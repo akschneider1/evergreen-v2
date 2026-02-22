@@ -133,7 +133,35 @@ This document catalogs the research, prior art, and real-world examples that inf
 
 ---
 
-## 5. Cross-Cutting Themes
+## 5. UbuntuGuard — Culturally-Grounded Policy Benchmarks for African Languages
+
+**Source**: Abdullahi, Mgonzo, Oduwole, Okewunmi, Owodunni, Singh, Eickhoff (2025)
+- [arXiv paper: "UbuntuGuard: A Culturally-Grounded Policy Benchmark for Equitable AI Safety in African Languages"](https://arxiv.org/abs/2601.12696)
+- Code repository: publicly available (CC-BY-4.0)
+
+**What they built**: The first African-language policy-based safety benchmark. UbuntuGuard addresses the critical gap that most AI safety benchmarks prioritize Western contexts and high-resource languages, leaving African languages vulnerable to harm misclassification and cultural misalignment.
+
+**Methodology**:
+- **155 domain experts** from sensitive fields (including healthcare) authored adversarial queries
+- **Context-specific safety policies** and reference responses reflecting cultural harm signals
+- **13 models evaluated** — 6 general-purpose LLMs + 7 safety-focused models — across three variants: static, dynamic, and multilingual
+
+**Key findings**:
+1. **English-centric benchmarks overestimate real-world multilingual safety** — models appear safe in English but fail in African language contexts.
+2. **Cross-lingual transfer offers only partial protection** — you can't just translate English safety into other languages.
+3. **Dynamic models struggle to localize** African-language contexts despite better policy-leveraging capacity.
+4. **Robust safety requires flexible, runtime-enforceable policies** tailored to local linguistic and sociocultural contexts.
+
+**What we learned for Evergreen**:
+- **Generic benchmarks are actively misleading** — they don't just miss context, they give false confidence. A model that "passes" on English-centric safety tests can fail badly for non-English-speaking populations.
+- **Domain experts must author adversarial test cases**, not just expected-path queries. The 155-expert methodology validates our approach of having subject matter experts define what "wrong" looks like.
+- **Static vs. dynamic testing matters** — UbuntuGuard's three variants (static, dynamic, multilingual) parallel Singapore's evolution from static benchmarks to dynamic, context-evolving tests.
+- **Safety policies must be enforceable at runtime**, not just checked at deployment — reinforcing the need for both pre-deployment evals (Evergreen) and runtime guardrails (future work, a la Singapore's Sentinel).
+- **Cultural context is not optional** — strengthens our Design Principle 2.4 (Context Is a First-Class Dimension) with empirical evidence that context-free evaluation is harmful.
+
+---
+
+## 6. Cross-Cutting Themes
 
 ### Where similar organizations have been successful
 
@@ -142,6 +170,7 @@ This document catalogs the research, prior art, and real-world examples that inf
 | GovTech AI Guardian | Singapore | Policy-Playbook-Product model; model-agnostic SaaS | ~1/3 of government agencies |
 | Samiksha / Karya | India | Community-driven benchmark creation; paid workers | Expanding to Brazil, Uganda, Sri Lanka |
 | UK AISI Inspect | UK | Open-source, composable framework; lab adoption | 50+ contributors; used by Anthropic, DeepMind |
+| UbuntuGuard | Africa (multi) | Culturally-grounded safety benchmarks; expert-authored adversarial queries | 155 domain experts, 13 models, 3 test variants |
 | CDLE / Propel | USA (CO) | Expert-first, jurisdiction-specific evals | State-level deployment gate |
 
 ### Converging insights across all research

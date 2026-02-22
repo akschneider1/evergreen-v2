@@ -478,6 +478,7 @@ This closes the **technical capacity gap**: governance policy becomes operationa
 - **GovTech Singapore AI Guardian** (Benjamin Goh): Policy-Playbook-Product governance model, Litmus testing-as-a-service, Sentinel guardrails-as-a-service, co-design with non-technical officers, operationalized technical AI governance across ~1/3 of government agencies
 - **Samiksha / Karya** (Microsoft Research, CIP, Karya — India): Community-driven evaluation pipeline, CSO and community member co-creation of benchmarks, culturally grounded evaluation across healthcare/agriculture/education/legal, multilingual and context-specific scoring
 - **UK AISI Inspect** (AI Security Institute, UK): Open-source Python eval framework (Dataset → Task → Solver → Scorer), adopted by Anthropic/DeepMind/major labs, 100+ pre-built evals, composition-first design, reproducible logging, sandboxed execution
+- **UbuntuGuard** (Abdullahi et al., 2025): First African-language policy-based safety benchmark; 155 domain experts authoring adversarial queries; evidence that English-centric benchmarks overestimate multilingual safety; static/dynamic/multilingual test variants
 - **Colorado Digital Equity SNAP Evals** (CDLE): State-level benefits chatbot evaluation, jurisdiction-specific test cases, harm-aware severity grading
 - **Promptfoo** (open source): Eval runner architecture, assertion types, YAML config format, provider abstraction
 - **NIST AI RMF**: Risk-based approach to AI evaluation aligned with federal standards
