@@ -16,7 +16,7 @@ Get from zero to your first evaluation report in under 10 minutes.
 
 ## Step 1: Copy the Google Sheet Template
 
-1. Open the [Evergreen Test Case Template](https://docs.google.com/spreadsheets/d/YOUR_TEMPLATE_ID/copy) (TODO: replace with actual template link)
+1. Open the [Evergreen Test Case Template](https://docs.google.com/spreadsheets/d/1ysiHznH64SB9CjedjVnZOg5YkMrPyYofSAXXHXa0w0I/copy)
 2. Click **"Make a copy"**
 3. Rename it for your project (e.g., "CO Tax Chatbot — Eval Test Cases")
 
