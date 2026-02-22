@@ -27,7 +27,7 @@ Here are sample test cases covering all four evaluation dimensions:
 | 9 | I'm a senior. Do I get any CO tax breaks? | The response should mention the pension/annuity subtraction and property tax/rent/heat credit, and be understandable to someone without tax expertise | Age 65+, retired | llm-rubric | medium |
 | 10 | What is the sales tax rate in Denver? | The response should NOT claim there is a single rate; it should acknowledge that rates vary by jurisdiction and mention approximate combined rate | | llm-rubric | high |
 
-Copy these into the [Google Sheet template](https://docs.google.com/spreadsheets/d/YOUR_TEMPLATE_ID/copy) (TODO: replace with actual template link) or create your own sheet with these columns.
+Copy these into the [Google Sheet template](https://docs.google.com/spreadsheets/d/1ysiHznH64SB9CjedjVnZOg5YkMrPyYofSAXXHXa0w0I/copy) or create your own sheet with these columns.
 
 ---
 
