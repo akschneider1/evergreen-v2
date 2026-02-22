@@ -6,4 +6,5 @@ dist/
 results.json
 *.html
 !src/report/template.html
+!examples/sample-report/report.html
 .env
