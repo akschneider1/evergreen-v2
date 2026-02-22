@@ -1,0 +1,32 @@
+{
+  "name": "Evergreen Dev",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "postCreateCommand": "npm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "yoavbls.pretty-ts-errors"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "typescript.preferences.importModuleSpecifier": "relative"
+      }
+    }
+  },
+  "forwardPorts": [],
+  "secrets": {
+    "OPENAI_API_KEY": {
+      "description": "OpenAI API key for running evals against GPT-4o",
+      "documentationUrl": "https://platform.openai.com/api-keys"
+    },
+    "ANTHROPIC_API_KEY": {
+      "description": "Anthropic API key for running evals against Claude",
+      "documentationUrl": "https://console.anthropic.com/settings/keys"
+    }
+  },
+  "remoteEnv": {
+    "PROMPTFOO_DISABLE_TELEMETRY": "1"
+  }
+}

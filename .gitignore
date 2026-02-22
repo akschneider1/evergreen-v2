@@ -4,6 +4,7 @@ dist/
 *.d.ts
 !src/**/*.d.ts
 results.json
+.promptfoo-config.yaml
 *.html
 !src/report/template.html
 !examples/sample-report/report.html

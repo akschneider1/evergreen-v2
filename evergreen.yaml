@@ -1,0 +1,25 @@
+# Evergreen config
+# Edit this file to point at your Google Sheet and the LLM you're testing.
+#
+# Quick start:
+#   1. Fill in sheetId (the ID from your Google Sheet URL)
+#   2. Set OPENAI_API_KEY in your environment
+#   3. Run: npx evergreen run
+
+description: "My AI Chatbot — Pre-Deployment Eval"
+
+# Google Sheet ID (from the URL: /spreadsheets/d/THIS_PART/edit)
+sheetId: "YOUR_SHEET_ID_HERE"
+
+# Which LLM(s) to test — add as many as you want to compare
+providers:
+  - id: openai:gpt-4o
+    systemPrompt: |
+      You are a helpful assistant.
+      Answer in plain language.
+
+# Uncomment to test a second model side-by-side:
+#  - id: anthropic:claude-sonnet-4-20250514
+#    systemPrompt: |
+#      You are a helpful assistant.
+#      Answer in plain language.
