@@ -6,15 +6,18 @@
 
 ## 1. Problem Statement
 
-Public sector agencies are deploying AI systems (chatbots, case assistants, benefits navigators) that directly affect people's lives. But most agencies lack practical, accessible tools to test whether these systems are safe, accurate, and appropriate *before* they go live.
+Public sector agencies are deploying AI systems (chatbots, case assistants, benefits navigators) that directly affect people's lives. But a **technical capacity gap** exists between AI governance policy and its operationalization: agencies have frameworks and principles, but lack the practical, accessible tooling to translate those into day-to-day testing and assurance practices.
 
-Current barriers:
-- **Eval tooling requires engineering expertise** that most policy teams don't have
-- **Generic benchmarks miss domain context** — a model can score well on general tests but fail on jurisdiction-specific rules
-- **No shared methodology** exists for non-technical staff to participate in defining what "good" looks like
-- **Testing is treated as a one-time gate** rather than an ongoing practice
+This gap — what Benjamin Goh (GovTech Singapore) calls the divide between policy intent and product execution — manifests as:
 
-**This project provides a lean, open-source demo** that shows how a non-technical policy SME can create domain-specific evaluations, run them against any text-based LLM, and interpret the results — all without writing code.
+- **No uniform standard for AI testing**: Different testing providers offer conflicting recommendations on what to test. Agencies need a clear benchmark — a "bar" to cross — not a menu of options that varies by vendor.
+- **Eval tooling requires engineering expertise** that most policy teams don't have, creating a bottleneck where governance depends on scarce technical staff.
+- **Generic benchmarks miss domain context** — a model can score well on general tests but fail on jurisdiction-specific rules. Evaluations must be grounded in local realities, not translated from generic or Western-centric datasets.
+- **No shared methodology** exists for the people closest to the problem — policy experts, program managers, *and members of the public / end users* — to participate in defining what a "correct" answer looks like and what constitutes real-world harm.
+- **Integration across agencies is not straightforward** due to varying tech stacks and use cases. Whatever solution exists must be application- and model-agnostic.
+- **Testing is treated as a one-time gate** rather than an ongoing practice. Agencies need not just pre-deployment testing, but also guardrails — mechanisms to continuously monitor and safeguard AI applications in production.
+
+**This project provides a lean, open-source demo** that shows how policy experts, program managers, and members of the public can collaboratively create domain-specific evaluations, run them against any text-based LLM, and interpret the results — closing the gap between governance intent and operational practice.
 
 ---
 
@@ -22,11 +25,11 @@ Current barriers:
 
 Drawn from the referenced work (Propel SNAP Evals, GovTech Singapore AI Guardian):
 
-### 2.1 Expert-First, Automate-Second
-Domain experts define what "correct" means before any automation runs. The tool encodes their judgment; it does not replace it. (Propel: "You write down tests and find a system prompt that passes them.")
+### 2.1 Community-Informed, Expert-Defined, Automate-Second
+What a "correct" answer looks like is informed by the people closest to the problem: **policy experts** who know the rules, **program managers** who know the operational context, and **members of the public / end users** who know how questions are actually asked and what answers actually help. The tool encodes their collective judgment; it does not replace it. (Propel: "You write down tests and find a system prompt that passes them." Samiksha: community members shape what gets evaluated, how benchmarks are constructed, and how outputs are scored.)
 
 ### 2.2 Co-Design Over Hand-Off
-Policy SMEs are co-designers, not end-consumers of engineering output. The tool's primary interface is Google Sheets — a surface they already know — not a config file or CLI.
+Policy SMEs, program managers, and community members are co-designers, not end-consumers of engineering output. The tool's primary interface is Google Sheets — a surface they already know — not a config file or CLI. (GovTech Singapore: co-design with non-technical officers; Samiksha: community-driven benchmark creation.)
 
 ### 2.3 Outcomes Over Process
 The pipeline answers a concrete question: **"Is this AI system safe and accurate enough to deploy for [specific use case]?"** Every feature traces back to answering that question.
@@ -35,9 +38,12 @@ The pipeline answers a concrete question: **"Is this AI system safe and accurate
 The same question can have different correct answers depending on jurisdiction, role, or scenario. Test cases encode this context explicitly. (Propel: state-by-state SNAP variation; GovTech: agency-specific risk profiles.)
 
 ### 2.5 Harm-Aware Prioritization
-Not all errors are equal. The system helps users categorize failures by real-world impact (e.g., incorrectly denying an eligible applicant is worse than being slightly verbose).
+Not all errors are equal. The system helps users categorize failures by real-world impact (e.g., incorrectly denying an eligible applicant is worse than being slightly verbose). End users and community members are uniquely positioned to identify which failures cause real harm — their input should inform severity ratings, not just expert assumptions.
 
-### 2.6 Lean and Open
+### 2.6 Application- and Model-Agnostic
+The pipeline must work across different AI systems, LLM providers, and agency tech stacks. No vendor lock-in, no assumptions about infrastructure. (GovTech Singapore: Litmus is model-agnostic and multi-tenant; UK AISI Inspect: one interface over dozens of model providers.)
+
+### 2.7 Lean and Open
 Minimum viable surface area. No unnecessary abstractions, feature flags, or configurability. Apache 2.0 licensed. Everything needed to run the demo ships in this repo.
 
 ---
@@ -409,33 +415,44 @@ Adapted from Propel's SNAP eval work, generalized for any public sector domain:
 
 ## 9. Implementation Plan
 
-### Phase 1: Foundation
+### Phase 1: Foundation (Dataset + Config)
+*Informed by: Inspect's typed Dataset → Task pipeline; Singapore's model-agnostic design*
+
 1. Initialize Node.js/TypeScript project with minimal dependencies
-2. Define core types (TestCase, EvalResult, Provider, GradingResult)
+2. Define core types (TestCase, EvalResult, Provider, GradingResult) — inspired by Inspect's composable primitives
 3. Build YAML config loader and validator
 4. Build Google Sheets connector (fetch + parse rows into test cases)
+5. Support community-input columns in Sheet template (e.g., "Source: policy rule / user feedback / community input" to track where test cases originate)
 
-### Phase 2: Eval Engine
-5. Implement provider interface + OpenAI provider + Anthropic provider
-6. Build eval runner (iterate test cases x providers, collect responses)
-7. Implement grading functions (contains, not-contains, contains-all, regex, llm-rubric)
-8. Build CLI entry point (`npx evergreen run`)
+### Phase 2: Eval Engine (Solver + Scorer)
+*Informed by: Inspect's Solver → Scorer composition; Promptfoo's assertion engine*
+
+6. Implement provider interface + OpenAI provider + Anthropic provider (model-agnostic by design)
+7. Build eval runner (iterate test cases x providers, collect responses)
+8. Implement grading functions (contains, not-contains, contains-all, regex, llm-rubric)
+9. Build CLI entry point (`npx evergreen run`)
 
 ### Phase 3: Reporting
-9. Build JSON result output
-10. Build HTML report generator (summary + detail views)
-11. Add severity-based aggregation and critical failure highlighting
+*Informed by: Inspect's comprehensive logging; Singapore's governance-ready insights*
+
+10. Build JSON result output with full audit trail (input, output, grade, reasoning — reproducible)
+11. Build HTML report generator (summary + detail views, persona-tabbed)
+12. Add severity-based aggregation and critical failure highlighting
+13. Include provenance tracking: which test cases came from policy rules vs. user/community feedback
 
 ### Phase 4: Documentation & Examples
-12. Write all 6 documentation files with visual aids
-13. Create SNAP benefits example (config + sheet template + walkthrough)
-14. Create housing voucher example
-15. Write README with quick start
+*Informed by: Samiksha's community-centered methodology; Propel's four-dimension framework*
+
+14. Write all 6 documentation files with visual aids
+15. Add methodology guide section on gathering community/user input for test cases
+16. Create SNAP benefits example (config + sheet template + walkthrough)
+17. Create housing voucher example
+18. Write README with quick start
 
 ### Phase 5: Polish
-16. End-to-end test of full flow (Sheet → Eval → Report)
-17. Error messages in plain language (not stack traces)
-18. Final review of all documentation for reading level and clarity
+19. End-to-end test of full flow (Sheet → Eval → Report)
+20. Error messages in plain language (not stack traces)
+21. Final review of all documentation for reading level and clarity
 
 ---
 
@@ -444,18 +461,25 @@ Adapted from Propel's SNAP eval work, generalized for any public sector domain:
 A policy SME with no coding background can:
 
 1. **Copy** the Google Sheet template (2 minutes)
-2. **Fill in** 5-10 test cases about their domain (30 minutes)
+2. **Fill in** 5-10 test cases about their domain — informed by user/community input on what questions real people ask and what answers actually help (30 minutes)
 3. **Run** `npx evergreen run` with help from a technical colleague (5 minutes)
 4. **Read** the HTML report and understand what passed and what failed (10 minutes)
 5. **Make a decision** about whether the AI system is ready to deploy
 
 The entire workflow produces a concrete artifact (the eval report) that can be shared with leadership, procurement, or oversight bodies as evidence of due diligence.
 
+This closes the **technical capacity gap**: governance policy becomes operational practice, with community-informed test cases, automated execution, and actionable results — not just another framework document.
+
 ---
 
 ## 11. References & Inspirations
 
 - **Propel SNAP LLM Evals** (Dave Guarino): Expert-first eval design, test-driven prompt development, four-dimension capability framework, Promptfoo + Google Sheets workflow
-- **GovTech Singapore AI Guardian** (Benjamin Goh): Policy-ops-tech integration, Litmus testing-as-a-service, co-design with non-technical officers, six responsible AI principles, continuous testing
+- **GovTech Singapore AI Guardian** (Benjamin Goh): Policy-Playbook-Product governance model, Litmus testing-as-a-service, Sentinel guardrails-as-a-service, co-design with non-technical officers, operationalized technical AI governance across ~1/3 of government agencies
+- **Samiksha / Karya** (Microsoft Research, CIP, Karya — India): Community-driven evaluation pipeline, CSO and community member co-creation of benchmarks, culturally grounded evaluation across healthcare/agriculture/education/legal, multilingual and context-specific scoring
+- **UK AISI Inspect** (AI Security Institute, UK): Open-source Python eval framework (Dataset → Task → Solver → Scorer), adopted by Anthropic/DeepMind/major labs, 100+ pre-built evals, composition-first design, reproducible logging, sandboxed execution
+- **Colorado Digital Equity SNAP Evals** (CDLE): State-level benefits chatbot evaluation, jurisdiction-specific test cases, harm-aware severity grading
 - **Promptfoo** (open source): Eval runner architecture, assertion types, YAML config format, provider abstraction
 - **NIST AI RMF**: Risk-based approach to AI evaluation aligned with federal standards
+
+See [RESEARCH.md](./RESEARCH.md) for detailed citations, methodology notes, and where each reference informs our approach.
