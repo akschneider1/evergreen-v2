@@ -29,6 +29,13 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command === 'serve') {
+    const port = Number(getFlagValue(args, '-p', '--port')) || 3000;
+    const { startServer } = await import('./server');
+    startServer(port);
+    return;
+  }
+
   if (command !== 'run') {
     console.error(`Unknown command: ${command}`);
     console.error('Run "evergreen --help" for usage.');
@@ -116,6 +123,8 @@ Usage:
   evergreen run                     Fetch test cases, run evals, generate report
   evergreen run -c config.yaml      Use a specific config file
   evergreen run -o report.html      Specify output report path
+  evergreen serve                   Start web UI for browser-based eval runs
+  evergreen serve -p 3000           Specify port (default: 3000)
 
 Config file (evergreen.yaml):
   description: "CO Tax Policy Chatbot Eval"
