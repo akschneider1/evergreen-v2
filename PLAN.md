@@ -23,7 +23,7 @@ This gap — what Benjamin Goh (GovTech Singapore) calls the divide between poli
 
 ## 2. Design Principles
 
-Drawn from the referenced work (Propel SNAP Evals, GovTech Singapore AI Guardian):
+Drawn from the referenced work (Propel evals, GovTech Singapore AI Guardian, Samiksha, UbuntuGuard):
 
 ### 2.1 Community-Informed, Expert-Defined, Automate-Second
 What a "correct" answer looks like is informed by the people closest to the problem: **policy experts** who know the rules, **program managers** who know the operational context, and **members of the public / end users** who know how questions are actually asked and what answers actually help. The tool encodes their collective judgment; it does not replace it. (Propel: "You write down tests and find a system prompt that passes them." Samiksha: community members shape what gets evaluated, how benchmarks are constructed, and how outputs are scored.)
@@ -35,7 +35,7 @@ Policy SMEs, program managers, and community members are co-designers, not end-c
 The pipeline answers a concrete question: **"Is this AI system safe and accurate enough to deploy for [specific use case]?"** Every feature traces back to answering that question.
 
 ### 2.4 Context Is a First-Class Dimension
-The same question can have different correct answers depending on jurisdiction, role, or scenario. Test cases encode this context explicitly. (Propel: state-by-state SNAP variation; GovTech: agency-specific risk profiles.)
+The same question can have different correct answers depending on jurisdiction, role, or scenario. Test cases encode this context explicitly. (Propel: state-by-state benefits variation; GovTech: agency-specific risk profiles; UbuntuGuard: culturally-grounded safety requires local context.)
 
 ### 2.5 Harm-Aware Prioritization
 Not all errors are equal. The system helps users categorize failures by real-world impact (e.g., incorrectly denying an eligible applicant is worse than being slightly verbose). End users and community members are uniquely positioned to identify which failures cause real harm — their input should inform severity ratings, not just expert assumptions.
@@ -80,7 +80,7 @@ Minimum viable surface area. No unnecessary abstractions, feature flags, or conf
 ```
 
 ### Demo Scenario
-A state benefits agency is considering deploying an AI chatbot to answer questions about a public assistance program (e.g., SNAP/food stamps, housing vouchers, Medicaid). Before launch, the policy team uses Evergreen to:
+A state agency is considering deploying AI chatbots to answer public questions about **Colorado tax policy** and **unemployment insurance**. Before launch, the policy team uses Evergreen to:
 
 1. **Define** test cases in a Google Sheet (questions + expected answers + context)
 2. **Run** the eval against one or more LLMs
@@ -107,34 +107,64 @@ A state benefits agency is considering deploying an AI chatbot to answer questio
 └─────────────┘     └──────────────┘     └──────────────┘     └──────────────┘
 ```
 
-### 4.2 What We Clone from Promptfoo (Evals Only)
+### 4.2 Promptfoo as the Eval Engine
 
-We do NOT fork the full Promptfoo codebase. Instead, we build a **lean eval runner** inspired by Promptfoo's architecture, taking only what's needed:
+**Promptfoo is a direct dependency — we use it, not rebuild it.** Promptfoo is an open-source eval runner with a mature assertion engine, YAML config format, multi-provider support, and CLI. Rather than re-implementing any of this, Evergreen wraps Promptfoo with three layers:
 
-| Component | Include? | Rationale |
-|---|---|---|
-| Eval runner core | **Yes** | Run prompts against models, collect responses |
-| Assertion/grading engine | **Yes** | Check responses against expected outcomes |
-| Google Sheets provider | **Yes** | Non-technical input interface |
-| YAML config format | **Yes** | Compatible with Promptfoo ecosystem |
-| HTML report viewer | **Yes** | Visual results for non-technical users |
-| Web UI / server | **No** | Unnecessary complexity for demo |
-| Red teaming module | **No** | Out of scope |
-| Caching / sharing | **No** | Unnecessary for demo |
-| 30+ provider integrations | **No** | Support 2-3 providers only |
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  What Evergreen adds on top of Promptfoo                         │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. INPUT LAYER: Google Sheets → Promptfoo YAML                  │
+│     Sheets connector fetches test cases and generates/updates    │
+│     the Promptfoo config so SMEs never touch YAML                │
+│                                                                  │
+│  2. OUTPUT LAYER: Promptfoo JSON → Evergreen HTML Report         │
+│     Custom report generator transforms Promptfoo's raw output    │
+│     into a persona-tabbed report (Policy / Ops / Technical)      │
+│                                                                  │
+│  3. DOCS + EXAMPLES LAYER                                        │
+│     Plain-language documentation and domain-specific examples    │
+│     (CO Tax Policy, Unemployment Insurance) that non-technical   │
+│     users can follow without understanding Promptfoo internals   │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**What Promptfoo provides (we don't rebuild):**
+
+| Promptfoo Capability | How Evergreen Uses It |
+|---|---|
+| Eval runner core | `npx promptfoo eval` executes test cases against providers |
+| Assertion engine | `contains`, `not-contains`, `contains-all`, `regex`, `llm-rubric` — all built-in |
+| YAML config format | Evergreen generates the YAML from Google Sheets data |
+| Provider integrations | OpenAI, Anthropic, and others — configured in YAML |
+| JSON output | Promptfoo's `--output` flag produces structured results that feed our report |
+
+**What Promptfoo does NOT provide (Evergreen adds):**
+
+| Gap | Evergreen Solution |
+|---|---|
+| No Google Sheets input | Sheets connector fetches, parses, and generates YAML |
+| Generic HTML viewer | Custom HTML report with severity, readiness, critical failures |
+| No persona-based views | Three tabs: Policy/Leadership, Operations, Technical |
+| No methodology guidance | Docs + methodology guide for non-technical users |
+| No domain examples | CO Tax Policy + Unemployment Insurance walkthroughs |
 
 ### 4.3 Technology Stack
 
 - **Runtime**: Node.js (TypeScript)
-- **Eval format**: YAML config (Promptfoo-compatible)
-- **Test case source**: Google Sheets (via Google Sheets API v4)
-- **LLM providers**: OpenAI, Anthropic (extensible)
-- **Grading methods**:
+- **Eval engine**: Promptfoo (npm dependency) — runs evals, grades responses
+- **Config format**: YAML (Promptfoo-native)
+- **Test case source**: Google Sheets (via Google Sheets API v4) → auto-generates YAML
+- **LLM providers**: OpenAI, Anthropic (configured through Promptfoo)
+- **Grading methods** (all Promptfoo built-ins):
   - String contains / exact match
   - Regex match
   - LLM-as-judge (model-graded)
   - Rubric-based (structured criteria)
-- **Output**: HTML report + JSON data + CLI summary
+- **Output**: Custom HTML report + JSON data + CLI summary
 - **Documentation**: Markdown docs with diagrams (in `/docs`)
 
 ### 4.4 Project Structure
@@ -177,10 +207,10 @@ evergreen-v2/
 │   └── images/                  # Screenshots, diagrams
 │
 ├── examples/
-│   ├── snap-benefits/           # SNAP/food stamps example
+│   ├── co-tax-policy/           # Colorado tax policy chatbot example
 │   │   ├── evergreen.yaml       # Eval config
 │   │   └── README.md            # Scenario walkthrough
-│   └── housing-voucher/         # Housing voucher example
+│   └── unemployment-insurance/  # Unemployment insurance chatbot example
 │       ├── evergreen.yaml
 │       └── README.md
 │
@@ -198,33 +228,34 @@ The Google Sheet is the primary interface for non-technical users. It serves as 
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────┐
-│  📊 Evergreen Eval: [Program Name] Test Cases                                       │
+│  📊 Evergreen Eval: CO Tax Policy Chatbot — Test Cases                               │
 ├────┬───────────────┬──────────────┬──────────────┬──────────────┬───────────────────┤
 │ #  │ Question      │ Expected     │ Context      │ Check Type   │ Severity          │
 │    │ (prompt)      │ Answer       │ (optional)   │              │                   │
 ├────┼───────────────┼──────────────┼──────────────┼──────────────┼───────────────────┤
-│ 1  │ What is the   │ $292         │ Federal,     │ contains     │ critical          │
-│    │ max SNAP      │              │ 1 person,    │              │ (wrong amount =   │
-│    │ benefit for   │              │ FY2025       │              │  real harm)       │
-│    │ 1 person?     │              │              │              │                   │
+│ 1  │ What is the   │ 4.4%         │ CO state     │ contains     │ critical          │
+│    │ Colorado      │              │ income tax,  │              │ (wrong rate =     │
+│    │ state income  │              │ 2024 tax     │              │  real harm)       │
+│    │ tax rate?     │              │ year         │              │                   │
 ├────┼───────────────┼──────────────┼──────────────┼──────────────┼───────────────────┤
-│ 2  │ Can I get     │ In most      │ State: CA    │ llm-rubric   │ high              │
-│    │ food stamps   │ states, yes. │              │              │                   │
-│    │ if I have     │ California   │              │              │                   │
-│    │ $10K in       │ has eliminated│             │              │                   │
-│    │ savings?      │ the asset    │              │              │                   │
-│    │               │ test...      │              │              │                   │
+│ 2  │ Do I owe CO   │ Depends on   │ Remote       │ llm-rubric   │ high              │
+│    │ tax if I work │ whether you  │ worker,      │              │                   │
+│    │ remotely for  │ are domiciled│ out-of-state │              │                   │
+│    │ a CO company  │ in CO or     │ employer     │              │                   │
+│    │ but live in   │ have CO-     │              │              │                   │
+│    │ another state?│ source income│              │              │                   │
 ├────┼───────────────┼──────────────┼──────────────┼──────────────┼───────────────────┤
-│ 3  │ How do I      │ Must mention:│ Practical    │ contains-all │ medium            │
-│    │ apply for     │ online,      │ navigation   │              │                   │
-│    │ SNAP?         │ in-person,   │              │              │                   │
-│    │               │ phone        │              │              │                   │
+│ 3  │ How do I file │ Must mention:│ Practical    │ contains-all │ medium            │
+│    │ my CO state   │ Revenue      │ navigation   │              │                   │
+│    │ tax return?   │ Online,      │              │              │                   │
+│    │               │ paper form,  │              │              │                   │
+│    │               │ tax software │              │              │                   │
 ├────┼───────────────┼──────────────┼──────────────┼──────────────┼───────────────────┤
-│ 4  │ Am I eligible │ Must NOT say │ Immigration  │ not-contains │ critical          │
-│    │ for SNAP as   │ "not         │ status       │              │ (misinformation   │
-│    │ a lawful      │ eligible"    │              │              │  = real harm)     │
-│    │ permanent     │ without      │              │              │                   │
-│    │ resident?     │ nuance       │              │              │                   │
+│ 4  │ Can I deduct  │ Must NOT say │ CO-specific  │ not-contains │ critical          │
+│    │ my federal    │ "you cannot  │ SALT rules   │              │ (misinformation   │
+│    │ taxes on my   │ deduct" as a │              │              │  = real harm)     │
+│    │ CO return?    │ blanket      │              │              │                   │
+│    │               │ statement    │              │              │                   │
 └────┴───────────────┴──────────────┴──────────────┴──────────────┴───────────────────┘
 ```
 
@@ -232,9 +263,9 @@ The Google Sheet is the primary interface for non-technical users. It serves as 
 
 | Column | What to put here | Example |
 |---|---|---|
-| **Question** | The question you'd ask the AI, exactly as a real user would phrase it | "What is the income limit for SNAP?" |
-| **Expected Answer** | What a correct response should include (keyword, phrase, or description of a good answer) | "$292" or "Must mention all three application methods" |
-| **Context** | Any situation-specific details that affect the correct answer | "State: Texas" or "Household size: 4" |
+| **Question** | The question you'd ask the AI, exactly as a real user would phrase it | "What is the Colorado state income tax rate?" |
+| **Expected Answer** | What a correct response should include (keyword, phrase, or description of a good answer) | "4.4%" or "Must mention Revenue Online and paper filing" |
+| **Context** | Any situation-specific details that affect the correct answer | "2024 tax year" or "Remote worker, out-of-state" |
 | **Check Type** | How to judge the response (pick from dropdown) | `contains`, `not-contains`, `llm-rubric`, `regex` |
 | **Severity** | How bad is it if the AI gets this wrong? | `critical`, `high`, `medium`, `low` |
 
@@ -256,31 +287,39 @@ The YAML config file connects the Google Sheet to the LLM providers. It is the o
 
 ```yaml
 # evergreen.yaml — Eval configuration
-description: "SNAP Benefits Chatbot Pre-Deployment Eval"
+# This file is auto-generated by `npx evergreen sync` from the Google Sheet.
+# You can also edit it directly if preferred.
+
+description: "CO Tax Policy Chatbot — Pre-Deployment Eval"
 
 # Where test cases come from
 testCases:
   source: google-sheets
   sheetId: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
-  range: "TestCases!A2:E"  # Skip header row
+  range: "TestCases!A2:F"  # Skip header row
 
-# What to test
+# What to test — these are Promptfoo provider IDs
 providers:
   - id: openai:gpt-4o
     config:
       systemPrompt: |
-        You are a helpful assistant for SNAP benefits questions.
+        You are a helpful assistant for Colorado state tax questions.
         Answer in plain language at a 6th grade reading level.
+        Only provide information specific to Colorado tax law.
 
   - id: anthropic:claude-sonnet-4-20250514
     config:
       systemPrompt: |
-        You are a helpful assistant for SNAP benefits questions.
+        You are a helpful assistant for Colorado state tax questions.
         Answer in plain language at a 6th grade reading level.
+        Only provide information specific to Colorado tax law.
 
-# How to grade (defaults, can be overridden per test case)
+# How to grade (defaults, can be overridden per test case in the Sheet)
 defaultGrading:
-  llmRubricProvider: openai:gpt-4o  # Model used as judge
+  llmRubricProvider: openai:gpt-4o  # Model used as judge for llm-rubric checks
+
+# Promptfoo output format — feeds into Evergreen's report generator
+outputPath: ./results.json
 ```
 
 ---
@@ -292,7 +331,7 @@ defaultGrading:
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                                                              │
-│  📋 EVAL REPORT: SNAP Benefits Chatbot                       │
+│  📋 EVAL REPORT: CO Tax Policy Chatbot                       │
 │  Date: 2026-02-22 | Test Cases: 25 | Models: 2              │
 │                                                              │
 ├──────────────────────────────────────────────────────────────┤
@@ -318,13 +357,13 @@ defaultGrading:
 │                                                              │
 │  ⚠️  CRITICAL FAILURES (require review before deployment)    │
 │  ┌──────────────────────────────────────────────────────┐    │
-│  │ #4: "Am I eligible as a lawful permanent resident?"  │    │
-│  │     GPT-4o said "not eligible" without nuance        │    │
-│  │     ➜ Risk: Could deter eligible applicants          │    │
+│  │ #4: "Can I deduct federal taxes on my CO return?"    │    │
+│  │     GPT-4o said "you cannot deduct" without nuance   │    │
+│  │     ➜ Risk: Taxpayers may miss legitimate deductions  │    │
 │  │                                                      │    │
-│  │ #7: "What happens if I miss my recertification?"     │    │
-│  │     GPT-4o omitted the grace period                  │    │
-│  │     ➜ Risk: Unnecessary panic for beneficiaries      │    │
+│  │ #9: "When is my CO tax return due?"                  │    │
+│  │     GPT-4o gave the federal date, not the CO date    │    │
+│  │     ➜ Risk: Late filing, penalties for taxpayers      │    │
 │  └──────────────────────────────────────────────────────┘    │
 │                                                              │
 │  RECOMMENDATION                                              │
@@ -415,44 +454,45 @@ Adapted from Propel's SNAP eval work, generalized for any public sector domain:
 
 ## 9. Implementation Plan
 
-### Phase 1: Foundation (Dataset + Config)
+### Phase 1: Foundation (Sheets → Promptfoo Config)
 *Informed by: Inspect's typed Dataset → Task pipeline; Singapore's model-agnostic design*
 
-1. Initialize Node.js/TypeScript project with minimal dependencies
-2. Define core types (TestCase, EvalResult, Provider, GradingResult) — inspired by Inspect's composable primitives
-3. Build YAML config loader and validator
-4. Build Google Sheets connector (fetch + parse rows into test cases)
+1. Initialize Node.js/TypeScript project; add `promptfoo` as npm dependency
+2. Define Evergreen types (TestCase, SheetRow, ReportData) — the bridge between Google Sheets and Promptfoo's YAML format
+3. Build Google Sheets connector (fetch rows via Sheets API, parse into typed test cases)
+4. Build YAML generator: convert Sheet rows into Promptfoo-compatible `evergreen.yaml`
 5. Support community-input columns in Sheet template (e.g., "Source: policy rule / user feedback / community input" to track where test cases originate)
+6. Build CLI entry point: `npx evergreen sync` (Sheets → YAML) and `npx evergreen run` (sync + eval + report)
 
-### Phase 2: Eval Engine (Solver + Scorer)
-*Informed by: Inspect's Solver → Scorer composition; Promptfoo's assertion engine*
+### Phase 2: Eval Execution (Promptfoo Wrapper)
+*Promptfoo does the heavy lifting — Evergreen orchestrates and reports*
 
-6. Implement provider interface + OpenAI provider + Anthropic provider (model-agnostic by design)
-7. Build eval runner (iterate test cases x providers, collect responses)
-8. Implement grading functions (contains, not-contains, contains-all, regex, llm-rubric)
-9. Build CLI entry point (`npx evergreen run`)
+7. Wire `npx evergreen run` to invoke Promptfoo programmatically (via its Node API or CLI subprocess)
+8. Configure provider setup (OpenAI, Anthropic) through the generated YAML
+9. Validate that all Promptfoo assertion types work with Sheet-defined check types (`contains`, `not-contains`, `contains-all`, `regex`, `llm-rubric`)
+10. Capture Promptfoo's JSON output for the report pipeline
 
 ### Phase 3: Reporting
 *Informed by: Inspect's comprehensive logging; Singapore's governance-ready insights*
 
-10. Build JSON result output with full audit trail (input, output, grade, reasoning — reproducible)
-11. Build HTML report generator (summary + detail views, persona-tabbed)
-12. Add severity-based aggregation and critical failure highlighting
-13. Include provenance tracking: which test cases came from policy rules vs. user/community feedback
+11. Build JSON → HTML report generator (summary + detail views, persona-tabbed) — **done** (generator.ts)
+12. Wire Promptfoo's JSON output format into the report generator's expected input
+13. Add severity-based aggregation and critical failure highlighting — **done** (built into generator)
+14. Include provenance tracking: which test cases came from policy rules vs. user/community feedback
 
 ### Phase 4: Documentation & Examples
 *Informed by: Samiksha's community-centered methodology; Propel's four-dimension framework*
 
-14. Write all 6 documentation files with visual aids
-15. Add methodology guide section on gathering community/user input for test cases
-16. Create SNAP benefits example (config + sheet template + walkthrough)
-17. Create housing voucher example
-18. Write README with quick start
+15. Write all 6 documentation files with visual aids
+16. Add methodology guide section on gathering community/user input for test cases
+17. Create CO Tax Policy example (config + sheet template + walkthrough)
+18. Create Unemployment Insurance example (config + sheet template + walkthrough)
+19. Write README quick start with end-to-end instructions
 
 ### Phase 5: Polish
-19. End-to-end test of full flow (Sheet → Eval → Report)
-20. Error messages in plain language (not stack traces)
-21. Final review of all documentation for reading level and clarity
+20. End-to-end test of full flow (Sheet → YAML → Promptfoo → JSON → Report)
+21. Error messages in plain language (not stack traces)
+22. Final review of all documentation for reading level and clarity
 
 ---
 
@@ -462,13 +502,13 @@ A policy SME with no coding background can:
 
 1. **Copy** the Google Sheet template (2 minutes)
 2. **Fill in** 5-10 test cases about their domain — informed by user/community input on what questions real people ask and what answers actually help (30 minutes)
-3. **Run** `npx evergreen run` with help from a technical colleague (5 minutes)
+3. **Run** `npx evergreen run` with help from a technical colleague (5 minutes) — this syncs the Sheet, generates Promptfoo config, executes evals, and produces the report in one command
 4. **Read** the HTML report and understand what passed and what failed (10 minutes)
 5. **Make a decision** about whether the AI system is ready to deploy
 
 The entire workflow produces a concrete artifact (the eval report) that can be shared with leadership, procurement, or oversight bodies as evidence of due diligence.
 
-This closes the **technical capacity gap**: governance policy becomes operational practice, with community-informed test cases, automated execution, and actionable results — not just another framework document.
+This closes the **technical capacity gap**: governance policy becomes operational practice, with community-informed test cases, automated execution (powered by Promptfoo), and actionable results — not just another framework document.
 
 ---
 

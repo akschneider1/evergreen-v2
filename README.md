@@ -42,11 +42,13 @@ The key insight: **what a "correct" answer looks like should be defined by the p
 ## Architecture
 
 ```
-Google Sheet  →  Evergreen Eval Runner  →  LLM Under Test  →  Results Report
-(test cases)     (fetch, parse, grade)     (OpenAI, etc.)     (HTML + JSON)
+Google Sheet  →  Evergreen CLI     →  Promptfoo        →  LLM Under Test  →  Evergreen Report
+(test cases)     (sync + orchestrate)  (eval engine)       (OpenAI, etc.)     (HTML + JSON)
 ```
 
-Inspired by [UK AISI Inspect](https://inspect.aisi.org.uk/)'s composable pipeline (Dataset → Task → Solver → Scorer) and [GovTech Singapore Litmus](https://medium.com/aiguardian-govtech/how-we-built-the-ai-guardian-team-at-govtech-singapore-3758cf21004d)'s model-agnostic, multi-tenant design — adapted for accessibility via Google Sheets.
+**[Promptfoo](https://github.com/promptfoo/promptfoo)** is the eval engine — it runs prompts against models, grades responses, and outputs structured results. Evergreen wraps it with a Google Sheets input layer, a custom report generator, and plain-language documentation so non-technical users never need to touch Promptfoo directly.
+
+Inspired by [UK AISI Inspect](https://inspect.aisi.org.uk/)'s composable pipeline, [GovTech Singapore Litmus](https://medium.com/aiguardian-govtech/how-we-built-the-ai-guardian-team-at-govtech-singapore-3758cf21004d)'s model-agnostic design, and Promptfoo's assertion engine — adapted for accessibility via Google Sheets.
 
 ## Current Status
 
