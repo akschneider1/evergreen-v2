@@ -24,7 +24,18 @@ export async function fetchSheet(sheetId: string, gid = '0'): Promise<SheetRow[]
   const url =
     `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
 
-  const res = await fetch(url);
+  let res: Response;
+  try {
+    res = await fetch(url);
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Could not connect to Google Sheets. Check your internet connection.\n` +
+      `  Sheet ID: ${sheetId}\n` +
+      `  Details: ${detail}`
+    );
+  }
+
   if (!res.ok) {
     throw new Error(
       `Failed to fetch Google Sheet (HTTP ${res.status}). ` +
