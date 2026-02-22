@@ -169,54 +169,45 @@ A state agency is considering deploying AI chatbots to answer public questions a
 
 ### 4.4 Project Structure
 
+Evergreen is intentionally minimal. Because Promptfoo handles providers, assertion grading, and eval execution natively, Evergreen only needs to implement the three layers it adds on top: input (Sheets), orchestration (CLI), and output (report).
+
 ```
 evergreen-v2/
 ├── README.md                    # Quick start (< 5 min setup)
 ├── LICENSE                      # Apache 2.0
 ├── package.json
 ├── tsconfig.json
+├── evergreen.yaml               # User's eval config (points to their Sheet + providers)
 │
 ├── src/
-│   ├── index.ts                 # CLI entry point
-│   ├── config/
-│   │   ├── loader.ts            # Load & validate YAML config
-│   │   └── schema.ts            # Config type definitions
-│   ├── sheets/
-│   │   ├── connector.ts         # Google Sheets API integration
-│   │   ├── parser.ts            # Parse sheet rows into test cases
-│   │   └── auth.ts              # Google API authentication
-│   ├── providers/
-│   │   ├── base.ts              # Provider interface
-│   │   ├── openai.ts            # OpenAI provider
-│   │   └── anthropic.ts         # Anthropic provider
-│   ├── eval/
-│   │   ├── runner.ts            # Core eval execution loop
-│   │   ├── graders.ts           # Assertion/grading functions
-│   │   └── types.ts             # Eval types (TestCase, Result, etc.)
+│   ├── index.ts                 # CLI entry point: `npx evergreen run`
+│   ├── types.ts                 # Shared types (SheetRow, EvergreenConfig, Promptfoo I/O)
+│   ├── sheets.ts                # Fetch Google Sheet as CSV → parse into SheetRows
+│   ├── config.ts                # Load evergreen.yaml + generate Promptfoo YAML from SheetRows
+│   ├── runner.ts                # Invoke `npx promptfoo eval`, capture JSON output
+│   ├── mapper.ts                # Transform Promptfoo JSON → EvalResults for report
 │   └── report/
-│       ├── generator.ts         # Generate HTML/JSON reports
-│       └── template.html        # Report HTML template
-│
-├── docs/
-│   ├── 01-what-is-this.md       # Plain-language overview
-│   ├── 02-quickstart.md         # Step-by-step setup guide
-│   ├── 03-writing-test-cases.md # How to write evals in Sheets
-│   ├── 04-understanding-results.md  # Reading the report
-│   ├── 05-evaluation-design.md  # Methodology guide for SMEs
-│   ├── 06-technical-reference.md    # Config options, CLI flags
-│   └── images/                  # Screenshots, diagrams
+│       ├── generator.ts         # EvalResults → single-file HTML report
+│       └── template.html        # Report HTML template (reference/design artifact)
 │
 ├── examples/
-│   ├── co-tax-policy/           # Colorado tax policy chatbot example
-│   │   ├── evergreen.yaml       # Eval config
-│   │   └── README.md            # Scenario walkthrough
-│   └── unemployment-insurance/  # Unemployment insurance chatbot example
-│       ├── evergreen.yaml
-│       └── README.md
+│   └── co-tax-policy/
+│       └── evergreen.yaml       # Example config for Colorado tax policy chatbot
 │
-└── templates/
-    └── google-sheet-template.md # Instructions to copy the template sheet
+└── docs/                        # (Phase 4 — not yet built)
+    ├── 01-what-is-this.md
+    ├── 02-quickstart.md
+    ├── 03-writing-test-cases.md
+    ├── 04-understanding-results.md
+    ├── 05-evaluation-design.md
+    └── 06-technical-reference.md
 ```
+
+**What's NOT in the tree (and why):**
+- No `src/providers/` — Promptfoo handles provider integration natively via YAML config
+- No `src/eval/runner.ts` or `src/eval/graders.ts` — Promptfoo IS the eval runner and grader
+- No `src/sheets/auth.ts` — public Google Sheets export as CSV requires no authentication
+- No `src/config/loader.ts` — we generate YAML for Promptfoo, we don't parse it back
 
 ---
 
@@ -454,44 +445,44 @@ Adapted from Propel's SNAP eval work, generalized for any public sector domain:
 
 ## 9. Implementation Plan
 
-### Phase 1: Foundation (Sheets → Promptfoo Config)
+### Phase 1: Foundation (Sheets → Promptfoo Config) — **DONE**
 *Informed by: Inspect's typed Dataset → Task pipeline; Singapore's model-agnostic design*
 
-1. Initialize Node.js/TypeScript project; add `promptfoo` as npm dependency
-2. Define Evergreen types (TestCase, SheetRow, ReportData) — the bridge between Google Sheets and Promptfoo's YAML format
-3. Build Google Sheets connector (fetch rows via Sheets API, parse into typed test cases)
-4. Build YAML generator: convert Sheet rows into Promptfoo-compatible `evergreen.yaml`
-5. Support community-input columns in Sheet template (e.g., "Source: policy rule / user feedback / community input" to track where test cases originate)
-6. Build CLI entry point: `npx evergreen sync` (Sheets → YAML) and `npx evergreen run` (sync + eval + report)
+1. ✅ Initialize Node.js/TypeScript project; add `promptfoo` as npm dependency
+2. ✅ Define Evergreen types (`src/types.ts`) — SheetRow, EvergreenConfig, Promptfoo I/O types
+3. ✅ Build Google Sheets connector (`src/sheets.ts`) — fetches public Sheet as CSV, parses into typed rows (no OAuth needed — just "Anyone with the link can view")
+4. ✅ Build config generator (`src/config.ts`) — loads `evergreen.yaml`, converts SheetRows into Promptfoo YAML config
+5. ✅ Build CLI entry point (`src/index.ts`): `npx evergreen run` (sync + eval + report in one command)
 
-### Phase 2: Eval Execution (Promptfoo Wrapper)
+### Phase 2: Eval Execution (Promptfoo Wrapper) — **DONE**
 *Promptfoo does the heavy lifting — Evergreen orchestrates and reports*
 
-7. Wire `npx evergreen run` to invoke Promptfoo programmatically (via its Node API or CLI subprocess)
-8. Configure provider setup (OpenAI, Anthropic) through the generated YAML
-9. Validate that all Promptfoo assertion types work with Sheet-defined check types (`contains`, `not-contains`, `contains-all`, `regex`, `llm-rubric`)
-10. Capture Promptfoo's JSON output for the report pipeline
+6. ✅ Wire `npx evergreen run` to invoke Promptfoo as CLI subprocess (`src/runner.ts`)
+7. ✅ Provider setup (OpenAI, Anthropic) configured through generated YAML — no custom provider code needed
+8. ✅ All Promptfoo assertion types supported via Sheet-defined check types (mapping in `src/config.ts`)
+9. ✅ Capture Promptfoo's JSON output and transform into report input (`src/mapper.ts`)
 
-### Phase 3: Reporting
+### Phase 3: Reporting — **DONE**
 *Informed by: Inspect's comprehensive logging; Singapore's governance-ready insights*
 
-11. Build JSON → HTML report generator (summary + detail views, persona-tabbed) — **done** (generator.ts)
-12. Wire Promptfoo's JSON output format into the report generator's expected input
-13. Add severity-based aggregation and critical failure highlighting — **done** (built into generator)
-14. Include provenance tracking: which test cases came from policy rules vs. user/community feedback
+10. ✅ HTML report generator with 3 tabs: Summary (Policy), Analysis (Ops), Details (Technical) — `src/report/generator.ts`
+11. ✅ Promptfoo JSON → EvalResults mapper (`src/mapper.ts`) wires eval output into report
+12. ✅ Severity-based aggregation, critical failure highlighting, readiness classification
+13. ✅ Provenance tracking (test source metadata in report footer)
 
-### Phase 4: Documentation & Examples
+### Phase 4: Documentation & Examples — NOT YET STARTED
 *Informed by: Samiksha's community-centered methodology; Propel's four-dimension framework*
 
-15. Write all 6 documentation files with visual aids
-16. Add methodology guide section on gathering community/user input for test cases
-17. Create CO Tax Policy example (config + sheet template + walkthrough)
-18. Create Unemployment Insurance example (config + sheet template + walkthrough)
-19. Write README quick start with end-to-end instructions
+14. Write all 6 documentation files with visual aids
+15. Add methodology guide section on gathering community/user input for test cases
+16. Create CO Tax Policy example (config + sheet template + walkthrough) — config skeleton done
+17. Create Unemployment Insurance example (config + sheet template + walkthrough)
+18. Write README quick start with end-to-end instructions
+19. Create a copyable Google Sheet template
 
-### Phase 5: Polish
+### Phase 5: Polish — NOT YET STARTED
 20. End-to-end test of full flow (Sheet → YAML → Promptfoo → JSON → Report)
-21. Error messages in plain language (not stack traces)
+21. Error messages in plain language (not stack traces) — partially done (all errors in CLI use plain language)
 22. Final review of all documentation for reading level and clarity
 
 ---
