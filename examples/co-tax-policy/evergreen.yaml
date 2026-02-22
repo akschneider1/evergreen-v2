@@ -1,0 +1,27 @@
+# Evergreen config — Colorado Tax Policy Chatbot Eval
+#
+# To run:
+#   1. Copy the Google Sheet template and fill in test cases
+#   2. Share the sheet as "Anyone with the link can view"
+#   3. Set your API key: export OPENAI_API_KEY=sk-...
+#   4. Run: npx evergreen run -c examples/co-tax-policy/evergreen.yaml
+
+description: "CO Tax Policy Chatbot — Pre-Deployment Eval"
+
+# Google Sheet ID (from the URL after /d/)
+sheetId: "YOUR_SHEET_ID_HERE"
+
+# LLM providers to test
+providers:
+  - id: openai:gpt-4o
+    systemPrompt: |
+      You are a helpful assistant for Colorado state tax questions.
+      Answer in plain language at a 6th grade reading level.
+      Only provide information specific to Colorado tax law.
+
+# Default system prompt (used when provider doesn't specify one)
+# defaultSystemPrompt: |
+#   You are a helpful assistant.
+
+# Provider used for llm-rubric grading (when test cases use llm-rubric check type)
+# llmRubricProvider: openai:gpt-4o

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.js.map
+*.d.ts
+!src/**/*.d.ts
+results.json
+*.html
+!src/report/template.html
+.env

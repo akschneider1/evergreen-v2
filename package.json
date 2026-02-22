@@ -1,0 +1,27 @@
+{
+  "name": "evergreen",
+  "version": "0.1.0",
+  "description": "Pre-deployment AI evaluation for the public sector",
+  "license": "Apache-2.0",
+  "bin": {
+    "evergreen": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "promptfoo": "^0.100.0",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "ts-node": "^10.9.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
