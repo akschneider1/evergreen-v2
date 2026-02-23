@@ -34,14 +34,25 @@
       padding: 1.25rem 1.5rem;
       box-sizing: border-box;
       height: 100%;
+      display: flex;
+      flex-direction: column;
     }
-    .how-it-works h3 { font-size: 0.9375rem !important; }
-    .how-it-works .usa-process-list__item {
-      padding-bottom: 0.75rem;
+    /* Distribute process list items evenly to fill the card height */
+    .how-it-works .usa-process-list {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       margin-bottom: 0;
     }
-    .how-it-works .usa-process-list__heading { font-size: 0.875rem; }
-    .how-it-works .usa-process-list p { font-size: 0.8125rem; margin-top: 0.15rem; margin-bottom: 0; }
+    .how-it-works .usa-process-list__item {
+      flex: 1;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    /* Slightly smaller text — just one notch down from USWDS defaults */
+    .how-it-works h3 { font-size: 0.9375rem !important; }
+    .how-it-works .usa-process-list__heading { font-size: 0.9375rem; }
+    .how-it-works .usa-process-list p { font-size: 0.875rem; margin-top: 0.2rem; margin-bottom: 0; }
     /* Hide per-segment labels — the heading counter already shows current step */
     .usa-step-indicator__segment-label { display: none; }
     /* Prevent the segments bar and header from overlapping */
