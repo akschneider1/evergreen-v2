@@ -34,45 +34,22 @@
       padding: 1.5rem;
       margin-top: 2rem;
     }
+    /* Hide per-segment labels — the heading counter already shows current step */
+    .usa-step-indicator__segment-label { display: none; }
+    /* Prevent the segments bar and header from overlapping */
+    .usa-step-indicator__segments { margin-bottom: 1rem; }
+    /* Give the Run button a clear top margin */
+    #run-btn { margin-top: 1.5rem; }
   </style>
 </head>
 <body>
 
-<!-- USWDS Government Banner -->
-<section class="usa-banner" aria-label="Official website of the United States government">
-  <div class="usa-accordion">
-    <header class="usa-banner__header">
-      <div class="usa-banner__inner">
-        <div class="grid-col-auto">
-          <img class="usa-banner__header-flag" src="/assets/img/us_flag_small.png" alt="U.S. flag">
-        </div>
-        <div class="grid-col-fill tablet:grid-col-auto" aria-hidden="true">
-          <p class="usa-banner__header-text">An official website of the United States government</p>
-          <p class="usa-banner__header-action">Here's how you know</p>
-        </div>
-        <button type="button" class="usa-accordion__button usa-banner__button" aria-expanded="false" aria-controls="gov-banner">
-          <span class="usa-banner__button-text">Here's how you know</span>
-        </button>
-      </div>
-    </header>
-    <div class="usa-banner__content usa-accordion__content" id="gov-banner" hidden>
-      <div class="grid-row grid-gap-lg">
-        <div class="usa-banner__guidance tablet:grid-col-6">
-          <img class="usa-banner__icon usa-media-block__img" src="/assets/img/icon-dot-gov.svg" alt="">
-          <div class="usa-media-block__body">
-            <p><strong>Official websites use .gov</strong><br>A <strong>.gov</strong> website belongs to an official government organization in the United States.</p>
-          </div>
-        </div>
-        <div class="usa-banner__guidance tablet:grid-col-6">
-          <img class="usa-banner__icon usa-media-block__img" src="/assets/img/icon-https.svg" alt="">
-          <div class="usa-media-block__body">
-            <p><strong>Secure .gov websites use HTTPS</strong><br>A <strong>lock</strong> or <strong>https://</strong> means you've safely connected to the .gov website.</p>
-          </div>
-        </div>
-      </div>
-    </div>
+<!-- Public Infrastructure Banner -->
+<div style="background:#1b1b1b; color:#e8e8e8; font-size:0.8125rem; padding:0.5rem 0; text-align:center;">
+  <div class="grid-container">
+    This is digital public infrastructure &mdash; by the people, for the people.
   </div>
-</section>
+</div>
 
 <!-- Hero Header -->
 <div class="evergreen-hero">
@@ -137,12 +114,12 @@
             </div>
 
             <div class="usa-form-group">
-              <label class="usa-label" for="systemPrompt">
-                System prompt
-                <span class="usa-hint">Instructions given to the AI before each question</span>
+              <label class="usa-label" for="aiDescription">
+                About this AI
+                <span class="usa-hint">One sentence describing what this chatbot does (optional)</span>
               </label>
-              <textarea class="usa-textarea" id="systemPrompt" name="systemPrompt" rows="4"
-                        placeholder="You are a helpful assistant. Answer in plain language at a 6th grade reading level."></textarea>
+              <input class="usa-input" id="aiDescription" name="aiDescription" type="text"
+                     placeholder="Helps Colorado residents with state tax questions">
             </div>
 
             <button type="submit" class="usa-button" id="run-btn">Run Evaluation</button>
@@ -232,19 +209,6 @@
             </li>
           </ol>
 
-          <h4 class="usa-prose" style="font-size:0.875rem; margin-bottom:0.5rem;">Required sheet columns</h4>
-          <table class="usa-table usa-table--compact usa-table--borderless" style="font-size:0.8125rem; width:100%">
-            <thead>
-              <tr><th>Column</th><th>Description</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Question</td><td>The user's question</td></tr>
-              <tr><td>Expected Answer</td><td>The expected content</td></tr>
-              <tr><td>Context</td><td>Optional background</td></tr>
-              <tr><td>Check Type</td><td>contains, not-contains…</td></tr>
-              <tr><td>Severity</td><td>critical, high, medium, low</td></tr>
-            </tbody>
-          </table>
         </div>
       </div>
 
@@ -314,10 +278,10 @@
     if (!valid) return;
 
     const body = {
-      description:  document.getElementById('description').value.trim(),
+      description:   document.getElementById('description').value.trim(),
       sheetUrl,
       provider,
-      systemPrompt: document.getElementById('systemPrompt').value.trim(),
+      aiDescription: document.getElementById('aiDescription').value.trim(),
     };
 
     document.getElementById('form-section').style.display    = 'none';

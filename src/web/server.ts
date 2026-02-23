@@ -52,7 +52,7 @@ function newJobId(): string {
 
 async function runPipeline(
   jobId: string,
-  body: { description: string; sheetUrl: string; provider: string; systemPrompt: string },
+  body: { description: string; sheetUrl: string; provider: string; aiDescription: string },
 ): Promise<void> {
   const job = jobs.get(jobId)!;
 
@@ -68,8 +68,12 @@ async function runPipeline(
       description: body.description || 'Evergreen Evaluation',
       sheetId,
       sheetRange: 'A2:E',
-      providers: [{ id: body.provider, systemPrompt: body.systemPrompt || undefined }],
-      defaultSystemPrompt: body.systemPrompt || undefined,
+      providers: [{ id: body.provider, systemPrompt: body.aiDescription
+        ? `You are a helpful AI assistant. ${body.aiDescription} Be accurate, clear, and easy to understand.`
+        : undefined }],
+      defaultSystemPrompt: body.aiDescription
+        ? `You are a helpful AI assistant. ${body.aiDescription} Be accurate, clear, and easy to understand.`
+        : undefined,
       outputPath: path.join(os.tmpdir(), `evergreen-results-${jobId}.json`),
     };
     const pfConfig = buildPromptfooConfig(rows, config);
@@ -119,7 +123,7 @@ export function createApp(): express.Application {
     const sheetUrl = typeof body?.sheetUrl === 'string' ? body.sheetUrl.trim() : '';
     const provider = typeof body?.provider === 'string' ? body.provider.trim() : '';
     const description = typeof body?.description === 'string' ? body.description.trim() : '';
-    const systemPrompt = typeof body?.systemPrompt === 'string' ? body.systemPrompt.trim() : '';
+    const aiDescription = typeof body?.aiDescription === 'string' ? body.aiDescription.trim() : '';
 
     if (!sheetUrl) {
       res.status(400).json({ error: 'sheetUrl is required' });
@@ -136,7 +140,7 @@ export function createApp(): express.Application {
     jobs.set(jobId, { step: 0, status: 'running', createdAt: Date.now() });
 
     // Fire-and-forget — response returns immediately with jobId
-    runPipeline(jobId, { description, sheetUrl, provider, systemPrompt });
+    runPipeline(jobId, { description, sheetUrl, provider, aiDescription });
 
     res.status(202).json({ jobId });
   });
