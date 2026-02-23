@@ -7,6 +7,7 @@
 
 import { execSync } from 'child_process';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { PromptfooOutput } from './types';
 
@@ -26,6 +27,10 @@ export function runPromptfoo(configPath: string, outputPath: string): PromptfooO
   console.log(`  Output: ${absOutput}`);
   console.log('');
 
+  // Use an isolated temp dir for promptfoo's SQLite database so a stale or
+  // corrupt DB from a previous run never causes a FOREIGN KEY constraint error.
+  const pfTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'evergreen-pf-'));
+
   try {
     execSync(
       `npx promptfoo eval --config "${absConfig}" --output "${absOutput}" --no-cache`,
@@ -35,6 +40,7 @@ export function runPromptfoo(configPath: string, outputPath: string): PromptfooO
         env: {
           ...process.env,
           PROMPTFOO_DISABLE_TELEMETRY: '1',
+          PROMPTFOO_CONFIG_DIR: pfTmpDir,
         },
       },
     );
@@ -43,6 +49,7 @@ export function runPromptfoo(configPath: string, outputPath: string): PromptfooO
     // expected behaviour, not a crash.  Only treat it as fatal if the output
     // file wasn't produced.
     if (!fs.existsSync(absOutput)) {
+      try { fs.rmSync(pfTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
       const msg = err instanceof Error ? err.message : String(err);
       throw new Error(
         `Promptfoo eval failed. This usually means:\n` +
@@ -55,5 +62,6 @@ export function runPromptfoo(configPath: string, outputPath: string): PromptfooO
   }
 
   const raw = fs.readFileSync(absOutput, 'utf-8');
+  try { fs.rmSync(pfTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
   return JSON.parse(raw) as PromptfooOutput;
 }
