@@ -103,6 +103,9 @@ export function createApp(): express.Application {
   const app = express();
   app.use(express.json());
 
+  // USWDS static assets (self-hosted to avoid CDN dependency)
+  app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
+
   // Input form
   app.get('/', (_req, res) => {
     res.sendFile(path.join(__dirname, 'input.html'));
