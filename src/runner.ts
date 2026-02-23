@@ -31,6 +31,13 @@ export function runPromptfoo(configPath: string, outputPath: string): PromptfooO
   // corrupt DB from a previous run never causes a FOREIGN KEY constraint error.
   const pfTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'evergreen-pf-'));
 
+  // Prepend the current Node.js binary directory to PATH so that child
+  // processes (npx, promptfoo) use the same Node version as the server.
+  // This is important in environments like Replit where multiple Node
+  // versions may be on PATH and a stale v18 could be picked up first.
+  const nodeBinDir = path.dirname(process.execPath);
+  const childPath = `${nodeBinDir}${path.delimiter}${process.env.PATH ?? ''}`;
+
   try {
     execFileSync(
       'npx',
@@ -40,6 +47,7 @@ export function runPromptfoo(configPath: string, outputPath: string): PromptfooO
         timeout: 5 * 60 * 1000, // 5 minute timeout
         env: {
           ...process.env,
+          PATH: childPath,
           PROMPTFOO_DISABLE_TELEMETRY: '1',
           PROMPTFOO_CONFIG_DIR: pfTmpDir,
         },
@@ -77,13 +85,21 @@ export function runPromptfooAsync(configPath: string, outputPath: string): Promi
   const absOutput = path.resolve(outputPath);
   const pfTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'evergreen-pf-'));
 
+  const nodeBinDir = path.dirname(process.execPath);
+  const childPath = `${nodeBinDir}${path.delimiter}${process.env.PATH ?? ''}`;
+
   return new Promise((resolve, reject) => {
     const child = execFile(
       'npx',
       ['promptfoo', 'eval', '--config', absConfig, '--output', absOutput, '--no-cache'],
       {
         timeout: 5 * 60 * 1000,
-        env: { ...process.env, PROMPTFOO_DISABLE_TELEMETRY: '1', PROMPTFOO_CONFIG_DIR: pfTmpDir },
+        env: {
+          ...process.env,
+          PATH: childPath,
+          PROMPTFOO_DISABLE_TELEMETRY: '1',
+          PROMPTFOO_CONFIG_DIR: pfTmpDir,
+        },
       },
       (err) => {
         try { fs.rmSync(pfTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
