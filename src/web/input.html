@@ -26,7 +26,6 @@
       margin-top: 0.25rem;
     }
     #progress-section { display: none; }
-    #result-section   { display: none; }
     #error-section    { display: none; }
     .how-it-works {
       background: #f0f0f0;
@@ -167,19 +166,6 @@
           </div>
         </div>
 
-        <!-- Result Section -->
-        <div id="result-section">
-          <div class="usa-alert usa-alert--success" role="alert">
-            <div class="usa-alert__body">
-              <h4 class="usa-alert__heading">Evaluation complete</h4>
-              <p class="usa-alert__text">
-                Your report is ready. <a id="report-link" href="#" class="usa-link">View the report →</a>
-              </p>
-            </div>
-          </div>
-          <button class="usa-button usa-button--outline margin-top-2" onclick="resetForm()">Run another evaluation</button>
-        </div>
-
         <!-- Error Section -->
         <div id="error-section">
           <div class="usa-alert usa-alert--error" role="alert">
@@ -293,7 +279,6 @@
 
     document.getElementById('form-section').style.display    = 'none';
     document.getElementById('progress-section').style.display = 'block';
-    document.getElementById('result-section').style.display  = 'none';
     document.getElementById('error-section').style.display   = 'none';
 
     fetch('/api/run', {
@@ -352,7 +337,7 @@
   }
 
   function showSuccess(reportUrl) {
-    // Mark all steps complete
+    // Mark all steps complete, then navigate directly to the report
     for (let i = 1; i <= 4; i++) {
       const seg = document.getElementById('step-' + i);
       if (!seg) continue;
@@ -362,9 +347,7 @@
     }
     const headingTextEl = document.getElementById('step-heading-text');
     if (headingTextEl) headingTextEl.textContent = 'Complete';
-    document.getElementById('progress-section').style.display = 'none';
-    document.getElementById('result-section').style.display   = 'block';
-    document.getElementById('report-link').href = reportUrl;
+    window.location.href = reportUrl;
   }
 
   function showError(msg) {
@@ -380,7 +363,6 @@
     document.getElementById('form-section').style.display    = 'block';
     document.getElementById('error-section').style.display   = 'none';
     document.getElementById('progress-section').style.display = 'none';
-    document.getElementById('result-section').style.display  = 'none';
   }
 </script>
 </body>

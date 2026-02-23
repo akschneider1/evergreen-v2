@@ -553,6 +553,24 @@ body {
   color: #fff;
   padding: 2.5rem 0 2rem;
 }
+.hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.hero-titles { flex: 1; min-width: 0; }
+.hero-action { flex-shrink: 0; margin-top: 4px; }
+.hero-action .usa-button--outline {
+  color: #fff;
+  border-color: rgba(255,255,255,0.5);
+  background: transparent;
+}
+.hero-action .usa-button--outline:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: #fff;
+  color: #fff;
+}
 .evergreen-hero h1 {
   color: #fff;
   font-size: 24px;
@@ -1108,22 +1126,22 @@ table.data-table, table.detail-table {
   </div>
 </section>
 
-<!-- Back link bar -->
-<div style="background:#112e51;padding:6px 0;font-size:0.8125rem;">
-  <div class="grid-container">
-    <a href="/" class="usa-link" style="color:#dce4ef;">← New Evaluation</a>
-  </div>
-</div>
-
 <!-- ── Header ── -->
 <header class="evergreen-hero">
   <div class="grid-container">
-    <h1>${esc(data.title)}</h1>
-    <div class="meta">
-      <span>${esc(data.date)}</span>
-      <span>${data.testCaseCount} test cases</span>
-      <span>${esc(data.providerList)}</span>
-      <span>${esc(data.testSource)}</span>
+    <div class="hero-top">
+      <div class="hero-titles">
+        <h1>${esc(data.title)}</h1>
+        <div class="meta">
+          <span>${esc(data.date)}</span>
+          <span>${data.testCaseCount} test cases</span>
+          <span>${esc(data.providerList)}</span>
+          <span>${esc(data.testSource)}</span>
+        </div>
+      </div>
+      <div class="hero-action">
+        <a href="/" class="usa-button usa-button--outline">New Evaluation</a>
+      </div>
     </div>
     <div class="readiness-pill ${data.readinessClass}">${esc(data.readinessLabel)}</div>
   </div>
