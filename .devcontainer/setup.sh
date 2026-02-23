@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# Post-create setup: install deps and build
+# Post-create setup: install system build deps, npm deps, and build
 
 set -e
+
+echo "Installing system build dependencies (required for better-sqlite3)..."
+sudo apt-get update -y
+sudo apt-get install -y python3 make g++
 
 echo "Installing dependencies..."
 npm install
