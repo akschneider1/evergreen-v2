@@ -59,6 +59,46 @@ Open **http://localhost:4000** (or your chosen port) in any browser. Press `Ctrl
 
 > `evergreen serve` requires `report.html` to already exist. Run `evergreen run` first.
 
+### `evergreen app`
+
+Launch the unified web app — an Express server that combines the input form and the report viewer in one browser session. No config file required.
+
+```bash
+npx evergreen app [flags]
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-p`, `--port` | `4000` | Port to listen on |
+
+```bash
+# Launch on the default port
+npx evergreen app
+
+# Launch on a custom port
+npx evergreen app -p 3000
+```
+
+Open **http://localhost:4000** in your browser. The form accepts:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| Evaluation name | No | A human-readable label for this run |
+| Google Sheet URL | Yes | Full browser URL — the app extracts the Sheet ID automatically |
+| LLM provider | Yes | Selected from a dropdown; same providers as `evergreen run` |
+| System prompt | No | Instructions given to the AI before each question |
+
+The server runs the same four-step pipeline as `evergreen run` (fetch → config → eval → report). When the pipeline completes, the report is served at `/report/:jobId` on the same server — no separate `evergreen serve` needed. Each report is held in memory for the lifetime of the server process.
+
+**API endpoints (for integration or debugging):**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | Input form (HTML) |
+| `POST` | `/api/run` | Start a job; body: `{ sheetUrl, provider, description?, systemPrompt? }`; returns `{ jobId }` |
+| `GET` | `/api/status/:jobId` | Poll job progress; returns `{ step, status, error? }` |
+| `GET` | `/report/:jobId` | Serve completed report HTML |
+
 ---
 
 ## Config File (evergreen.yaml)
@@ -178,7 +218,7 @@ The tool accepts common typos and aliases (e.g., `not_contains`, `containsAll`, 
 
 ## How It Works Under the Hood
 
-The `npx evergreen run` command executes four steps:
+Both `npx evergreen run` and `npx evergreen app` execute the same four-step pipeline:
 
 ```
 1. FETCH    Google Sheet → CSV → SheetRow[]     (src/sheets.ts)
@@ -186,6 +226,8 @@ The `npx evergreen run` command executes four steps:
 3. EVAL     Promptfoo CLI → JSON results          (src/runner.ts)
 4. REPORT   JSON → EvalResults → HTML             (src/mapper.ts + src/report/generator.ts)
 ```
+
+The difference: `evergreen run` runs the pipeline synchronously in the terminal; `evergreen app` runs it asynchronously in a background job and serves the result over HTTP.
 
 ### Step 1: Fetch
 Fetches the Google Sheet as a CSV export (no API key needed — the sheet just needs to be publicly viewable). Parses the CSV into typed `SheetRow` objects.
@@ -238,3 +280,6 @@ For complex grading beyond what `contains` or `llm-rubric` provides, you can wri
 | All `llm-rubric` tests fail | No judge provider configured | Set `llmRubricProvider` in config |
 | `evergreen serve` — "Report not found" | `report.html` doesn't exist yet | Run `evergreen run` first to generate it |
 | `evergreen serve` — "address already in use" | Another process is on port 4000 | Use `-p 3001` (or any free port) |
+| `evergreen app` — "address already in use" | Port 4000 is taken | Use `evergreen app -p 3001` |
+| `evergreen app` — report link 404 | Server was restarted; reports live in memory only | Re-run the evaluation |
+| `evergreen app` — provider not in dropdown | You need a provider not shown | Use `evergreen run` with a custom `evergreen.yaml` |

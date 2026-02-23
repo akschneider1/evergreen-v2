@@ -2,6 +2,15 @@
 
 Get from zero to your first evaluation report in under 10 minutes.
 
+There are two ways to run Evergreen:
+
+| | **Web App** | **CLI** |
+|--|------------|---------|
+| Config file needed? | No — use the browser form | Yes — `evergreen.yaml` |
+| Sheet input | Paste the full URL | Copy the Sheet ID |
+| Best for | Non-technical users; one-off runs | Scripting, automation, CI/CD |
+| Command | `npx evergreen app` | `npx evergreen run` |
+
 ---
 
 ## What You'll Need
@@ -41,17 +50,56 @@ See [Writing Test Cases](./03-writing-test-cases.md) for detailed guidance.
 1. Click the **Share** button in your Google Sheet
 2. Under "General access", change to **"Anyone with the link"**
 3. Set permission to **"Viewer"**
-4. Copy the Sheet ID from the URL — it's the long string between `/d/` and `/edit`:
-
-```
-https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit
-                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                                       This is your Sheet ID
-```
+4. Copy the full URL from your browser's address bar (you'll need it in the next step)
 
 ---
 
-## Step 3: Create the Config File
+## Option A: Web App
+
+No config file needed. Everything is entered through the browser.
+
+### Step 3A: Set Your API Key
+
+```bash
+# For OpenAI
+export OPENAI_API_KEY=sk-your-key-here
+
+# For Anthropic
+export ANTHROPIC_API_KEY=sk-ant-your-key-here
+```
+
+### Step 4A: Launch the Web App
+
+```bash
+npx evergreen app
+```
+
+Open **http://localhost:4000** in your browser.
+
+### Step 5A: Fill In the Form
+
+| Field | What to Enter |
+|-------|--------------|
+| **Evaluation name** | A label for this run, e.g. "CO Tax Chatbot — March 2026" |
+| **Google Sheet URL** | Paste the full link from your browser |
+| **LLM provider** | Select from the dropdown (Claude Sonnet is recommended) |
+| **System prompt** | The instructions your AI uses before each question (optional) |
+
+Click **Run Evaluation**. A step-by-step progress indicator tracks the pipeline:
+1. Fetch test cases from Google Sheet
+2. Generate evaluation config
+3. Run AI evaluations
+4. Generate report
+
+When complete, a success banner appears with a **View the report →** link.
+
+---
+
+## Option B: CLI
+
+Use this path if you want a config file you can version-control or run in CI/CD.
+
+### Step 3B: Create the Config File
 
 Create a file called `evergreen.yaml` in your project folder:
 
@@ -68,7 +116,7 @@ providers:
 ```
 
 Replace:
-- `YOUR_SHEET_ID_HERE` with the Sheet ID from Step 2
+- `YOUR_SHEET_ID_HERE` with the long string between `/d/` and `/edit` in the Sheet URL
 - `openai:gpt-4o` with whichever LLM you're testing
 - The system prompt with whatever your AI system uses
 
@@ -80,9 +128,7 @@ Replace:
 | Anthropic Claude Sonnet | `anthropic:messages:claude-sonnet-4-20250514` |
 | Anthropic Claude Haiku | `anthropic:messages:claude-haiku-4-5-20251001` |
 
----
-
-## Step 4: Set Your API Key
+### Step 4B: Set Your API Key
 
 ```bash
 # For OpenAI
@@ -92,20 +138,11 @@ export OPENAI_API_KEY=sk-your-key-here
 export ANTHROPIC_API_KEY=sk-ant-your-key-here
 ```
 
----
-
-## Step 5: Run the Evaluation
+### Step 5B: Run the Evaluation
 
 ```bash
 npx evergreen run
 ```
-
-That's it. This single command:
-1. Fetches your test cases from the Google Sheet
-2. Generates the evaluation config
-3. Sends each question to the LLM
-4. Grades the responses
-5. Produces an HTML report
 
 You'll see progress in the terminal:
 
@@ -136,19 +173,15 @@ Step 4/4 — Generating report...
 └─────────────────────────────────────────┘
 ```
 
----
-
-## Step 6: View the Report
-
-Run the report server:
+### Step 6B: View the Report
 
 ```bash
 npx evergreen serve
 ```
 
-Then open **http://localhost:4000** in your browser. Press `Ctrl+C` to stop the server when you're done.
+Open **http://localhost:4000** in your browser. Press `Ctrl+C` to stop.
 
-Alternatively, open `report.html` directly in your browser as a file. See [Understanding Results](./04-understanding-results.md) for how to read the report.
+Alternatively, open `report.html` directly as a file. See [Understanding Results](./04-understanding-results.md) for how to read the report.
 
 ---
 

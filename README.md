@@ -8,7 +8,7 @@
 
 ### Prerequisites
 - Node.js 18+
-- An API key for the LLM you're testing (e.g., OpenAI)
+- An API key for the LLM you're testing (e.g., `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`)
 
 ### 1. Create a Google Sheet with test cases
 
@@ -22,7 +22,36 @@ Set up a Google Sheet with these 5 columns. **Row 1 = header, row 2 = example/in
 
 Share the sheet as **"Anyone with the link can view."**
 
-### 2. Create `evergreen.yaml`
+---
+
+### Option A: Web App (no config file needed)
+
+#### 2. Set your API key
+
+```bash
+export OPENAI_API_KEY=sk-your-key-here
+```
+
+#### 3. Launch the web app
+
+```bash
+npx evergreen app
+```
+
+Open **http://localhost:4000**. Fill in the form:
+
+- **Evaluation name** — a label for this run (e.g., "CO Tax Chatbot — March 2026")
+- **Google Sheet URL** — paste the full link from your browser
+- **LLM provider** — select from the dropdown (Claude Sonnet, GPT-4o, etc.)
+- **System prompt** — the instructions your AI uses (optional)
+
+Click **Run Evaluation**. A step-by-step progress indicator tracks the pipeline. When complete, click the link to open the report.
+
+---
+
+### Option B: CLI (for scripting and CI/CD)
+
+#### 2. Create `evergreen.yaml`
 
 ```yaml
 description: "My AI Chatbot Eval"
@@ -35,14 +64,14 @@ providers:
 
 Replace `YOUR_GOOGLE_SHEET_ID` with the ID from your Sheet URL (the string between `/d/` and `/edit`).
 
-### 3. Run
+#### 3. Run
 
 ```bash
 export OPENAI_API_KEY=sk-your-key-here
 npx evergreen run
 ```
 
-### 4. View the report
+#### 4. View the report
 
 ```bash
 npx evergreen serve
@@ -86,28 +115,32 @@ The report is a concrete artifact that can be shared with leadership, procuremen
 ## Architecture
 
 ```
-Google Sheet  →  Evergreen CLI     →  Promptfoo        →  LLM Under Test  →  Evergreen Report
-(test cases)     (sync + orchestrate)  (eval engine)       (OpenAI, etc.)     (HTML + JSON)
+Google Sheet  →  Evergreen          →  Promptfoo        →  LLM Under Test  →  Evergreen Report
+(test cases)     CLI or Web App        (eval engine)       (OpenAI, etc.)     (3-tab HTML)
 ```
 
 **[Promptfoo](https://github.com/promptfoo/promptfoo)** is the eval engine — it runs prompts against models, grades responses, and outputs structured results. Evergreen wraps it with:
 
-1. **Input layer** — Google Sheets → Promptfoo YAML (so SMEs never touch config files)
+1. **Input layer** — Google Sheets → Promptfoo YAML (so SMEs never touch config files); web app accepts full Sheet URL directly
 2. **Output layer** — Promptfoo JSON → HTML report with severity, readiness, and critical failures
-3. **Documentation** — plain-language guides for non-technical users
+3. **Two modes** — `evergreen run` (CLI, requires `evergreen.yaml`) and `evergreen app` (browser form, no config file)
+4. **Documentation** — plain-language guides for non-technical users
 
 ### What's in the Box
 
 ```
 src/
-├── index.ts          # CLI: npx evergreen run / serve
+├── index.ts          # CLI: evergreen run / serve / app
 ├── sheets.ts         # Fetch Google Sheet → parse rows (skips row 2 example row)
 ├── config.ts         # Generate Promptfoo YAML from sheet data
-├── runner.ts         # Invoke Promptfoo, capture JSON
+├── runner.ts         # Invoke Promptfoo, capture JSON (sync + async)
 ├── mapper.ts         # Promptfoo JSON → report input
 ├── types.ts          # Shared types + promptfoo output normalizer
-└── report/
-    └── generator.ts  # Render HTML report (3 tabs: Summary, Analysis, Details)
+├── report/
+│   └── generator.ts  # Render HTML report (3 tabs: Summary, Analysis, Details)
+└── web/
+    ├── server.ts     # Express app: form → pipeline → report (evergreen app)
+    └── input.html    # USWDS input form (Sheet URL, provider, system prompt)
 ```
 
 ---

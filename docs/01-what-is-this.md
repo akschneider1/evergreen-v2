@@ -16,7 +16,7 @@ If your agency is about to launch a chatbot, virtual assistant, or any AI-powere
 - **Program managers** who need evidence that an AI vendor's product meets standards
 - **Anyone** who needs to sign off on whether an AI system is ready for real people to use
 
-You'll need a **technical colleague** (someone comfortable with a terminal) to run the actual evaluation command — but everything else happens in Google Sheets and a web browser.
+You'll need a **technical colleague** (someone comfortable with a terminal) to start the evaluation — but everything else happens in Google Sheets and a web browser.
 
 ---
 
@@ -26,9 +26,10 @@ You'll need a **technical colleague** (someone comfortable with a terminal) to r
 |------|------------|------|
 | 1 | **Copy** the Google Sheet template | 2 min |
 | 2 | **Write** test cases — real questions the public would ask, plus the correct answers | 30 min |
-| 3 | **Ask a technical colleague** to run `npx evergreen run` | 5 min |
-| 4 | **Read** the HTML report in your browser | 10 min |
-| 5 | **Decide** whether the AI system is ready to deploy | You |
+| 3 | **Ask a technical colleague** to launch `npx evergreen app` and open http://localhost:4000 | 5 min |
+| 4 | **Fill in the form** — paste the Sheet URL, select a provider, enter the system prompt, click Run | 2 min |
+| 5 | **Read** the report that opens in your browser | 10 min |
+| 6 | **Decide** whether the AI system is ready to deploy | You |
 
 The report is a concrete artifact you can share with leadership, procurement, or oversight bodies as evidence of due diligence.
 
