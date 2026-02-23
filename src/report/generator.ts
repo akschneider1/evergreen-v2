@@ -562,14 +562,14 @@ body {
 .hero-titles { flex: 1; min-width: 0; }
 .hero-action { flex-shrink: 0; margin-top: 4px; }
 .hero-action .usa-button--outline {
-  color: #fff;
-  border-color: rgba(255,255,255,0.5);
-  background: transparent;
+  color: #112e51;
+  border-color: #fff;
+  background: #fff;
 }
 .hero-action .usa-button--outline:hover {
-  background: rgba(255,255,255,0.1);
-  border-color: #fff;
-  color: #fff;
+  background: #dce4ef;
+  border-color: #dce4ef;
+  color: #112e51;
 }
 .evergreen-hero h1 {
   color: #fff;
