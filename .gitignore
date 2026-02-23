@@ -6,7 +6,6 @@ dist/
 results.json
 .promptfoo-config.yaml
 *.html
-!src/report/template.html
 !src/web/input.html
 !examples/sample-report/report.html
 .env

@@ -27,9 +27,22 @@ interface Job {
   status: 'running' | 'complete' | 'error';
   error?: string;
   reportHtml?: string;
+  createdAt: number;
 }
 
 const jobs = new Map<string, Job>();
+
+const JOB_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+/** Remove completed/errored jobs older than JOB_TTL_MS to prevent memory leaks. */
+function pruneStaleJobs(): void {
+  const now = Date.now();
+  for (const [id, job] of jobs) {
+    if (job.status !== 'running' && now - job.createdAt > JOB_TTL_MS) {
+      jobs.delete(id);
+    }
+  }
+}
 
 function newJobId(): string {
   return crypto.randomBytes(8).toString('hex');
@@ -97,7 +110,13 @@ export function createApp(): express.Application {
 
   // Start eval job
   app.post('/api/run', (req, res) => {
-    const { description, sheetUrl, provider, systemPrompt } = req.body as Record<string, string>;
+    const body = req.body;
+
+    // Validate that required fields are present and are strings
+    const sheetUrl = typeof body?.sheetUrl === 'string' ? body.sheetUrl.trim() : '';
+    const provider = typeof body?.provider === 'string' ? body.provider.trim() : '';
+    const description = typeof body?.description === 'string' ? body.description.trim() : '';
+    const systemPrompt = typeof body?.systemPrompt === 'string' ? body.systemPrompt.trim() : '';
 
     if (!sheetUrl) {
       res.status(400).json({ error: 'sheetUrl is required' });
@@ -108,8 +127,10 @@ export function createApp(): express.Application {
       return;
     }
 
+    pruneStaleJobs();
+
     const jobId = newJobId();
-    jobs.set(jobId, { step: 0, status: 'running' });
+    jobs.set(jobId, { step: 0, status: 'running', createdAt: Date.now() });
 
     // Fire-and-forget — response returns immediately with jobId
     runPipeline(jobId, { description, sheetUrl, provider, systemPrompt });

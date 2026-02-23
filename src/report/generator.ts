@@ -11,35 +11,9 @@
  */
 
 import * as fs from 'fs';
-import * as path from 'path';
 
-// ---------- Public Types ----------
-
-export interface EvalResults {
-  title: string;
-  date: string;
-  providers: string[];
-  testSource: string;
-  testCases: TestCaseResult[];
-}
-
-export interface TestCaseResult {
-  number: number;
-  question: string;
-  expected: string;
-  context: string;
-  checkType: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  /** One entry per provider, in same order as EvalResults.providers */
-  results: ProviderResult[];
-}
-
-export interface ProviderResult {
-  provider: string;
-  response: string;
-  passed: boolean;
-  gradingReason: string;
-}
+import { EvalResults, TestCaseResult, ProviderResult } from '../types';
+export type { EvalResults, TestCaseResult, ProviderResult };
 
 // ---------- Internal Derived Types ----------
 
@@ -506,7 +480,7 @@ function renderHtml(data: ReportData): string {
     `).join('');
 
     return `
-      <tbody class="test-case-group" data-severity="${tc.severity}" data-passed="${!tc.anyFailed}" onclick="toggleRow(${tc.number})">
+      <tbody class="test-case-group" data-severity="${tc.severity}" data-passed="${!tc.anyFailed}" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-${tc.number}" onclick="toggleRow(${tc.number})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(${tc.number})}">
         <tr class="main-row ${tc.anyFailed ? 'fail-row' : 'pass-row'}">
           <td class="tc-num">${tc.number}</td>
           <td class="tc-question">${esc(tc.question)}</td>
@@ -539,12 +513,9 @@ function renderHtml(data: ReportData): string {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(data.title)} — Evergreen Eval Report</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://designsystem.digital.gov/assets/css/uswds.min.css">
 <style>
-/* ── Reset & Tokens (USWDS-aligned) ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Tokens ── */
 :root {
   --bg:           #f0f0f0;
   --surface:      #ffffff;
@@ -564,8 +535,7 @@ function renderHtml(data: ReportData): string {
   --warn-bg:      #faf3d1;
   --warn-border:  #fee685;
   --neutral:      #1b1b1b;
-  --font:         'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif;
-  --mono:         'Source Code Pro', 'Courier New', monospace;
+  --mono:         ui-monospace, 'SFMono-Regular', 'Courier New', monospace;
   --radius:       4px;
   --shadow:       0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
   --shadow-md:    0 4px 12px rgba(0,0,0,.10);
@@ -573,28 +543,16 @@ function renderHtml(data: ReportData): string {
 
 /* ── Base ── */
 body {
-  font-family: var(--font);
   background: var(--bg);
   color: var(--text);
-  line-height: 1.6;
-  font-size: 15px;
 }
 
 /* ── Header ── */
 .report-header {
   background: linear-gradient(135deg, #112e51 0%, #205493 100%);
   color: #fff;
-  padding: 32px 40px 28px;
+  padding: 2rem 0 1.75rem;
   position: relative;
-  overflow: hidden;
-}
-.report-header::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.06) 1px, transparent 0);
-  background-size: 28px 28px;
-  pointer-events: none;
 }
 .header-inner { position: relative; }
 .report-header h1 {
@@ -632,7 +590,7 @@ body {
   display: flex;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: 0 40px;
+  padding: 0;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -642,7 +600,7 @@ body {
   padding: 14px 22px;
   border: none;
   background: none;
-  font-family: var(--font);
+
   font-size: 14px;
   font-weight: 500;
   color: var(--text-2);
@@ -660,7 +618,7 @@ body {
 .tab-btn.active .tab-sub { color: var(--text-2); }
 
 /* ── Tab content ── */
-.tab-content { display: none; padding: 32px 40px 60px; max-width: 1140px; }
+.tab-content { display: none; padding: 2rem 0 3.75rem; }
 .tab-content.active { display: block; }
 
 /* ── Cards ── */
@@ -867,9 +825,9 @@ body {
 .bar-track { flex: none; width: 300px; height: 22px; background: var(--border-sub); border-radius: 4px; overflow: hidden; }
 @media (max-width: 700px) { .bar-track { width: 160px; } }
 .bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(.16,1,.3,1); }
-.bar-fill.green  { background: linear-gradient(90deg, #16a34a, #22c55e); }
-.bar-fill.yellow { background: linear-gradient(90deg, #d97706, #fbbf24); }
-.bar-fill.red    { background: linear-gradient(90deg, #dc2626, #f87171); }
+.bar-fill.green  { background: linear-gradient(90deg, #008817, var(--pass)); }
+.bar-fill.yellow { background: linear-gradient(90deg, #936f38, var(--warn)); }
+.bar-fill.red    { background: linear-gradient(90deg, #b50909, var(--fail)); }
 .bar-pct { font-size: 14px; font-weight: 700; color: var(--text); width: 40px; text-align: right; }
 .pattern-note {
   margin-top: 18px;
@@ -885,7 +843,7 @@ body {
 /* ── USWDS overrides for report data tables and buttons ── */
 /* Ensure custom table styles win over USWDS defaults */
 table.data-table, table.detail-table {
-  font-family: var(--font);
+
   font-size: 13px;
 }
 /* Keep filter buttons compact; USWDS adds extra padding by default */
@@ -971,7 +929,7 @@ table.data-table, table.detail-table {
   border: 1px solid var(--border);
   border-radius: 20px;
   background: var(--surface);
-  font-family: var(--font);
+
   font-size: 13px;
   font-weight: 500;
   color: var(--text-2);
@@ -1111,7 +1069,7 @@ table.data-table, table.detail-table {
 
 /* ── Footer ── */
 .methodology {
-  padding: 24px 40px 40px;
+  padding: 1.5rem 0 2.5rem;
   border-top: 1px solid var(--border);
   font-size: 12px;
   color: var(--text-3);
@@ -1186,7 +1144,7 @@ table.data-table, table.detail-table {
 
 <!-- ── Header ── -->
 <header class="report-header">
-  <div class="header-inner">
+  <div class="grid-container header-inner">
     <h1>${esc(data.title)}</h1>
     <div class="meta">
       <span>${esc(data.date)}</span>
@@ -1200,22 +1158,25 @@ table.data-table, table.detail-table {
 
 <!-- ── Tab nav ── -->
 <nav class="tab-nav">
-  <button class="tab-btn active" data-tab="summary">
-    <span class="tab-label">Summary</span>
-    <span class="tab-sub">Policy &amp; Leadership</span>
-  </button>
-  <button class="tab-btn" data-tab="analysis">
-    <span class="tab-label">Analysis</span>
-    <span class="tab-sub">Operations</span>
-  </button>
-  <button class="tab-btn" data-tab="details">
-    <span class="tab-label">Details</span>
-    <span class="tab-sub">Technical</span>
-  </button>
+  <div class="grid-container" style="display:flex">
+    <button class="tab-btn active" data-tab="summary">
+      <span class="tab-label">Summary</span>
+      <span class="tab-sub">Policy &amp; Leadership</span>
+    </button>
+    <button class="tab-btn" data-tab="analysis">
+      <span class="tab-label">Analysis</span>
+      <span class="tab-sub">Operations</span>
+    </button>
+    <button class="tab-btn" data-tab="details">
+      <span class="tab-label">Details</span>
+      <span class="tab-sub">Technical</span>
+    </button>
+  </div>
 </nav>
 
 <!-- ── Summary tab ── -->
 <section class="tab-content active" id="tab-summary">
+<div class="grid-container">
 
   <div class="readiness-hero ${data.readinessClass}">
     <div class="rh-status ${data.readinessClass}">${esc(data.readinessLabel)}</div>
@@ -1231,10 +1192,12 @@ table.data-table, table.detail-table {
 
   ${criticalFailuresHtml}
 
+</div>
 </section>
 
 <!-- ── Analysis tab ── -->
 <section class="tab-content" id="tab-analysis">
+<div class="grid-container">
 
   <div class="card">
     <h2 class="card-title">Results by Evaluation Dimension</h2>
@@ -1259,10 +1222,12 @@ table.data-table, table.detail-table {
 
   ${comparisonHtml}
 
+</div>
 </section>
 
 <!-- ── Details tab ── -->
 <section class="tab-content" id="tab-details">
+<div class="grid-container">
 
   <div class="filter-bar">
     <span class="filter-label">Show</span>
@@ -1294,14 +1259,17 @@ table.data-table, table.detail-table {
     </table>
   </div>
 
+</div>
 </section>
 
 <!-- ── Footer ── -->
 <footer class="methodology">
-  <span><strong>Framework:</strong> Evergreen 4-Dimension Eval</span>
-  <span><strong>Test Source:</strong> ${esc(data.testSource)}</span>
-  <span><strong>Grading:</strong> ${esc(data.gradingMethods)}</span>
-  <span><strong>Generated:</strong> ${esc(data.generatedAt)}</span>
+  <div class="grid-container">
+    <span><strong>Framework:</strong> Evergreen 4-Dimension Eval</span>
+    <span><strong>Test Source:</strong> ${esc(data.testSource)}</span>
+    <span><strong>Grading:</strong> ${esc(data.gradingMethods)}</span>
+    <span><strong>Generated:</strong> ${esc(data.generatedAt)}</span>
+  </div>
 </footer>
 
 <script>
@@ -1326,6 +1294,9 @@ table.data-table, table.detail-table {
     if (!detail) return;
     var isOpen = detail.classList.toggle('open');
     if (chevron) chevron.classList.toggle('open', isOpen);
+    // Update ARIA state on parent tbody
+    var tbody = detail.closest('.test-case-group');
+    if (tbody) tbody.setAttribute('aria-expanded', String(isOpen));
   }
   window.toggleRow = toggleRow;
 
@@ -1336,6 +1307,7 @@ table.data-table, table.detail-table {
 
   // ── Details filter ──
   var currentFilter = 'all';
+  var severityLevels = ['critical', 'high', 'medium', 'low'];
   function applyFilter(filter) {
     currentFilter = filter;
     document.querySelectorAll('.filter-btn').forEach(function(btn) {
@@ -1343,6 +1315,7 @@ table.data-table, table.detail-table {
       btn.classList.toggle('active', isActive);
       btn.classList.toggle('usa-button--outline', !isActive);
     });
+    var isSeverityFilter = severityLevels.indexOf(filter) !== -1;
     var total = 0, visible = 0;
     document.querySelectorAll('.test-case-group').forEach(function(group) {
       total++;
@@ -1350,7 +1323,7 @@ table.data-table, table.detail-table {
       var passed = group.dataset.passed === 'true';
       var show = true;
       if (filter === 'failures' && passed) show = false;
-      if (filter === 'critical' && sev !== 'critical') show = false;
+      else if (isSeverityFilter && sev !== filter) show = false;
       group.style.display = show ? '' : 'none';
       if (show) visible++;
     });
@@ -1364,11 +1337,7 @@ table.data-table, table.detail-table {
   // ── Severity row click → Details tab with filter ──
   function gotoSeverity(sev) {
     activateTab('details');
-    if (sev === 'critical') {
-      applyFilter('critical');
-    } else {
-      applyFilter('all');
-    }
+    applyFilter(sev);
   }
   window.gotoSeverity = gotoSeverity;
 

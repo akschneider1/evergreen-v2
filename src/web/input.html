@@ -107,19 +107,21 @@
                      placeholder="My AI Chatbot Eval">
             </div>
 
-            <div class="usa-form-group">
+            <div class="usa-form-group" id="sheetUrl-group">
               <label class="usa-label" for="sheetUrl">
                 Google Sheet URL <span class="usa-required" aria-hidden="true">*</span>
                 <span class="usa-hint">Paste the full link to your test-case sheet</span>
               </label>
+              <span class="usa-error-message" id="sheetUrl-error" role="alert" style="display:none">Please enter a Google Sheet URL.</span>
               <input class="usa-input" id="sheetUrl" name="sheetUrl" type="url" required
                      placeholder="https://docs.google.com/spreadsheets/d/…">
             </div>
 
-            <div class="usa-form-group">
+            <div class="usa-form-group" id="provider-group">
               <label class="usa-label" for="provider">
                 LLM provider <span class="usa-required" aria-hidden="true">*</span>
               </label>
+              <span class="usa-error-message" id="provider-error" role="alert" style="display:none">Please select an LLM provider.</span>
               <select class="usa-select" id="provider" name="provider" required>
                 <option value="">-- Select a provider --</option>
                 <optgroup label="Anthropic">
@@ -191,6 +193,7 @@
               </p>
             </div>
           </div>
+          <button class="usa-button usa-button--outline margin-top-2" onclick="resetForm()">Run another evaluation</button>
         </div>
 
         <!-- Error Section -->
@@ -279,18 +282,36 @@
     submitEval();
   });
 
+  function clearValidationErrors() {
+    ['sheetUrl', 'provider'].forEach(function(id) {
+      document.getElementById(id + '-group').classList.remove('usa-form-group--error');
+      document.getElementById(id + '-error').style.display = 'none';
+      document.getElementById(id).classList.remove('usa-input--error');
+    });
+  }
+
+  function showFieldError(id) {
+    document.getElementById(id + '-group').classList.add('usa-form-group--error');
+    document.getElementById(id + '-error').style.display = 'block';
+    document.getElementById(id).classList.add('usa-input--error');
+  }
+
   function submitEval() {
+    clearValidationErrors();
+
     const sheetUrl = document.getElementById('sheetUrl').value.trim();
     const provider = document.getElementById('provider').value;
 
+    let valid = true;
     if (!sheetUrl) {
-      alert('Please enter a Google Sheet URL.');
-      return;
+      showFieldError('sheetUrl');
+      valid = false;
     }
     if (!provider) {
-      alert('Please select an LLM provider.');
-      return;
+      showFieldError('provider');
+      valid = false;
     }
+    if (!valid) return;
 
     const body = {
       description:  document.getElementById('description').value.trim(),
@@ -384,6 +405,7 @@
   function resetForm() {
     clearInterval(pollInterval);
     currentJobId = null;
+    clearValidationErrors();
     document.getElementById('form-section').style.display    = 'block';
     document.getElementById('error-section').style.display   = 'none';
     document.getElementById('progress-section').style.display = 'none';

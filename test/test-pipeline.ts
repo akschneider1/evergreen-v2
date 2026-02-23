@@ -11,11 +11,12 @@ import { parseCsv } from '../src/sheets';
 import { buildPromptfooConfig, writePromptfooConfig } from '../src/config';
 import { mapToEvalResults } from '../src/mapper';
 import { generateReport } from '../src/report/generator';
-import { EvergreenConfig, PromptfooOutput } from '../src/types';
+import { EvergreenConfig, PromptfooOutput, normalizePromptfooOutput } from '../src/types';
 
 // ── Test Data ──
 
 const TEST_CSV = `Question,Expected Answer,Context,Check Type,Severity
+Example: What is 2+2?,4,,contains,low
 What is the Colorado state income tax rate?,4.4%,,contains,critical
 "Do I owe CO tax if I work remotely for a CO company, but live in another state?","Depends on whether you are domiciled in CO or have CO-source income","Remote worker, out-of-state employer",llm-rubric,high
 How do I file my CO state tax return?,"Revenue Online, paper form, tax software",,contains-all,medium
@@ -134,7 +135,8 @@ function testConfigGeneration(): void {
 function testReportMapping(): void {
   console.log('Test 3: Promptfoo Output → Report Mapping');
   const rows = parseCsv(TEST_CSV);
-  const pfOutput = mockPromptfooOutput(rows.length);
+  const pfRaw = mockPromptfooOutput(rows.length);
+  const pfOutput = normalizePromptfooOutput(pfRaw);
   const evalResults = mapToEvalResults(pfOutput, rows, TEST_CONFIG.description);
 
   assert(evalResults.title === TEST_CONFIG.description, 'Title mismatch');
@@ -155,7 +157,8 @@ function testReportMapping(): void {
 function testReportGeneration(): void {
   console.log('Test 4: HTML Report Generation');
   const rows = parseCsv(TEST_CSV);
-  const pfOutput = mockPromptfooOutput(rows.length);
+  const pfRaw = mockPromptfooOutput(rows.length);
+  const pfOutput = normalizePromptfooOutput(pfRaw);
   const evalResults = mapToEvalResults(pfOutput, rows, TEST_CONFIG.description);
   const html = generateReport(evalResults);
 

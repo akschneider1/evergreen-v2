@@ -123,3 +123,31 @@ export interface PromptfooResult {
     componentResults?: Array<{ pass: boolean; reason: string }>;
   };
 }
+
+// ── Report types ──
+
+export interface EvalResults {
+  title: string;
+  date: string;
+  providers: string[];
+  testSource: string;
+  testCases: TestCaseResult[];
+}
+
+export interface TestCaseResult {
+  number: number;
+  question: string;
+  expected: string;
+  context: string;
+  checkType: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  /** One entry per provider, in same order as EvalResults.providers */
+  results: ProviderResult[];
+}
+
+export interface ProviderResult {
+  provider: string;
+  response: string;
+  passed: boolean;
+  gradingReason: string;
+}

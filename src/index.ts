@@ -121,8 +121,9 @@ async function main(): Promise<void> {
   console.log('└─────────────────────────────────────────┘');
   console.log('');
 
-  // Clean up intermediate config
+  // Clean up intermediate files
   try { fs.unlinkSync(pfConfigPath); } catch { /* ignore */ }
+  try { fs.unlinkSync(outputPath); } catch { /* ignore */ }
 }
 
 function serveReport(reportPath: string, port: number): void {
