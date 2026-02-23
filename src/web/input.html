@@ -119,12 +119,13 @@
               </select>
             </div>
 
-            <div class="usa-form-group">
+            <div class="usa-form-group" id="aiUseCase-group">
               <label class="usa-label" for="aiUseCase">
-                Approved AI use case
-                <span class="usa-hint">Select the use case this AI is being evaluated for</span>
+                Approved AI use case <span class="usa-required" aria-hidden="true">*</span>
+                <span class="usa-hint">Choose what you are evaluating today</span>
               </label>
-              <select class="usa-select" id="aiUseCase" name="aiUseCase" onchange="handleUseCaseChange()">
+              <span class="usa-error-message" id="aiUseCase-error" role="alert" style="display:none">Please select an approved use case.</span>
+              <select class="usa-select" id="aiUseCase" name="aiUseCase" required onchange="handleUseCaseChange()">
                 <option value="">-- Select a use case --</option>
                 <option value="Helps residents look up the status of their state tax refund">Where's My Refund</option>
                 <option value="Helps residents determine eligibility for public assistance programs">Benefits Eligibility Checker</option>
@@ -256,7 +257,7 @@
   });
 
   function clearValidationErrors() {
-    ['sheetUrl', 'provider'].forEach(function(id) {
+    ['sheetUrl', 'provider', 'aiUseCase'].forEach(function(id) {
       document.getElementById(id + '-group').classList.remove('usa-form-group--error');
       document.getElementById(id + '-error').style.display = 'none';
       document.getElementById(id).classList.remove('usa-input--error');
@@ -282,6 +283,10 @@
     }
     if (!provider) {
       showFieldError('provider');
+      valid = false;
+    }
+    if (!document.getElementById('aiUseCase').value) {
+      showFieldError('aiUseCase');
       valid = false;
     }
     if (!valid) return;
