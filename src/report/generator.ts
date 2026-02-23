@@ -513,7 +513,7 @@ function renderHtml(data: ReportData): string {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(data.title)} — Evergreen Eval Report</title>
-<link rel="stylesheet" href="https://designsystem.digital.gov/assets/css/uswds.min.css">
+<link rel="stylesheet" href="/assets/css/uswds.min.css">
 <style>
 /* ── Tokens ── */
 :root {
@@ -548,27 +548,26 @@ body {
 }
 
 /* ── Header ── */
-.report-header {
+.evergreen-hero {
   background: linear-gradient(135deg, #112e51 0%, #205493 100%);
   color: #fff;
-  padding: 2rem 0 1.75rem;
-  position: relative;
+  padding: 2.5rem 0 2rem;
 }
-.header-inner { position: relative; }
-.report-header h1 {
+.evergreen-hero h1 {
+  color: #fff;
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.5px;
   margin-bottom: 6px;
 }
-.report-header .meta {
+.evergreen-hero .meta {
   font-size: 13px;
-  color: #94a3b8;
+  color: #dce4ef;
   display: flex;
   gap: 0;
   flex-wrap: wrap;
 }
-.report-header .meta span + span::before { content: "·"; margin: 0 10px; color: #475569; }
+.evergreen-hero .meta span + span::before { content: "·"; margin: 0 10px; color: #94a3b8; }
 .readiness-pill {
   display: inline-flex;
   align-items: center;
@@ -626,9 +625,8 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 24px 28px;
-  margin-bottom: 20px;
-  box-shadow: var(--shadow);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
 }
 .card-title {
   font-size: 11px;
@@ -1096,37 +1094,15 @@ table.data-table, table.detail-table {
 </head>
 <body>
 
-<!-- USWDS Government Banner -->
-<section class="usa-banner" aria-label="Official website of the United States government">
-  <div class="usa-accordion">
-    <header class="usa-banner__header">
-      <div class="usa-banner__inner">
-        <div class="grid-col-auto">
-          <img class="usa-banner__header-flag" src="https://designsystem.digital.gov/assets/img/us_flag_small.png" alt="U.S. flag">
-        </div>
-        <div class="grid-col-fill tablet:grid-col-auto" aria-hidden="true">
-          <p class="usa-banner__header-text">An official website of the United States government</p>
-          <p class="usa-banner__header-action">Here's how you know</p>
-        </div>
-        <button type="button" class="usa-accordion__button usa-banner__button" aria-expanded="false" aria-controls="gov-banner-report">
-          <span class="usa-banner__button-text">Here's how you know</span>
-        </button>
+<!-- Public Infrastructure Banner -->
+<section class="usa-banner" aria-label="Evergreen — digital public infrastructure">
+  <div class="usa-banner__header" style="padding-top:0.5rem;padding-bottom:0.5rem;">
+    <div class="usa-banner__inner">
+      <div class="grid-col-auto">
+        <img class="usa-banner__header-flag" src="/assets/img/us_flag_small.png" alt="U.S. flag">
       </div>
-    </header>
-    <div class="usa-banner__content usa-accordion__content" id="gov-banner-report" hidden>
-      <div class="grid-row grid-gap-lg">
-        <div class="usa-banner__guidance tablet:grid-col-6">
-          <img class="usa-banner__icon usa-media-block__img" src="https://designsystem.digital.gov/assets/img/icon-dot-gov.svg" alt="">
-          <div class="usa-media-block__body">
-            <p><strong>Official websites use .gov</strong><br>A <strong>.gov</strong> website belongs to an official government organization in the United States.</p>
-          </div>
-        </div>
-        <div class="usa-banner__guidance tablet:grid-col-6">
-          <img class="usa-banner__icon usa-media-block__img" src="https://designsystem.digital.gov/assets/img/icon-https.svg" alt="">
-          <div class="usa-media-block__body">
-            <p><strong>Secure .gov websites use HTTPS</strong><br>A <strong>lock</strong> or <strong>https://</strong> means you've safely connected to the .gov website.</p>
-          </div>
-        </div>
+      <div class="grid-col-fill">
+        <p class="usa-banner__header-text">This is digital public infrastructure &mdash; by the people, for the people.</p>
       </div>
     </div>
   </div>
@@ -1139,12 +1115,9 @@ table.data-table, table.detail-table {
   </div>
 </div>
 
-<!-- USWDS accordion JS (banner only) -->
-<script src="https://designsystem.digital.gov/assets/js/uswds.min.js"></script>
-
 <!-- ── Header ── -->
-<header class="report-header">
-  <div class="grid-container header-inner">
+<header class="evergreen-hero">
+  <div class="grid-container">
     <h1>${esc(data.title)}</h1>
     <div class="meta">
       <span>${esc(data.date)}</span>
@@ -1272,6 +1245,7 @@ table.data-table, table.detail-table {
   </div>
 </footer>
 
+<script src="/assets/js/uswds.min.js"></script>
 <script>
 (function() {
   // ── Tab switching ──
