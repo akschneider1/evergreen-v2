@@ -29,9 +29,11 @@
     #error-section    { display: none; }
     .how-it-works {
       background: #f0f0f0;
+      border: 1px solid #dfe1e2;
       border-radius: 4px;
       padding: 1.5rem;
-      margin-top: 2rem;
+      box-sizing: border-box;
+      height: 100%;
     }
     /* Hide per-segment labels — the heading counter already shows current step */
     .usa-step-indicator__segment-label { display: none; }
@@ -197,7 +199,7 @@
       </div>
 
       <!-- How it works sidebar -->
-      <div class="grid-col-12 tablet:grid-col-4">
+      <div class="grid-col-12 tablet:grid-col-4" style="display:flex; flex-direction:column;">
         <div class="how-it-works">
           <h3 class="usa-prose" style="margin-top:0; font-size:1rem;">How it works</h3>
           <ol class="usa-process-list">
