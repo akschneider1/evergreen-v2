@@ -14,13 +14,13 @@
     "test": "ts-node test/test-pipeline.ts"
   },
   "dependencies": {
-    "promptfoo": "^0.100.0",
+    "promptfoo": "^0.120.25",
     "yaml": "^2.7.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.7.0",
-    "ts-node": "^10.9.0"
+    "ts-node": "^10.9.0",
+    "typescript": "^5.7.0"
   },
   "engines": {
     "node": ">=18"

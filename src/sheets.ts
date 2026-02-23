@@ -60,8 +60,8 @@ export function parseCsv(csv: string): SheetRow[] {
   }
 
   const rows: SheetRow[] = [];
-  // Skip header (line 0)
-  for (let i = 1; i < lines.length; i++) {
+  // Skip header (line 0) and example/instruction row (line 1 = spreadsheet row 2)
+  for (let i = 2; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
 

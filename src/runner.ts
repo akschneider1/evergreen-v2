@@ -39,21 +39,19 @@ export function runPromptfoo(configPath: string, outputPath: string): PromptfooO
       },
     );
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    throw new Error(
-      `Promptfoo eval failed. This usually means:\n` +
-      `  - An API key is missing (set OPENAI_API_KEY or ANTHROPIC_API_KEY)\n` +
-      `  - The provider ID in your config is wrong\n` +
-      `  - Network issues connecting to the LLM provider\n\n` +
-      `Details: ${msg}`
-    );
-  }
-
-  if (!fs.existsSync(absOutput)) {
-    throw new Error(
-      `Promptfoo finished but no output file found at ${absOutput}. ` +
-      `This is unexpected — check the Promptfoo output above for errors.`
-    );
+    // Newer versions of promptfoo exit non-zero when test cases fail — that's
+    // expected behaviour, not a crash.  Only treat it as fatal if the output
+    // file wasn't produced.
+    if (!fs.existsSync(absOutput)) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `Promptfoo eval failed. This usually means:\n` +
+        `  - An API key is missing (set OPENAI_API_KEY or ANTHROPIC_API_KEY)\n` +
+        `  - The provider ID in your config is wrong\n` +
+        `  - Network issues connecting to the LLM provider\n\n` +
+        `Details: ${msg}`
+      );
+    }
   }
 
   const raw = fs.readFileSync(absOutput, 'utf-8');

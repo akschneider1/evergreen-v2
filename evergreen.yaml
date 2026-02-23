@@ -9,17 +9,11 @@
 description: "My AI Chatbot — Pre-Deployment Eval"
 
 # Google Sheet ID (from the URL: /spreadsheets/d/THIS_PART/edit)
-sheetId: "YOUR_SHEET_ID_HERE"
+sheetId: "1ysiHznH64SB9CjedjVnZOg5YkMrPyYofSAXXHXa0w0I"
 
 # Which LLM(s) to test — add as many as you want to compare
 providers:
-  - id: openai:gpt-4o
+  - id: anthropic:messages:claude-sonnet-4-20250514
     systemPrompt: |
       You are a helpful assistant.
       Answer in plain language.
-
-# Uncomment to test a second model side-by-side:
-#  - id: anthropic:claude-sonnet-4-20250514
-#    systemPrompt: |
-#      You are a helpful assistant.
-#      Answer in plain language.

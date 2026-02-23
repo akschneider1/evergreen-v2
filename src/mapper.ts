@@ -5,8 +5,7 @@
  * expected by the report generator.
  */
 
-import { SheetRow } from './types';
-import { PromptfooOutput } from './types';
+import { SheetRow, PromptfooResult } from './types';
 import { EvalResults, TestCaseResult, ProviderResult } from './report/generator';
 
 /**
@@ -17,7 +16,7 @@ import { EvalResults, TestCaseResult, ProviderResult } from './report/generator'
  * (severity, context, checkType) from the sheet rows.
  */
 export function mapToEvalResults(
-  output: PromptfooOutput,
+  output: { results: PromptfooResult[]; stats: { successes: number; failures: number; errors: number } },
   rows: SheetRow[],
   title: string,
 ): EvalResults {

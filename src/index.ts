@@ -12,6 +12,7 @@
  */
 
 import * as fs from 'fs';
+import * as http from 'http';
 import * as path from 'path';
 import { loadEvergreenConfig } from './config';
 import { buildPromptfooConfig, writePromptfooConfig } from './config';
@@ -19,6 +20,7 @@ import { fetchSheet } from './sheets';
 import { runPromptfoo } from './runner';
 import { mapToEvalResults } from './mapper';
 import { generateReport } from './report/generator';
+import { normalizePromptfooOutput } from './types';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -26,6 +28,13 @@ async function main(): Promise<void> {
 
   if (!command || command === '--help' || command === '-h') {
     printUsage();
+    return;
+  }
+
+  if (command === 'serve') {
+    const reportPath = getFlagValue(args, '-o', '--output') || 'report.html';
+    const port = parseInt(getFlagValue(args, '-p', '--port') || '4000', 10);
+    serveReport(reportPath, port);
     return;
   }
 
@@ -84,7 +93,8 @@ async function main(): Promise<void> {
   console.log('Step 3/4 — Running evaluations...');
   console.log('');
   const outputPath = config.outputPath || './results.json';
-  const pfOutput = runPromptfoo(pfConfigPath, outputPath);
+  const pfRaw = runPromptfoo(pfConfigPath, outputPath);
+  const pfOutput = normalizePromptfooOutput(pfRaw);
   console.log('');
   console.log(`  Promptfoo complete: ${pfOutput.stats.successes} passed, ${pfOutput.stats.failures} failed`);
   console.log('');
@@ -108,6 +118,36 @@ async function main(): Promise<void> {
   try { fs.unlinkSync(pfConfigPath); } catch { /* ignore */ }
 }
 
+function serveReport(reportPath: string, port: number): void {
+  const absPath = path.resolve(reportPath);
+
+  if (!fs.existsSync(absPath)) {
+    console.error(`Report not found: ${absPath}`);
+    console.error('');
+    console.error('Generate one first with: evergreen run');
+    process.exit(1);
+  }
+
+  const server = http.createServer((_req, res) => {
+    const html = fs.readFileSync(absPath, 'utf-8');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(html);
+  });
+
+  server.listen(port, () => {
+    console.log('');
+    console.log('┌─────────────────────────────────────────┐');
+    console.log('│  Evergreen — Report Server              │');
+    console.log('└─────────────────────────────────────────┘');
+    console.log('');
+    console.log(`  Report:  ${absPath}`);
+    console.log(`  URL:     http://localhost:${port}`);
+    console.log('');
+    console.log('  Press Ctrl+C to stop.');
+    console.log('');
+  });
+}
+
 function printUsage(): void {
   console.log(`
 Evergreen — Pre-Deployment AI Evaluation
@@ -116,6 +156,9 @@ Usage:
   evergreen run                     Fetch test cases, run evals, generate report
   evergreen run -c config.yaml      Use a specific config file
   evergreen run -o report.html      Specify output report path
+  evergreen serve                   Serve the report in your browser (port 4000)
+  evergreen serve -o report.html    Serve a specific report file
+  evergreen serve -p 3000           Serve on a custom port
 
 Config file (evergreen.yaml):
   description: "CO Tax Policy Chatbot Eval"

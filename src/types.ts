@@ -70,11 +70,42 @@ export interface PromptfooAssertion {
 // ── Promptfoo output (subset we read) ──
 
 export interface PromptfooOutput {
+  // New promptfoo format (0.110+): top-level wrapper
+  evalId?: string;
+  results: PromptfooResultsWrapper | PromptfooResult[];
+  stats?: {
+    successes: number;
+    failures: number;
+    errors: number;
+  };
+}
+
+/** Newer promptfoo wraps results + stats under a "results" key */
+export interface PromptfooResultsWrapper {
+  version: number;
+  timestamp: string;
   results: PromptfooResult[];
   stats: {
     successes: number;
     failures: number;
     errors: number;
+  };
+}
+
+/** Normalise the two possible output shapes into a consistent form */
+export function normalizePromptfooOutput(raw: PromptfooOutput): {
+  results: PromptfooResult[];
+  stats: { successes: number; failures: number; errors: number };
+} {
+  if (raw.evalId && raw.results && !Array.isArray(raw.results)) {
+    // New format: { evalId, results: { results: [...], stats: {...} } }
+    const wrapper = raw.results as PromptfooResultsWrapper;
+    return { results: wrapper.results, stats: wrapper.stats };
+  }
+  // Old format: { results: [...], stats: {...} }
+  return {
+    results: raw.results as PromptfooResult[],
+    stats: raw.stats!,
   };
 }
 
