@@ -28,36 +28,6 @@
     #progress-section { display: none; }
     #result-section   { display: none; }
     #error-section    { display: none; }
-    .step-list {
-      list-style: none;
-      padding: 0;
-      margin: 1rem 0 0;
-    }
-    .step-list li {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.6rem 0;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 0.9375rem;
-      color: #565c65;
-    }
-    .step-list li:last-child { border-bottom: none; }
-    .step-icon {
-      width: 1.75rem;
-      height: 1.75rem;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 700;
-      flex-shrink: 0;
-      background: #dfe1e2;
-      color: #565c65;
-    }
-    .step-icon.active   { background: #005ea2; color: #fff; }
-    .step-icon.complete { background: #00a91c; color: #fff; }
     .how-it-works {
       background: #f0f0f0;
       border-radius: 4px;
@@ -181,25 +151,34 @@
         <!-- Progress Section -->
         <div class="form-card" id="progress-section">
           <h2 class="usa-prose" style="margin-top:0">Running evaluation…</h2>
-          <p class="step-description">This usually takes 1–2 minutes. You can leave this page open.</p>
-          <ul class="step-list">
-            <li id="step-1">
-              <span class="step-icon" id="icon-1">1</span>
-              Fetch test cases from Google Sheet
-            </li>
-            <li id="step-2">
-              <span class="step-icon" id="icon-2">2</span>
-              Generate evaluation config
-            </li>
-            <li id="step-3">
-              <span class="step-icon" id="icon-3">3</span>
-              Run AI evaluations
-            </li>
-            <li id="step-4">
-              <span class="step-icon" id="icon-4">4</span>
-              Generate report
-            </li>
-          </ul>
+          <p class="usa-hint margin-top-1">This usually takes 1–2 minutes. You can leave this page open.</p>
+
+          <div class="usa-step-indicator margin-top-3" aria-label="Evaluation progress">
+            <ol class="usa-step-indicator__segments">
+              <li class="usa-step-indicator__segment" id="step-1" aria-label="Fetch test cases">
+                <span class="usa-step-indicator__segment-label">Fetch test cases</span>
+              </li>
+              <li class="usa-step-indicator__segment" id="step-2" aria-label="Generate config">
+                <span class="usa-step-indicator__segment-label">Generate config</span>
+              </li>
+              <li class="usa-step-indicator__segment" id="step-3" aria-label="Run evaluations">
+                <span class="usa-step-indicator__segment-label">Run evaluations</span>
+              </li>
+              <li class="usa-step-indicator__segment" id="step-4" aria-label="Generate report">
+                <span class="usa-step-indicator__segment-label">Generate report</span>
+              </li>
+            </ol>
+            <div class="usa-step-indicator__header">
+              <h4 class="usa-step-indicator__heading">
+                <span class="usa-step-indicator__heading-counter">
+                  <span class="usa-sr-only">Step</span>
+                  <span class="usa-step-indicator__current-step" id="step-current">1</span>
+                  <span class="usa-step-indicator__total-steps"> of 4</span>
+                </span>
+                <span class="usa-step-indicator__heading-text" id="step-heading-text">Fetch test cases</span>
+              </h4>
+            </div>
+          </div>
         </div>
 
         <!-- Result Section -->
@@ -356,24 +335,41 @@
       .catch(err => { clearInterval(pollInterval); showError(err.message); });
   }
 
+  const stepNames = ['Fetch test cases', 'Generate config', 'Run evaluations', 'Generate report'];
+
   function updateSteps(currentStep) {
     for (let i = 1; i <= 4; i++) {
-      const icon = document.getElementById('icon-' + i);
+      const seg = document.getElementById('step-' + i);
+      if (!seg) continue;
+      seg.classList.remove(
+        'usa-step-indicator__segment--complete',
+        'usa-step-indicator__segment--current'
+      );
+      seg.removeAttribute('aria-current');
       if (i < currentStep) {
-        icon.className = 'step-icon complete';
-        icon.textContent = '✓';
+        seg.classList.add('usa-step-indicator__segment--complete');
       } else if (i === currentStep) {
-        icon.className = 'step-icon active';
-        icon.textContent = String(i);
-      } else {
-        icon.className = 'step-icon';
-        icon.textContent = String(i);
+        seg.classList.add('usa-step-indicator__segment--current');
+        seg.setAttribute('aria-current', 'true');
       }
     }
+    const currentStepEl = document.getElementById('step-current');
+    const headingTextEl = document.getElementById('step-heading-text');
+    if (currentStepEl) currentStepEl.textContent = String(Math.min(currentStep, 4));
+    if (headingTextEl) headingTextEl.textContent = stepNames[Math.min(currentStep, 4) - 1] || '';
   }
 
   function showSuccess(reportUrl) {
-    updateSteps(5); // mark all complete
+    // Mark all steps complete
+    for (let i = 1; i <= 4; i++) {
+      const seg = document.getElementById('step-' + i);
+      if (!seg) continue;
+      seg.classList.remove('usa-step-indicator__segment--current');
+      seg.removeAttribute('aria-current');
+      seg.classList.add('usa-step-indicator__segment--complete');
+    }
+    const headingTextEl = document.getElementById('step-heading-text');
+    if (headingTextEl) headingTextEl.textContent = 'Complete';
     document.getElementById('progress-section').style.display = 'none';
     document.getElementById('result-section').style.display   = 'block';
     document.getElementById('report-link').href = reportUrl;

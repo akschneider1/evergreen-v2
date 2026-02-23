@@ -439,7 +439,7 @@ function renderHtml(data: ReportData): string {
     }).join('');
     return `
       <tr class="sev-row" data-sev="${s.level}" onclick="gotoSeverity('${s.level}')">
-        <td><span class="severity-badge ${s.level}">${s.level}</span></td>
+        <td><span class="usa-tag severity-badge ${s.level}">${s.level}</span></td>
         <td class="sev-total">${s.total}</td>
         ${cells}
         <td class="sev-link">View →</td>
@@ -449,7 +449,7 @@ function renderHtml(data: ReportData): string {
   const comparisonHtml = data.multipleProviders ? `
     <div class="card">
       <h2 class="card-title">Provider Comparison</h2>
-      <table class="data-table">
+      <table class="data-table usa-table usa-table--borderless usa-table--compact">
         <thead>
           <tr>
             <th>Metric</th>
@@ -467,7 +467,7 @@ function renderHtml(data: ReportData): string {
           </tr>
           ${data.severities.map(s => `
           <tr>
-            <td><span class="severity-badge ${s.level}">${s.level}</span> severity</td>
+            <td><span class="usa-tag severity-badge ${s.level}">${s.level}</span> severity</td>
             ${s.results.map(r => {
               const pct = r.total > 0 ? Math.round((r.passed / r.total) * 100) : 0;
               return `<td>${r.passed}/${r.total} <span class="dimtext">(${pct}%)</span></td>`;
@@ -510,7 +510,7 @@ function renderHtml(data: ReportData): string {
         <tr class="main-row ${tc.anyFailed ? 'fail-row' : 'pass-row'}">
           <td class="tc-num">${tc.number}</td>
           <td class="tc-question">${esc(tc.question)}</td>
-          <td><span class="severity-badge ${tc.severity}">${tc.severity}</span></td>
+          <td><span class="usa-tag severity-badge ${tc.severity}">${tc.severity}</span></td>
           <td class="tc-check"><span class="check-badge">${esc(tc.checkTypeLabel)}</span></td>
           ${resultCells}
           <td class="tc-chevron"><span class="chevron" id="chevron-${tc.number}">▼</span></td>
@@ -541,6 +541,7 @@ function renderHtml(data: ReportData): string {
 <title>${esc(data.title)} — Evergreen Eval Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://designsystem.digital.gov/assets/css/uswds.min.css">
 <style>
 /* ── Reset & Tokens (USWDS-aligned) ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -881,6 +882,21 @@ body {
   line-height: 1.5;
 }
 
+/* ── USWDS overrides for report data tables and buttons ── */
+/* Ensure custom table styles win over USWDS defaults */
+table.data-table, table.detail-table {
+  font-family: var(--font);
+  font-size: 13px;
+}
+/* Keep filter buttons compact; USWDS adds extra padding by default */
+.filter-bar .usa-button {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  height: auto;
+}
+
 /* ── Analysis: severity table ── */
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table th {
@@ -911,6 +927,12 @@ body {
 .dimtext { color: var(--text-3); font-weight: 400; font-size: 12px; }
 
 /* ── Severity & check badges ── */
+/* Override usa-tag defaults so custom sev colors take precedence */
+.severity-badge.usa-tag {
+  text-transform: lowercase;
+  letter-spacing: normal;
+  font-weight: 600;
+}
 .severity-badge {
   display: inline-block;
   padding: 2px 9px;
@@ -1117,13 +1139,50 @@ body {
 <body>
 
 <!-- USWDS Government Banner -->
-<section style="background:#112e51;padding:4px 0;font-size:12px;color:#dce4ef">
-  <div style="max-width:1200px;margin:0 auto;padding:0 40px;display:flex;align-items:center;gap:8px">
-    <img src="https://designsystem.digital.gov/assets/img/us_flag_small.png" alt="U.S. flag" style="height:14px">
-    <span>An official website of the United States government</span>
-    <span style="margin-left:auto"><a href="/" style="color:#dce4ef;text-decoration:underline">← New Evaluation</a></span>
+<section class="usa-banner" aria-label="Official website of the United States government">
+  <div class="usa-accordion">
+    <header class="usa-banner__header">
+      <div class="usa-banner__inner">
+        <div class="grid-col-auto">
+          <img class="usa-banner__header-flag" src="https://designsystem.digital.gov/assets/img/us_flag_small.png" alt="U.S. flag">
+        </div>
+        <div class="grid-col-fill tablet:grid-col-auto" aria-hidden="true">
+          <p class="usa-banner__header-text">An official website of the United States government</p>
+          <p class="usa-banner__header-action">Here's how you know</p>
+        </div>
+        <button type="button" class="usa-accordion__button usa-banner__button" aria-expanded="false" aria-controls="gov-banner-report">
+          <span class="usa-banner__button-text">Here's how you know</span>
+        </button>
+      </div>
+    </header>
+    <div class="usa-banner__content usa-accordion__content" id="gov-banner-report" hidden>
+      <div class="grid-row grid-gap-lg">
+        <div class="usa-banner__guidance tablet:grid-col-6">
+          <img class="usa-banner__icon usa-media-block__img" src="https://designsystem.digital.gov/assets/img/icon-dot-gov.svg" alt="">
+          <div class="usa-media-block__body">
+            <p><strong>Official websites use .gov</strong><br>A <strong>.gov</strong> website belongs to an official government organization in the United States.</p>
+          </div>
+        </div>
+        <div class="usa-banner__guidance tablet:grid-col-6">
+          <img class="usa-banner__icon usa-media-block__img" src="https://designsystem.digital.gov/assets/img/icon-https.svg" alt="">
+          <div class="usa-media-block__body">
+            <p><strong>Secure .gov websites use HTTPS</strong><br>A <strong>lock</strong> or <strong>https://</strong> means you've safely connected to the .gov website.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
+
+<!-- Back link bar -->
+<div style="background:#112e51;padding:6px 0;font-size:0.8125rem;">
+  <div class="grid-container">
+    <a href="/" class="usa-link" style="color:#dce4ef;">← New Evaluation</a>
+  </div>
+</div>
+
+<!-- USWDS accordion JS (banner only) -->
+<script src="https://designsystem.digital.gov/assets/js/uswds.min.js"></script>
 
 <!-- ── Header ── -->
 <header class="report-header">
@@ -1207,20 +1266,20 @@ body {
 
   <div class="filter-bar">
     <span class="filter-label">Show</span>
-    <button class="filter-btn active" data-filter="all" onclick="applyFilter('all')">
+    <button class="usa-button filter-btn active" data-filter="all" onclick="applyFilter('all')">
       All <span class="filter-count">${data.testCaseCount}</span>
     </button>
-    <button class="filter-btn" data-filter="failures" onclick="applyFilter('failures')">
+    <button class="usa-button usa-button--outline filter-btn" data-filter="failures" onclick="applyFilter('failures')">
       Failures <span class="filter-count">${failedCount}</span>
     </button>
-    <button class="filter-btn" data-filter="critical" onclick="applyFilter('critical')">
+    <button class="usa-button usa-button--outline filter-btn" data-filter="critical" onclick="applyFilter('critical')">
       Critical <span class="filter-count">${data.criticalCaseCount}</span>
     </button>
     <span class="filter-result" id="filter-result"></span>
   </div>
 
   <div class="detail-card">
-    <table class="detail-table">
+    <table class="detail-table usa-table usa-table--borderless usa-table--compact">
       <thead>
         <tr>
           <th>#</th>
@@ -1280,7 +1339,9 @@ body {
   function applyFilter(filter) {
     currentFilter = filter;
     document.querySelectorAll('.filter-btn').forEach(function(btn) {
-      btn.classList.toggle('active', btn.dataset.filter === filter);
+      var isActive = btn.dataset.filter === filter;
+      btn.classList.toggle('active', isActive);
+      btn.classList.toggle('usa-button--outline', !isActive);
     });
     var total = 0, visible = 0;
     document.querySelectorAll('.test-case-group').forEach(function(group) {
@@ -1313,6 +1374,26 @@ body {
 
 })();
 </script>
+
+<!-- USWDS Footer -->
+<footer class="usa-footer usa-footer--slim">
+  <div class="usa-footer__secondary-section">
+    <div class="grid-container">
+      <div class="grid-row grid-gap">
+        <div class="usa-footer__logo grid-row mobile-lg:grid-col-6 mobile-lg:grid-gap-2">
+          <div class="mobile-lg:grid-col-auto">
+            <p class="usa-footer__logo-heading">Evergreen</p>
+          </div>
+        </div>
+        <div class="usa-footer__contact-links mobile-lg:grid-col-6">
+          <p style="font-size:0.8125rem; color:#565c65; margin:0">
+            Powered by <a href="https://www.promptfoo.dev" class="usa-link">Promptfoo</a> under the Apache 2.0 License
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
 </body>
 </html>`;
 }
