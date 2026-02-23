@@ -120,12 +120,28 @@
             </div>
 
             <div class="usa-form-group">
+              <label class="usa-label" for="aiUseCase">
+                Approved AI use case
+                <span class="usa-hint">Select the use case this AI is being evaluated for</span>
+              </label>
+              <select class="usa-select" id="aiUseCase" name="aiUseCase" onchange="handleUseCaseChange()">
+                <option value="">-- Select a use case --</option>
+                <option value="Helps residents look up the status of their state tax refund">Where's My Refund</option>
+                <option value="Helps residents determine eligibility for public assistance programs">Benefits Eligibility Checker</option>
+                <option value="Provides real-time guidance to human agents during resident support calls">Agent Assist</option>
+                <option value="Summarizes call center conversations for quality review and record-keeping">Call Center Summaries</option>
+                <option value="Answers questions about applying for, renewing, or checking the status of permits">Permitting Assistant</option>
+                <option value="other">Other (describe below)</option>
+              </select>
+            </div>
+
+            <div class="usa-form-group" id="aiDescription-group" style="display:none">
               <label class="usa-label" for="aiDescription">
-                About this AI
-                <span class="usa-hint">One sentence describing what this chatbot does (optional)</span>
+                Describe this AI
+                <span class="usa-hint">One sentence describing what this chatbot does</span>
               </label>
               <input class="usa-input" id="aiDescription" name="aiDescription" type="text"
-                     placeholder="Helps Colorado residents with state tax questions">
+                     placeholder="e.g. Helps Colorado residents with state tax questions">
             </div>
 
             <button type="submit" class="usa-button" id="run-btn">Run Evaluation</button>
@@ -270,11 +286,16 @@
     }
     if (!valid) return;
 
+    const useCaseEl = document.getElementById('aiUseCase');
+    const aiDescription = useCaseEl.value === 'other'
+      ? document.getElementById('aiDescription').value.trim()
+      : useCaseEl.value;
+
     const body = {
       description:   document.getElementById('description').value.trim(),
       sheetUrl,
       provider,
-      aiDescription: document.getElementById('aiDescription').value.trim(),
+      aiDescription,
     };
 
     document.getElementById('form-section').style.display    = 'none';
@@ -356,10 +377,18 @@
     document.getElementById('error-message').textContent = msg;
   }
 
+  function handleUseCaseChange() {
+    var val = document.getElementById('aiUseCase').value;
+    document.getElementById('aiDescription-group').style.display = val === 'other' ? 'block' : 'none';
+  }
+
   function resetForm() {
     clearInterval(pollInterval);
     currentJobId = null;
     clearValidationErrors();
+    document.getElementById('aiUseCase').value = '';
+    document.getElementById('aiDescription').value = '';
+    document.getElementById('aiDescription-group').style.display = 'none';
     document.getElementById('form-section').style.display    = 'block';
     document.getElementById('error-section').style.display   = 'none';
     document.getElementById('progress-section').style.display = 'none';
