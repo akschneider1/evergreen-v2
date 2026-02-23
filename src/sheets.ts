@@ -15,6 +15,18 @@ const VALID_CHECK_TYPES: CheckType[] = [
 const VALID_SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low'];
 
 /**
+ * Extract a bare Google Sheet ID from either a full Sheets URL or a bare ID.
+ *
+ * Handles URLs like:
+ *   https://docs.google.com/spreadsheets/d/SHEET_ID/edit#gid=0
+ * and passes bare IDs through unchanged.
+ */
+export function extractSheetId(input: string): string {
+  const match = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : input.trim();
+}
+
+/**
  * Fetch a Google Sheet as CSV and parse into SheetRows.
  *
  * @param sheetId  The Google Sheet ID (from the URL)

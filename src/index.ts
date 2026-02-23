@@ -21,6 +21,7 @@ import { runPromptfoo } from './runner';
 import { mapToEvalResults } from './mapper';
 import { generateReport } from './report/generator';
 import { normalizePromptfooOutput } from './types';
+import { startApp } from './web/server';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -35,6 +36,12 @@ async function main(): Promise<void> {
     const reportPath = getFlagValue(args, '-o', '--output') || 'report.html';
     const port = parseInt(getFlagValue(args, '-p', '--port') || '4000', 10);
     serveReport(reportPath, port);
+    return;
+  }
+
+  if (command === 'app') {
+    const port = parseInt(getFlagValue(args, '-p', '--port') || '4000', 10);
+    startApp(port);
     return;
   }
 
@@ -159,6 +166,8 @@ Usage:
   evergreen serve                   Serve the report in your browser (port 4000)
   evergreen serve -o report.html    Serve a specific report file
   evergreen serve -p 3000           Serve on a custom port
+  evergreen app                     Launch the unified web app (input + output, port 4000)
+  evergreen app -p 3000             Launch on a custom port
 
 Config file (evergreen.yaml):
   description: "CO Tax Policy Chatbot Eval"

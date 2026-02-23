@@ -5,7 +5,7 @@
  * Uses Promptfoo's CLI as a subprocess so we don't depend on internal APIs.
  */
 
-import { execFileSync } from 'child_process';
+import { execFile, execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -65,4 +65,43 @@ export function runPromptfoo(configPath: string, outputPath: string): PromptfooO
   const raw = fs.readFileSync(absOutput, 'utf-8');
   try { fs.rmSync(pfTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
   return JSON.parse(raw) as PromptfooOutput;
+}
+
+/**
+ * Async (non-blocking) variant for use in the web server.
+ * Uses execFile instead of execFileSync so the Node.js event loop
+ * remains free to handle poll requests while the eval runs.
+ */
+export function runPromptfooAsync(configPath: string, outputPath: string): Promise<PromptfooOutput> {
+  const absConfig = path.resolve(configPath);
+  const absOutput = path.resolve(outputPath);
+  const pfTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'evergreen-pf-'));
+
+  return new Promise((resolve, reject) => {
+    const child = execFile(
+      'npx',
+      ['promptfoo', 'eval', '--config', absConfig, '--output', absOutput, '--no-cache'],
+      {
+        timeout: 5 * 60 * 1000,
+        env: { ...process.env, PROMPTFOO_DISABLE_TELEMETRY: '1', PROMPTFOO_CONFIG_DIR: pfTmpDir },
+      },
+      (err) => {
+        try { fs.rmSync(pfTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
+        if (err && !fs.existsSync(absOutput)) {
+          reject(new Error(
+            `Promptfoo eval failed. Check API keys and provider config.\n\nDetails: ${err.message}`
+          ));
+          return;
+        }
+        try {
+          resolve(JSON.parse(fs.readFileSync(absOutput, 'utf-8')) as PromptfooOutput);
+        } catch (readErr) {
+          reject(readErr);
+        }
+      },
+    );
+    // Suppress promptfoo's stdout/stderr from web server logs
+    child.stdout?.resume();
+    child.stderr?.resume();
+  });
 }

@@ -8,16 +8,18 @@
   },
   "main": "./dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/web/*.html dist/web/",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "test": "ts-node test/test-pipeline.ts"
   },
   "dependencies": {
+    "express": "^5.2.1",
     "promptfoo": "^0.120.25",
     "yaml": "^2.7.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^22.0.0",
     "ts-node": "^10.9.0",
     "typescript": "^5.7.0"

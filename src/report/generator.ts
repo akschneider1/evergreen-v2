@@ -540,32 +540,32 @@ function renderHtml(data: ReportData): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(data.title)} — Evergreen Eval Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ── Reset & Tokens ── */
+/* ── Reset & Tokens (USWDS-aligned) ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg:           #f8fafc;
+  --bg:           #f0f0f0;
   --surface:      #ffffff;
-  --border:       #e2e8f0;
-  --border-sub:   #f1f5f9;
-  --text:         #0f172a;
-  --text-2:       #475569;
-  --text-3:       #94a3b8;
-  --brand:        #0284c7;
-  --pass:         #16a34a;
-  --pass-bg:      #f0fdf4;
-  --pass-border:  #bbf7d0;
-  --fail:         #dc2626;
-  --fail-bg:      #fef2f2;
-  --fail-border:  #fecaca;
-  --warn:         #d97706;
-  --warn-bg:      #fffbeb;
-  --warn-border:  #fde68a;
-  --neutral:      #0f172a;
-  --font:         'Outfit', 'DM Sans', system-ui, sans-serif;
-  --mono:         'JetBrains Mono', 'Fira Code', monospace;
-  --radius:       8px;
+  --border:       #dfe1e2;
+  --border-sub:   #f0f0f0;
+  --text:         #1b1b1b;
+  --text-2:       #3d4551;
+  --text-3:       #71767a;
+  --brand:        #005ea2;
+  --pass:         #00a91c;
+  --pass-bg:      #ecf3ec;
+  --pass-border:  #70e17b;
+  --fail:         #e52207;
+  --fail-bg:      #fff3f2;
+  --fail-border:  #f4a8a0;
+  --warn:         #e5a000;
+  --warn-bg:      #faf3d1;
+  --warn-border:  #fee685;
+  --neutral:      #1b1b1b;
+  --font:         'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif;
+  --mono:         'Source Code Pro', 'Courier New', monospace;
+  --radius:       4px;
   --shadow:       0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
   --shadow-md:    0 4px 12px rgba(0,0,0,.10);
 }
@@ -581,7 +581,7 @@ body {
 
 /* ── Header ── */
 .report-header {
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+  background: linear-gradient(135deg, #112e51 0%, #205493 100%);
   color: #fff;
   padding: 32px 40px 28px;
   position: relative;
@@ -622,9 +622,9 @@ body {
   letter-spacing: 0.6px;
   margin-top: 14px;
 }
-.readiness-pill.ready    { background: rgba(22,163,74,.2);  color: #4ade80; border: 1px solid rgba(74,222,128,.3); }
-.readiness-pill.not-ready{ background: rgba(220,38,38,.2);  color: #fca5a5; border: 1px solid rgba(252,165,165,.3); }
-.readiness-pill.caution  { background: rgba(217,119,6,.2);  color: #fcd34d; border: 1px solid rgba(252,211,77,.3); }
+.readiness-pill.ready    { background: rgba(0,169,28,.25);  color: #a8f0b0; border: 1px solid rgba(0,169,28,.4); }
+.readiness-pill.not-ready{ background: rgba(229,34,7,.25);  color: #f4a8a0; border: 1px solid rgba(229,34,7,.4); }
+.readiness-pill.caution  { background: rgba(229,160,0,.25); color: #fee685; border: 1px solid rgba(229,160,0,.4); }
 
 /* ── Tab nav ── */
 .tab-nav {
@@ -1115,6 +1115,15 @@ body {
 </style>
 </head>
 <body>
+
+<!-- USWDS Government Banner -->
+<section style="background:#112e51;padding:4px 0;font-size:12px;color:#dce4ef">
+  <div style="max-width:1200px;margin:0 auto;padding:0 40px;display:flex;align-items:center;gap:8px">
+    <img src="https://designsystem.digital.gov/assets/img/us_flag_small.png" alt="U.S. flag" style="height:14px">
+    <span>An official website of the United States government</span>
+    <span style="margin-left:auto"><a href="/" style="color:#dce4ef;text-decoration:underline">← New Evaluation</a></span>
+  </div>
+</section>
 
 <!-- ── Header ── -->
 <header class="report-header">

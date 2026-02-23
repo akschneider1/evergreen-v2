@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evergreen — Pre-Deployment AI Evaluation</title>
+  <link rel="stylesheet" href="https://designsystem.digital.gov/assets/css/uswds.min.css">
+  <style>
+    .evergreen-hero {
+      background: linear-gradient(135deg, #112e51 0%, #205493 100%);
+      color: #fff;
+      padding: 2.5rem 0 2rem;
+    }
+    .evergreen-hero .usa-prose h1 { color: #fff; margin-bottom: 0.5rem; }
+    .evergreen-hero .usa-prose p  { color: #dce4ef; margin-top: 0; }
+    .form-card {
+      background: #fff;
+      border: 1px solid #dfe1e2;
+      border-radius: 4px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    .step-description {
+      font-size: 0.875rem;
+      color: #71767a;
+      margin-top: 0.25rem;
+    }
+    #progress-section { display: none; }
+    #result-section   { display: none; }
+    #error-section    { display: none; }
+    .step-list {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0 0;
+    }
+    .step-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.9375rem;
+      color: #565c65;
+    }
+    .step-list li:last-child { border-bottom: none; }
+    .step-icon {
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      background: #dfe1e2;
+      color: #565c65;
+    }
+    .step-icon.active   { background: #005ea2; color: #fff; }
+    .step-icon.complete { background: #00a91c; color: #fff; }
+    .how-it-works {
+      background: #f0f0f0;
+      border-radius: 4px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- USWDS Government Banner -->
+<section class="usa-banner" aria-label="Official website of the United States government">
+  <div class="usa-accordion">
+    <header class="usa-banner__header">
+      <div class="usa-banner__inner">
+        <div class="grid-col-auto">
+          <img class="usa-banner__header-flag" src="https://designsystem.digital.gov/assets/img/us_flag_small.png" alt="U.S. flag">
+        </div>
+        <div class="grid-col-fill tablet:grid-col-auto" aria-hidden="true">
+          <p class="usa-banner__header-text">An official website of the United States government</p>
+          <p class="usa-banner__header-action">Here's how you know</p>
+        </div>
+        <button type="button" class="usa-accordion__button usa-banner__button" aria-expanded="false" aria-controls="gov-banner">
+          <span class="usa-banner__button-text">Here's how you know</span>
+        </button>
+      </div>
+    </header>
+    <div class="usa-banner__content usa-accordion__content" id="gov-banner" hidden>
+      <div class="grid-row grid-gap-lg">
+        <div class="usa-banner__guidance tablet:grid-col-6">
+          <img class="usa-banner__icon usa-media-block__img" src="https://designsystem.digital.gov/assets/img/icon-dot-gov.svg" alt="">
+          <div class="usa-media-block__body">
+            <p><strong>Official websites use .gov</strong><br>A <strong>.gov</strong> website belongs to an official government organization in the United States.</p>
+          </div>
+        </div>
+        <div class="usa-banner__guidance tablet:grid-col-6">
+          <img class="usa-banner__icon usa-media-block__img" src="https://designsystem.digital.gov/assets/img/icon-https.svg" alt="">
+          <div class="usa-media-block__body">
+            <p><strong>Secure .gov websites use HTTPS</strong><br>A <strong>lock</strong> or <strong>https://</strong> means you've safely connected to the .gov website.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Hero Header -->
+<div class="evergreen-hero">
+  <div class="grid-container">
+    <div class="usa-prose">
+      <h1>Pre-Deployment AI Evaluation</h1>
+      <p>Test whether your AI system gives safe, accurate answers before you deploy it to the public.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<main id="main-content">
+  <div class="grid-container margin-y-4">
+    <div class="grid-row grid-gap">
+
+      <!-- Form Column -->
+      <div class="grid-col-12 tablet:grid-col-8">
+
+        <!-- Input Form -->
+        <div class="form-card" id="form-section">
+          <h2 class="usa-prose" style="margin-top:0">Run an Evaluation</h2>
+
+          <form id="eval-form" novalidate>
+
+            <div class="usa-form-group">
+              <label class="usa-label" for="description">
+                Evaluation name
+                <span class="usa-hint">e.g. "CO Tax Chatbot — March 2026"</span>
+              </label>
+              <input class="usa-input" id="description" name="description" type="text"
+                     placeholder="My AI Chatbot Eval">
+            </div>
+
+            <div class="usa-form-group">
+              <label class="usa-label" for="sheetUrl">
+                Google Sheet URL <span class="usa-required" aria-hidden="true">*</span>
+                <span class="usa-hint">Paste the full link to your test-case sheet</span>
+              </label>
+              <input class="usa-input" id="sheetUrl" name="sheetUrl" type="url" required
+                     placeholder="https://docs.google.com/spreadsheets/d/…">
+            </div>
+
+            <div class="usa-form-group">
+              <label class="usa-label" for="provider">
+                LLM provider <span class="usa-required" aria-hidden="true">*</span>
+              </label>
+              <select class="usa-select" id="provider" name="provider" required>
+                <option value="">-- Select a provider --</option>
+                <optgroup label="Anthropic">
+                  <option value="anthropic:messages:claude-sonnet-4-20250514">Claude Sonnet 4 (Recommended)</option>
+                  <option value="anthropic:messages:claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                  <option value="anthropic:messages:claude-opus-4-5">Claude Opus 4.5</option>
+                </optgroup>
+                <optgroup label="OpenAI">
+                  <option value="openai:gpt-4o">GPT-4o</option>
+                  <option value="openai:gpt-4o-mini">GPT-4o mini</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="usa-form-group">
+              <label class="usa-label" for="systemPrompt">
+                System prompt
+                <span class="usa-hint">Instructions given to the AI before each question</span>
+              </label>
+              <textarea class="usa-textarea" id="systemPrompt" name="systemPrompt" rows="4"
+                        placeholder="You are a helpful assistant. Answer in plain language at a 6th grade reading level."></textarea>
+            </div>
+
+            <button type="submit" class="usa-button" id="run-btn">Run Evaluation</button>
+
+          </form>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="form-card" id="progress-section">
+          <h2 class="usa-prose" style="margin-top:0">Running evaluation…</h2>
+          <p class="step-description">This usually takes 1–2 minutes. You can leave this page open.</p>
+          <ul class="step-list">
+            <li id="step-1">
+              <span class="step-icon" id="icon-1">1</span>
+              Fetch test cases from Google Sheet
+            </li>
+            <li id="step-2">
+              <span class="step-icon" id="icon-2">2</span>
+              Generate evaluation config
+            </li>
+            <li id="step-3">
+              <span class="step-icon" id="icon-3">3</span>
+              Run AI evaluations
+            </li>
+            <li id="step-4">
+              <span class="step-icon" id="icon-4">4</span>
+              Generate report
+            </li>
+          </ul>
+        </div>
+
+        <!-- Result Section -->
+        <div id="result-section">
+          <div class="usa-alert usa-alert--success" role="alert">
+            <div class="usa-alert__body">
+              <h4 class="usa-alert__heading">Evaluation complete</h4>
+              <p class="usa-alert__text">
+                Your report is ready. <a id="report-link" href="#" class="usa-link">View the report →</a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error Section -->
+        <div id="error-section">
+          <div class="usa-alert usa-alert--error" role="alert">
+            <div class="usa-alert__body">
+              <h4 class="usa-alert__heading">Evaluation failed</h4>
+              <p class="usa-alert__text" id="error-message">An unexpected error occurred.</p>
+            </div>
+          </div>
+          <button class="usa-button usa-button--outline margin-top-2" onclick="resetForm()">Try again</button>
+        </div>
+
+      </div>
+
+      <!-- How it works sidebar -->
+      <div class="grid-col-12 tablet:grid-col-4">
+        <div class="how-it-works">
+          <h3 class="usa-prose" style="margin-top:0; font-size:1rem;">How it works</h3>
+          <ol class="usa-process-list" style="padding-left:0">
+            <li class="usa-process-list__item">
+              <h4 class="usa-process-list__heading">Create a Google Sheet</h4>
+              <p>Add your test cases using the required columns.</p>
+            </li>
+            <li class="usa-process-list__item">
+              <h4 class="usa-process-list__heading">Share the sheet</h4>
+              <p>Set sharing to "Anyone with the link can view."</p>
+            </li>
+            <li class="usa-process-list__item">
+              <h4 class="usa-process-list__heading">Run the evaluation</h4>
+              <p>Paste the URL, choose your AI provider, and click Run.</p>
+            </li>
+            <li class="usa-process-list__item">
+              <h4 class="usa-process-list__heading">Review the report</h4>
+              <p>See pass/fail results across three stakeholder views.</p>
+            </li>
+          </ol>
+
+          <h4 class="usa-prose" style="font-size:0.875rem; margin-bottom:0.5rem;">Required sheet columns</h4>
+          <table class="usa-table usa-table--compact usa-table--borderless" style="font-size:0.8125rem; width:100%">
+            <thead>
+              <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Question</td><td>The user's question</td></tr>
+              <tr><td>Expected Answer</td><td>The expected content</td></tr>
+              <tr><td>Context</td><td>Optional background</td></tr>
+              <tr><td>Check Type</td><td>contains, not-contains…</td></tr>
+              <tr><td>Severity</td><td>critical, high, medium, low</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- USWDS Footer -->
+<footer class="usa-footer usa-footer--slim">
+  <div class="usa-footer__secondary-section">
+    <div class="grid-container">
+      <div class="grid-row grid-gap">
+        <div class="usa-footer__logo grid-row mobile-lg:grid-col-6 mobile-lg:grid-gap-2">
+          <div class="mobile-lg:grid-col-auto">
+            <p class="usa-footer__logo-heading">Evergreen</p>
+          </div>
+        </div>
+        <div class="usa-footer__contact-links mobile-lg:grid-col-6">
+          <p style="font-size:0.8125rem; color:#565c65; margin:0">
+            Powered by <a href="https://www.promptfoo.dev" class="usa-link">Promptfoo</a> under the Apache 2.0 License
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://designsystem.digital.gov/assets/js/uswds.min.js"></script>
+<script>
+  let currentJobId = null;
+  let pollInterval = null;
+
+  document.getElementById('eval-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    submitEval();
+  });
+
+  function submitEval() {
+    const sheetUrl = document.getElementById('sheetUrl').value.trim();
+    const provider = document.getElementById('provider').value;
+
+    if (!sheetUrl) {
+      alert('Please enter a Google Sheet URL.');
+      return;
+    }
+    if (!provider) {
+      alert('Please select an LLM provider.');
+      return;
+    }
+
+    const body = {
+      description:  document.getElementById('description').value.trim(),
+      sheetUrl,
+      provider,
+      systemPrompt: document.getElementById('systemPrompt').value.trim(),
+    };
+
+    document.getElementById('form-section').style.display    = 'none';
+    document.getElementById('progress-section').style.display = 'block';
+    document.getElementById('result-section').style.display  = 'none';
+    document.getElementById('error-section').style.display   = 'none';
+
+    fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) { showError(data.error); return; }
+      currentJobId = data.jobId;
+      pollInterval = setInterval(pollStatus, 2000);
+    })
+    .catch(err => showError(err.message));
+  }
+
+  function pollStatus() {
+    if (!currentJobId) return;
+    fetch('/api/status/' + currentJobId)
+      .then(res => res.json())
+      .then(data => {
+        updateSteps(data.step);
+        if (data.status === 'complete') {
+          clearInterval(pollInterval);
+          showSuccess('/report/' + currentJobId);
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          showError(data.error || 'Evaluation failed.');
+        }
+      })
+      .catch(err => { clearInterval(pollInterval); showError(err.message); });
+  }
+
+  function updateSteps(currentStep) {
+    for (let i = 1; i <= 4; i++) {
+      const icon = document.getElementById('icon-' + i);
+      if (i < currentStep) {
+        icon.className = 'step-icon complete';
+        icon.textContent = '✓';
+      } else if (i === currentStep) {
+        icon.className = 'step-icon active';
+        icon.textContent = String(i);
+      } else {
+        icon.className = 'step-icon';
+        icon.textContent = String(i);
+      }
+    }
+  }
+
+  function showSuccess(reportUrl) {
+    updateSteps(5); // mark all complete
+    document.getElementById('progress-section').style.display = 'none';
+    document.getElementById('result-section').style.display   = 'block';
+    document.getElementById('report-link').href = reportUrl;
+  }
+
+  function showError(msg) {
+    document.getElementById('progress-section').style.display = 'none';
+    document.getElementById('error-section').style.display    = 'block';
+    document.getElementById('error-message').textContent = msg;
+  }
+
+  function resetForm() {
+    clearInterval(pollInterval);
+    currentJobId = null;
+    document.getElementById('form-section').style.display    = 'block';
+    document.getElementById('error-section').style.display   = 'none';
+    document.getElementById('progress-section').style.display = 'none';
+    document.getElementById('result-section').style.display  = 'none';
+  }
+</script>
+</body>
+</html>
