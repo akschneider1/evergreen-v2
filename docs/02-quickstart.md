@@ -30,6 +30,8 @@ The template has five columns:
 | **Check Type** | How to judge the response (`contains`, `llm-rubric`, etc.) |
 | **Severity** | How bad is it if the AI gets this wrong? (`critical`, `high`, `medium`, `low`) |
 
+> **Note:** Row 1 is the header. Row 2 is a pre-filled example row that explains each column — leave it in place, it won't be included in the evaluation. Your test cases start at **row 3**.
+
 See [Writing Test Cases](./03-writing-test-cases.md) for detailed guidance.
 
 ---
@@ -75,8 +77,8 @@ Replace:
 |----------|-----|
 | OpenAI GPT-4o | `openai:gpt-4o` |
 | OpenAI GPT-4o-mini | `openai:gpt-4o-mini` |
-| Anthropic Claude Sonnet | `anthropic:claude-sonnet-4-20250514` |
-| Anthropic Claude Haiku | `anthropic:claude-haiku-4-5-20251001` |
+| Anthropic Claude Sonnet | `anthropic:messages:claude-sonnet-4-20250514` |
+| Anthropic Claude Haiku | `anthropic:messages:claude-haiku-4-5-20251001` |
 
 ---
 
@@ -136,9 +138,17 @@ Step 4/4 — Generating report...
 
 ---
 
-## Step 6: Open the Report
+## Step 6: View the Report
 
-Open `report.html` in your web browser. See [Understanding Results](./04-understanding-results.md) for how to read it.
+Run the report server:
+
+```bash
+npx evergreen serve
+```
+
+Then open **http://localhost:4000** in your browser. Press `Ctrl+C` to stop the server when you're done.
+
+Alternatively, open `report.html` directly in your browser as a file. See [Understanding Results](./04-understanding-results.md) for how to read the report.
 
 ---
 
@@ -149,7 +159,9 @@ Open `report.html` in your web browser. See [Understanding Results](./04-underst
 | "Failed to fetch Google Sheet" | Make sure the sheet is shared as "Anyone with the link can view" |
 | "API key is missing" | Set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in your terminal |
 | "Config file not found" | Make sure `evergreen.yaml` is in the folder where you run the command |
-| "No valid test cases found" | Check your Sheet has the 5 required columns with data starting in row 2 |
+| "No valid test cases found" | Check your Sheet has the 5 required columns with data starting in **row 3** (row 1 = header, row 2 = example) |
+| "Report not found" when running `serve` | Run `npx evergreen run` first to generate the report |
+| Anthropic provider error about unknown model type | Use the `anthropic:messages:` prefix, e.g. `anthropic:messages:claude-sonnet-4-20250514` |
 
 ---
 

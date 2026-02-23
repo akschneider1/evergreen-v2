@@ -12,7 +12,7 @@
 
 ### 1. Create a Google Sheet with test cases
 
-Set up a Google Sheet with these 5 columns (row 1 = header, data starts row 2):
+Set up a Google Sheet with these 5 columns. **Row 1 = header, row 2 = example/instructions (leave as-is), data starts row 3:**
 
 | Question | Expected Answer | Context | Check Type | Severity |
 |----------|----------------|---------|------------|----------|
@@ -42,9 +42,13 @@ export OPENAI_API_KEY=sk-your-key-here
 npx evergreen run
 ```
 
-### 4. Open `report.html` in your browser
+### 4. View the report
 
-That's it. The report shows pass/fail for every test case, highlights critical failures, and gives a deployment recommendation.
+```bash
+npx evergreen serve
+```
+
+Open **http://localhost:4000** in your browser. The report shows pass/fail for every test case, highlights critical failures, and gives a deployment recommendation across three tabs — Summary (leadership), Analysis (operations), and Details (technical).
 
 ---
 
@@ -96,12 +100,12 @@ Google Sheet  →  Evergreen CLI     →  Promptfoo        →  LLM Under Test  
 
 ```
 src/
-├── index.ts          # CLI: npx evergreen run
-├── sheets.ts         # Fetch Google Sheet → parse rows
+├── index.ts          # CLI: npx evergreen run / serve
+├── sheets.ts         # Fetch Google Sheet → parse rows (skips row 2 example row)
 ├── config.ts         # Generate Promptfoo YAML from sheet data
 ├── runner.ts         # Invoke Promptfoo, capture JSON
 ├── mapper.ts         # Promptfoo JSON → report input
-├── types.ts          # Shared types
+├── types.ts          # Shared types + promptfoo output normalizer
 └── report/
     └── generator.ts  # Render HTML report (3 tabs: Summary, Analysis, Details)
 ```

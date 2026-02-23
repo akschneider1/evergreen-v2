@@ -6,6 +6,10 @@ Configuration options, CLI flags, and details for technical implementers.
 
 ## CLI Usage
 
+### `evergreen run`
+
+Fetch test cases, run evaluations, and generate the HTML report.
+
 ```bash
 npx evergreen run [flags]
 ```
@@ -16,10 +20,8 @@ npx evergreen run [flags]
 | `-o`, `--output` | `report.html` | Path for the HTML report output |
 | `-h`, `--help` | — | Show usage information |
 
-### Examples
-
 ```bash
-# Run with defaults (looks for evergreen.yaml in current directory)
+# Run with defaults
 npx evergreen run
 
 # Specify a config file
@@ -27,10 +29,35 @@ npx evergreen run -c examples/co-tax-policy/evergreen.yaml
 
 # Specify output path
 npx evergreen run -o results/my-eval-report.html
-
-# Both
-npx evergreen run -c config/eval.yaml -o reports/latest.html
 ```
+
+### `evergreen serve`
+
+Start a local HTTP server to view the report in a browser.
+
+```bash
+npx evergreen serve [flags]
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-o`, `--output` | `report.html` | Path to the report file to serve |
+| `-p`, `--port` | `4000` | Port to listen on |
+
+```bash
+# Serve the default report on port 4000
+npx evergreen serve
+
+# Serve a specific report file
+npx evergreen serve -o results/my-eval-report.html
+
+# Use a different port
+npx evergreen serve -p 3000
+```
+
+Open **http://localhost:4000** (or your chosen port) in any browser. Press `Ctrl+C` to stop.
+
+> `evergreen serve` requires `report.html` to already exist. Run `evergreen run` first.
 
 ---
 
@@ -95,9 +122,11 @@ Evergreen supports any provider that Promptfoo supports. Common ones:
 | OpenAI GPT-4o | `openai:gpt-4o` |
 | OpenAI GPT-4o-mini | `openai:gpt-4o-mini` |
 | OpenAI GPT-4-turbo | `openai:gpt-4-turbo` |
-| Anthropic Claude 4 Opus | `anthropic:claude-opus-4-20250514` |
-| Anthropic Claude 4 Sonnet | `anthropic:claude-sonnet-4-20250514` |
-| Anthropic Claude 3.5 Haiku | `anthropic:claude-haiku-4-5-20251001` |
+| Anthropic Claude 4 Opus | `anthropic:messages:claude-opus-4-20250514` |
+| Anthropic Claude 4 Sonnet | `anthropic:messages:claude-sonnet-4-20250514` |
+| Anthropic Claude Haiku | `anthropic:messages:claude-haiku-4-5-20251001` |
+
+> **Anthropic note:** The `anthropic:messages:` prefix is required. Using `anthropic:` alone (without `messages:`) will cause a provider error.
 
 See [Promptfoo's provider docs](https://www.promptfoo.dev/docs/providers/) for the full list, including Azure, Google, AWS Bedrock, local models, and custom API endpoints.
 
@@ -105,7 +134,7 @@ See [Promptfoo's provider docs](https://www.promptfoo.dev/docs/providers/) for t
 
 ## Google Sheet Format
 
-The Google Sheet must have these five columns in order, starting at row 1 (header) with data in row 2+:
+The Google Sheet must have these five columns in order. **Row 1 is the header. Row 2 is a pre-filled example row** that explains each column to sheet editors — it is automatically skipped and never used as a test case. **Test cases start at row 3.**
 
 | Column | Name | Required |
 |--------|------|----------|
@@ -202,7 +231,10 @@ For complex grading beyond what `contains` or `llm-rubric` provides, you can wri
 |-------|-------------|-----|
 | Sheet fetch returns 404 | Sheet ID is wrong or sheet isn't shared | Check the URL and sharing settings |
 | Sheet fetch returns HTML instead of CSV | Google returned a login page | Set sheet to "Anyone with the link can view" |
+| Anthropic "unknown model type" error | Missing `messages:` prefix | Use `anthropic:messages:claude-sonnet-4-20250514` |
 | Promptfoo errors about provider | Invalid provider ID or missing API key | Check provider ID spelling and env vars |
 | Promptfoo timeout | LLM provider is slow or unreachable | Check network, try again, or increase timeout |
 | Report shows "(no response)" | LLM returned empty or Promptfoo errored | Check Promptfoo's console output for details |
 | All `llm-rubric` tests fail | No judge provider configured | Set `llmRubricProvider` in config |
+| `evergreen serve` — "Report not found" | `report.html` doesn't exist yet | Run `evergreen run` first to generate it |
+| `evergreen serve` — "address already in use" | Another process is on port 4000 | Use `-p 3001` (or any free port) |
