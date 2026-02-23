@@ -5,8 +5,7 @@
  * expected by the report generator.
  */
 
-import { SheetRow, PromptfooResult } from './types';
-import { EvalResults, TestCaseResult, ProviderResult } from './report/generator';
+import { SheetRow, PromptfooResult, EvalResults, TestCaseResult, ProviderResult } from './types';
 
 /**
  * Map Promptfoo output + original sheet rows into EvalResults for the report.

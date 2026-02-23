@@ -11,35 +11,9 @@
  */
 
 import * as fs from 'fs';
-import * as path from 'path';
 
-// ---------- Public Types ----------
-
-export interface EvalResults {
-  title: string;
-  date: string;
-  providers: string[];
-  testSource: string;
-  testCases: TestCaseResult[];
-}
-
-export interface TestCaseResult {
-  number: number;
-  question: string;
-  expected: string;
-  context: string;
-  checkType: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  /** One entry per provider, in same order as EvalResults.providers */
-  results: ProviderResult[];
-}
-
-export interface ProviderResult {
-  provider: string;
-  response: string;
-  passed: boolean;
-  gradingReason: string;
-}
+import { EvalResults, TestCaseResult, ProviderResult } from '../types';
+export type { EvalResults, TestCaseResult, ProviderResult };
 
 // ---------- Internal Derived Types ----------
 
@@ -506,7 +480,7 @@ function renderHtml(data: ReportData): string {
     `).join('');
 
     return `
-      <tbody class="test-case-group" data-severity="${tc.severity}" data-passed="${!tc.anyFailed}" onclick="toggleRow(${tc.number})">
+      <tbody class="test-case-group" data-severity="${tc.severity}" data-passed="${!tc.anyFailed}" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-${tc.number}" onclick="toggleRow(${tc.number})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(${tc.number})}">
         <tr class="main-row ${tc.anyFailed ? 'fail-row' : 'pass-row'}">
           <td class="tc-num">${tc.number}</td>
           <td class="tc-question">${esc(tc.question)}</td>
@@ -1326,6 +1300,9 @@ table.data-table, table.detail-table {
     if (!detail) return;
     var isOpen = detail.classList.toggle('open');
     if (chevron) chevron.classList.toggle('open', isOpen);
+    // Update ARIA state on parent tbody
+    var tbody = detail.closest('.test-case-group');
+    if (tbody) tbody.setAttribute('aria-expanded', String(isOpen));
   }
   window.toggleRow = toggleRow;
 
@@ -1336,6 +1313,7 @@ table.data-table, table.detail-table {
 
   // ── Details filter ──
   var currentFilter = 'all';
+  var severityLevels = ['critical', 'high', 'medium', 'low'];
   function applyFilter(filter) {
     currentFilter = filter;
     document.querySelectorAll('.filter-btn').forEach(function(btn) {
@@ -1343,6 +1321,7 @@ table.data-table, table.detail-table {
       btn.classList.toggle('active', isActive);
       btn.classList.toggle('usa-button--outline', !isActive);
     });
+    var isSeverityFilter = severityLevels.indexOf(filter) !== -1;
     var total = 0, visible = 0;
     document.querySelectorAll('.test-case-group').forEach(function(group) {
       total++;
@@ -1350,7 +1329,7 @@ table.data-table, table.detail-table {
       var passed = group.dataset.passed === 'true';
       var show = true;
       if (filter === 'failures' && passed) show = false;
-      if (filter === 'critical' && sev !== 'critical') show = false;
+      else if (isSeverityFilter && sev !== filter) show = false;
       group.style.display = show ? '' : 'none';
       if (show) visible++;
     });
@@ -1364,11 +1343,7 @@ table.data-table, table.detail-table {
   // ── Severity row click → Details tab with filter ──
   function gotoSeverity(sev) {
     activateTab('details');
-    if (sev === 'critical') {
-      applyFilter('critical');
-    } else {
-      applyFilter('all');
-    }
+    applyFilter(sev);
   }
   window.gotoSeverity = gotoSeverity;
 

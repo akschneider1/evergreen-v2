@@ -66,7 +66,7 @@ export async function fetchSheet(sheetId: string, gid = '0'): Promise<SheetRow[]
  * First row is treated as a header and skipped.
  */
 export function parseCsv(csv: string): SheetRow[] {
-  const lines = csv.split('\n');
+  const lines = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   if (lines.length < 2) {
     throw new Error('Sheet appears empty — expected a header row plus at least one test case.');
   }
