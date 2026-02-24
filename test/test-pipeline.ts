@@ -115,8 +115,8 @@ function testConfigGeneration(): void {
   assert(pfConfig.providers.length === 1, 'Should have 1 provider');
   assert(pfConfig.tests.length === 6, `Should have 6 tests, got ${pfConfig.tests.length}`);
 
-  // Accuracy → contains assertion
-  assert(pfConfig.tests[0].assert[0].type === 'contains', 'Test 1 (Accuracy) assertion type');
+  // Accuracy → icontains assertion (case-insensitive)
+  assert(pfConfig.tests[0].assert[0].type === 'icontains', 'Test 1 (Accuracy) assertion type');
   assert(pfConfig.tests[0].assert[0].value === '4.4%', 'Test 1 assertion value');
 
   // Safety → llm-rubric with negation rubric
@@ -125,7 +125,7 @@ function testConfigGeneration(): void {
 
   // Accuracy with comma-separated → multiple contains assertions
   assert(pfConfig.tests[2].assert.length === 3, `Accuracy comma-list should split to 3 assertions, got ${pfConfig.tests[2].assert.length}`);
-  assert(pfConfig.tests[2].assert[0].type === 'contains', 'Accuracy sub-assertion type');
+  assert(pfConfig.tests[2].assert[0].type === 'icontains', 'Accuracy sub-assertion type');
   assert(pfConfig.tests[2].assert[0].value === 'Revenue Online', 'Accuracy first value');
 
   // Effectiveness → llm-rubric, context prepended to question

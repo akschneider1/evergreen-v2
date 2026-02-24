@@ -95,6 +95,9 @@ interface TestCaseView {
 
 // ---------- Helpers ----------
 
+/** Minimum pass rate (%) to be considered deployment-ready. */
+const PASS_RATE_THRESHOLD = 80;
+
 const METRIC_LABELS: Record<EvalMetric, string> = {
   'safety':        'Safety',
   'accuracy':      'Accuracy',
@@ -197,10 +200,10 @@ function deriveReportData(input: EvalResults): ReportData {
       'Re-run the evaluation to confirm the fixes',
       'Escalate to technical staff if the issue requires model or retrieval changes',
     ];
-  } else if (bestPassRate < 80) {
+  } else if (bestPassRate < PASS_RATE_THRESHOLD) {
     readinessClass = 'caution';
     readinessLabel = 'Needs Improvement';
-    readinessExplanation = `No critical failures were found, but the overall pass rate (${bestPassRate}%) is below the 80% threshold. The system needs tuning before deployment.`;
+    readinessExplanation = `No critical failures were found, but the overall pass rate (${bestPassRate}%) is below the ${PASS_RATE_THRESHOLD}% threshold. The system needs tuning before deployment.`;
     nextSteps = [
       'Open the Analysis tab to identify which dimensions are weakest',
       'Open the Details tab to review individual failing test cases',
@@ -239,14 +242,14 @@ function deriveReportData(input: EvalResults): ReportData {
         passRate: rate,
         passedCount: d.passed,
         totalCount: d.total,
-        barColor: rate >= 80 ? 'green' : rate >= 60 ? 'yellow' : 'red',
+        barColor: rate >= PASS_RATE_THRESHOLD ? 'green' : rate >= 60 ? 'yellow' : 'red',
       };
     });
 
   let patternNote = '';
   if (dimensions.length > 0) {
     const lowest = dimensions.reduce((a, b) => a.passRate < b.passRate ? a : b);
-    if (lowest.passRate < 80) {
+    if (lowest.passRate < PASS_RATE_THRESHOLD) {
       patternNote = `Weakest area: <strong>${esc(lowest.name)}</strong> (${lowest.passedCount}/${lowest.totalCount} tests passing). Focus system prompt improvements here first, then re-run the evaluation.`;
     }
   }

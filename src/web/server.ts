@@ -36,6 +36,24 @@ const jobs = new Map<string, Job>();
 const JOB_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const MAX_CONCURRENT_JOBS = 3;
 
+// ── Rate limiting ──
+
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX = 10;              // requests per window per IP
+
+const rateCounts = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateCounts.get(ip);
+  if (!entry || now >= entry.resetAt) {
+    rateCounts.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  entry.count++;
+  return entry.count > RATE_LIMIT_MAX;
+}
+
 /** Remove completed/errored jobs older than JOB_TTL_MS to prevent memory leaks. */
 function pruneStaleJobs(): void {
   const now = Date.now();
@@ -141,6 +159,12 @@ export function createApp(): express.Application {
 
   // Start eval job
   app.post('/api/run', (req, res) => {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    if (isRateLimited(ip)) {
+      res.status(429).json({ error: 'Too many requests. Please wait a minute before trying again.' });
+      return;
+    }
+
     const body = req.body;
 
     // Validate that required fields are present and are strings

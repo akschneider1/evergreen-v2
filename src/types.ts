@@ -25,6 +25,7 @@ export type EvalMetric =
 /** Internal Promptfoo assertion types — not exposed to test makers */
 export type CheckType =
   | 'contains'
+  | 'icontains'
   | 'not-contains'
   | 'contains-all'
   | 'regex'
@@ -56,6 +57,7 @@ export interface PromptfooConfig {
   prompts: string[];
   providers: PromptfooProvider[];
   tests: PromptfooTest[];
+  defaultTest?: { options?: { provider?: string } };
   outputPath: string;
 }
 

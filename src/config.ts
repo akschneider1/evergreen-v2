@@ -56,11 +56,16 @@ export function buildPromptfooConfig(
     return test;
   });
 
+  // Use the configured llmRubricProvider or fall back to the first provider
+  // so llm-rubric assertions use a known, consistent grading model.
+  const gradingProvider = config.llmRubricProvider || config.providers[0]?.id;
+
   return {
     description: config.description,
     prompts: ['{{question}}'],
     providers,
     tests,
+    ...(gradingProvider ? { defaultTest: { options: { provider: gradingProvider } } } : {}),
     outputPath: config.outputPath || './results.json',
   };
 }
@@ -83,9 +88,9 @@ function metricToAssertions(
       if (whatToCheck.startsWith('regex:')) {
         return [{ type: 'regex', value: whatToCheck.slice('regex:'.length).trim() }];
       }
-      // Comma-separated list → multiple contains assertions
+      // Comma-separated list → case-insensitive contains assertions
       return whatToCheck.split(',').map(item => ({
-        type: 'contains',
+        type: 'icontains',
         value: item.trim(),
       }));
 

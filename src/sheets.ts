@@ -29,7 +29,14 @@ const VALID_SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low'];
  */
 export function extractSheetId(input: string): string {
   const match = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
-  return match ? match[1] : input.trim();
+  if (match) return match[1];
+  // Bare ID must be at least 20 alphanumeric/dash/underscore characters
+  const bare = input.trim();
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(bare)) return bare;
+  throw new Error(
+    'Could not find a valid Google Sheet ID. Make sure you pasted the full URL from your browser ' +
+    '(e.g. https://docs.google.com/spreadsheets/d/…).'
+  );
 }
 
 /**
@@ -107,6 +114,12 @@ export function parseCsv(csv: string): SheetRow[] {
 
     const metric = normalizeMetric(rawMetric.trim().toLowerCase(), i + 1);
     const severity = normalizeSeverity(rawSeverity.trim().toLowerCase(), i + 1);
+
+    // Accuracy tests require a non-empty "What to check" field
+    if (metric === 'accuracy' && !expectedAnswer.trim()) {
+      console.warn(`Row ${i + 1}: accuracy test is missing "What to check" — skipping. Add the expected keywords or facts.`);
+      continue;
+    }
 
     rows.push({
       question: question.trim(),

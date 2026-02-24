@@ -59,6 +59,26 @@
     .usa-step-indicator__segments { margin-bottom: 1rem; }
     /* Give the Run button a clear top margin */
     #run-btn { margin-top: 1.5rem; }
+    /* Spinner for step 3 */
+    .step-spinner {
+      display: none;
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      color: #71767a;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .step-spinner.active { display: flex; }
+    .step-spinner::before {
+      content: '';
+      width: 16px; height: 16px;
+      border: 2px solid #dfe1e2;
+      border-top-color: #005ea2;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -140,6 +160,7 @@
               <span class="usa-error-message" id="sheetUrl-error" role="alert" style="display:none">Please enter a Google Sheet URL.</span>
               <input class="usa-input" id="sheetUrl" name="sheetUrl" type="url"
                      placeholder="https://docs.google.com/spreadsheets/d/…"
+                     required
                      aria-describedby="sheetUrl-error"
                      onblur="validateSheetUrlField()">
             </div>
@@ -150,7 +171,7 @@
                 <span class="usa-hint">Choose a pre-built evaluation for your use case</span>
               </label>
               <span class="usa-error-message" id="presetId-error" role="alert" style="display:none">Please select a test suite.</span>
-              <select class="usa-select" id="presetId" name="presetId">
+              <select class="usa-select" id="presetId" name="presetId" required aria-describedby="presetId-error">
                 <option value="">-- Select a test suite --</option>
                 <option value="wheres-my-refund">Where's My Refund</option>
                 <option value="benefits-eligibility">Benefits Eligibility Checker</option>
@@ -165,7 +186,7 @@
                 LLM provider <span class="usa-required" aria-hidden="true">*</span>
               </label>
               <span class="usa-error-message" id="provider-error" role="alert" style="display:none">Please select an LLM provider.</span>
-              <select class="usa-select" id="provider" name="provider" required>
+              <select class="usa-select" id="provider" name="provider" required aria-describedby="provider-error">
                 <option value="">-- Select a provider --</option>
                 <optgroup label="Anthropic">
                   <option value="anthropic:messages:claude-sonnet-4-20250514">Claude Sonnet 4 (Recommended)</option>
@@ -185,7 +206,7 @@
                 <span class="usa-hint">Choose what you are evaluating today</span>
               </label>
               <span class="usa-error-message" id="aiUseCase-error" role="alert" style="display:none">Please select an approved use case.</span>
-              <select class="usa-select" id="aiUseCase" name="aiUseCase" required onchange="handleUseCaseChange()">
+              <select class="usa-select" id="aiUseCase" name="aiUseCase" required aria-describedby="aiUseCase-error" onchange="handleUseCaseChange()">
                 <option value="">-- Select a use case --</option>
                 <option value="Helps residents look up the status of their state tax refund">Where's My Refund</option>
                 <option value="Helps residents determine eligibility for public assistance programs">Benefits Eligibility Checker</option>
@@ -241,6 +262,7 @@
               </h4>
             </div>
           </div>
+          <div class="step-spinner" id="step-spinner">Running test cases against the LLM — this is the longest step…</div>
         </div>
 
         <!-- Error Section -->
@@ -467,8 +489,10 @@
     }
     const currentStepEl = document.getElementById('step-current');
     const headingTextEl = document.getElementById('step-heading-text');
+    const spinnerEl = document.getElementById('step-spinner');
     if (currentStepEl) currentStepEl.textContent = String(Math.min(currentStep, 4));
     if (headingTextEl) headingTextEl.textContent = stepNames[Math.min(currentStep, 4) - 1] || '';
+    if (spinnerEl) spinnerEl.classList.toggle('active', currentStep === 3);
   }
 
   function showSuccess(reportUrl) {
