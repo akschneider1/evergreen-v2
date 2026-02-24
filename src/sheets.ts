@@ -45,20 +45,30 @@ export async function fetchSheet(sheetId: string, gid = '0'): Promise<SheetRow[]
   let res: Response;
   try {
     res = await fetch(url);
-  } catch (err) {
-    const detail = err instanceof Error ? err.message : String(err);
+  } catch {
     throw new Error(
-      `Could not connect to Google Sheets. Check your internet connection.\n` +
-      `  Sheet ID: ${sheetId}\n` +
-      `  Details: ${detail}`
+      `Can't reach Google Sheets. Check your internet connection and try again. ` +
+      `If the problem persists, the sheet URL might be incorrect.`
+    );
+  }
+
+  if (res.status === 404) {
+    throw new Error(
+      `Google Sheet not found. Check that the URL is correct and the sheet hasn't been deleted.`
+    );
+  }
+
+  if (res.status === 403 || res.status === 401) {
+    throw new Error(
+      `Google Sheet is not accessible. Make sure the sheet is shared — ` +
+      `open the sheet, click Share, and set it to "Anyone with the link can view."`
     );
   }
 
   if (!res.ok) {
     throw new Error(
-      `Failed to fetch Google Sheet (HTTP ${res.status}). ` +
-      `Make sure the sheet is shared as "Anyone with the link can view." ` +
-      `Sheet ID: ${sheetId}`
+      `Something went wrong when loading your Google Sheet. ` +
+      `Check that the URL is correct and the sheet is shared as "Anyone with the link can view," then try again.`
     );
   }
 
@@ -74,7 +84,7 @@ export async function fetchSheet(sheetId: string, gid = '0'): Promise<SheetRow[]
 export function parseCsv(csv: string): SheetRow[] {
   const lines = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   if (lines.length < 2) {
-    throw new Error('Sheet appears empty — expected a header row plus at least one test case.');
+    throw new Error('Your sheet appears to be empty. Make sure it has a header row and at least one test case below it.');
   }
 
   const rows: SheetRow[] = [];
@@ -108,7 +118,10 @@ export function parseCsv(csv: string): SheetRow[] {
   }
 
   if (rows.length === 0) {
-    throw new Error('No valid test cases found in the sheet. Check that columns are: Question, What to check, Context, Metric, Severity');
+    throw new Error(
+      'No test cases found in your sheet. Make sure your columns are: ' +
+      'Question, What to check, Context, Metric, Severity — and that data starts on row 3 (row 1 is the header, row 2 is the example).'
+    );
   }
 
   return rows;

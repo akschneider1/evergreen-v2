@@ -34,6 +34,7 @@ interface Job {
 const jobs = new Map<string, Job>();
 
 const JOB_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const MAX_CONCURRENT_JOBS = 3;
 
 /** Remove completed/errored jobs older than JOB_TTL_MS to prevent memory leaks. */
 function pruneStaleJobs(): void {
@@ -43,6 +44,14 @@ function pruneStaleJobs(): void {
       jobs.delete(id);
     }
   }
+}
+
+function countRunningJobs(): number {
+  let count = 0;
+  for (const job of jobs.values()) {
+    if (job.status === 'running') count++;
+  }
+  return count;
 }
 
 function newJobId(): string {
@@ -67,7 +76,7 @@ async function runPipeline(
 
     if (body.presetId) {
       const preset = getPreset(body.presetId);
-      if (!preset) throw new Error(`Unknown preset: "${body.presetId}"`);
+      if (!preset) throw new Error(`The selected test suite could not be found. Try selecting a different suite.`);
       rows = preset.rows;
       systemPrompt = preset.systemPrompt;
       testSource = `Built-in: ${preset.name}`;
@@ -120,7 +129,7 @@ async function runPipeline(
 
 export function createApp(): express.Application {
   const app = express();
-  app.use(express.json());
+  app.use(express.json({ limit: '100kb' }));
 
   // USWDS static assets (self-hosted to avoid CDN dependency)
   app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
@@ -141,16 +150,37 @@ export function createApp(): express.Application {
     const description = typeof body?.description === 'string' ? body.description.trim() : '';
     const aiDescription = typeof body?.aiDescription === 'string' ? body.aiDescription.trim() : '';
 
+    // Input length bounds
+    if (description.length > 200) {
+      res.status(400).json({ error: 'Evaluation name is too long (200 characters max).' });
+      return;
+    }
+    if (aiDescription.length > 500) {
+      res.status(400).json({ error: 'AI description is too long (500 characters max).' });
+      return;
+    }
+    if (sheetUrl.length > 500) {
+      res.status(400).json({ error: 'Sheet URL is too long. Copy the URL directly from your browser.' });
+      return;
+    }
+
     if (!presetId && !sheetUrl) {
-      res.status(400).json({ error: 'Either sheetUrl or presetId is required' });
+      res.status(400).json({ error: 'Please provide a Google Sheet URL or select a built-in test suite.' });
       return;
     }
     if (!provider) {
-      res.status(400).json({ error: 'provider is required' });
+      res.status(400).json({ error: 'Please select an LLM provider.' });
       return;
     }
 
     pruneStaleJobs();
+
+    if (countRunningJobs() >= MAX_CONCURRENT_JOBS) {
+      res.status(429).json({
+        error: `The server is busy — ${MAX_CONCURRENT_JOBS} evaluations are already running. Please wait a minute and try again.`,
+      });
+      return;
+    }
 
     const jobId = newJobId();
     jobs.set(jobId, { step: 0, status: 'running', createdAt: Date.now() });

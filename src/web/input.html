@@ -139,7 +139,9 @@
               </label>
               <span class="usa-error-message" id="sheetUrl-error" role="alert" style="display:none">Please enter a Google Sheet URL.</span>
               <input class="usa-input" id="sheetUrl" name="sheetUrl" type="url"
-                     placeholder="https://docs.google.com/spreadsheets/d/…">
+                     placeholder="https://docs.google.com/spreadsheets/d/…"
+                     aria-describedby="sheetUrl-error"
+                     onblur="validateSheetUrlField()">
             </div>
 
             <div class="usa-form-group" id="presetId-group" style="display:none">
@@ -331,6 +333,33 @@
     document.getElementById(id).classList.add('usa-input--error');
   }
 
+  function clearFieldError(id) {
+    var grp = document.getElementById(id + '-group');
+    var err = document.getElementById(id + '-error');
+    var inp = document.getElementById(id);
+    if (grp) grp.classList.remove('usa-form-group--error');
+    if (err) err.style.display = 'none';
+    if (inp) inp.classList.remove('usa-input--error');
+  }
+
+  function showFieldErrorMsg(id, msg) {
+    var errEl = document.getElementById(id + '-error');
+    if (errEl && msg) errEl.textContent = msg;
+    showFieldError(id);
+  }
+
+  function validateSheetUrlField() {
+    var val = document.getElementById('sheetUrl').value.trim();
+    if (!val) { clearFieldError('sheetUrl'); return; }
+    if (!val.includes('docs.google.com/spreadsheets')) {
+      showFieldErrorMsg('sheetUrl', "That doesn't look like a Google Sheet URL. Copy the full link from your browser.");
+    } else if (!/\/spreadsheets\/d\/[a-zA-Z0-9_-]+/.test(val)) {
+      showFieldErrorMsg('sheetUrl', 'The URL seems incomplete. Make sure you copied the entire link.');
+    } else {
+      clearFieldError('sheetUrl');
+    }
+  }
+
   function handleDataSourceChange() {
     var isPreset = document.getElementById('dataSource-preset').checked;
     document.getElementById('sheetUrl-group').style.display    = isPreset ? 'none'  : 'block';
@@ -352,8 +381,12 @@
         valid = false;
       }
     } else {
-      if (!document.getElementById('sheetUrl').value.trim()) {
-        showFieldError('sheetUrl');
+      var sheetVal = document.getElementById('sheetUrl').value.trim();
+      if (!sheetVal) {
+        showFieldErrorMsg('sheetUrl', 'Please enter a Google Sheet URL.');
+        valid = false;
+      } else if (!sheetVal.includes('docs.google.com/spreadsheets') || !/\/spreadsheets\/d\/[a-zA-Z0-9_-]+/.test(sheetVal)) {
+        showFieldErrorMsg('sheetUrl', "That doesn't look like a valid Google Sheet URL. Copy the full link from your browser.");
         valid = false;
       }
       if (!document.getElementById('aiUseCase').value) {

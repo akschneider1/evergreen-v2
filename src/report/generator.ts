@@ -1100,6 +1100,30 @@ table.data-table, table.detail-table {
 .fail   { color: var(--fail); }
 .neutral{ color: var(--neutral); }
 
+/* ── Mobile responsive tables ── */
+@media (max-width: 768px) {
+  .detail-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .detail-table { min-width: 600px; }
+  .detail-table th, .detail-table td { padding: 8px 10px; font-size: 12px; }
+  .tc-question { max-width: 200px; }
+  .data-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .cf-comparison { grid-template-columns: 1fr; }
+  .bar-track { width: 120px; }
+  .exp-grading { min-width: 200px; max-width: 260px; }
+}
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .bar-row { grid-template-columns: 1fr; gap: 4px; }
+  .bar-track { width: 100%; }
+  .bar-pct { text-align: left; width: auto; }
+  .tab-btn { padding: 10px 14px; font-size: 13px; }
+  .readiness-hero { padding: 20px 16px; }
+  .rh-status { font-size: 18px; }
+  .rh-explanation { font-size: 14px; }
+  .card { padding: 1.25rem; }
+}
+
 /* ── Print ── */
 @media print {
   .tab-nav { position: static; box-shadow: none; }
@@ -1178,12 +1202,12 @@ table.data-table, table.detail-table {
     <ul class="rh-steps">${nextStepsHtml}</ul>
   </div>
 
+  ${criticalFailuresHtml}
+
   <div class="stats-grid">
     ${providerStatCardsHtml}
     ${criticalCardHtml}
   </div>
-
-  ${criticalFailuresHtml}
 
 </div>
 </section>

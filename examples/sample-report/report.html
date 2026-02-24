@@ -594,6 +594,30 @@ table.data-table, table.detail-table {
 .fail   { color: var(--fail); }
 .neutral{ color: var(--neutral); }
 
+/* ── Mobile responsive tables ── */
+@media (max-width: 768px) {
+  .detail-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .detail-table { min-width: 600px; }
+  .detail-table th, .detail-table td { padding: 8px 10px; font-size: 12px; }
+  .tc-question { max-width: 200px; }
+  .data-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .cf-comparison { grid-template-columns: 1fr; }
+  .bar-track { width: 120px; }
+  .exp-grading { min-width: 200px; max-width: 260px; }
+}
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .bar-row { grid-template-columns: 1fr; gap: 4px; }
+  .bar-track { width: 100%; }
+  .bar-pct { text-align: left; width: auto; }
+  .tab-btn { padding: 10px 14px; font-size: 13px; }
+  .readiness-hero { padding: 20px 16px; }
+  .rh-status { font-size: 18px; }
+  .rh-explanation { font-size: 14px; }
+  .card { padding: 1.25rem; }
+}
+
 /* ── Print ── */
 @media print {
   .tab-nav { position: static; box-shadow: none; }
@@ -672,28 +696,6 @@ table.data-table, table.detail-table {
     <ul class="rh-steps"><li>Review each critical failure below and identify the root cause</li><li>Update the system prompt or knowledge base to address the gaps</li><li>Re-run the evaluation to confirm the fixes</li><li>Escalate to technical staff if the issue requires model or retrieval changes</li></ul>
   </div>
 
-  <div class="stats-grid">
-    
-    <div class="stat-card">
-      <div class="stat-value neutral">83%</div>
-      <div class="stat-fraction">5 of 6 tests</div>
-      <div class="stat-label">GPT-4o</div>
-    </div>
-  
-    
-    <div class="stat-card">
-      <div class="stat-value fail">1</div>
-      <div class="stat-fraction">2 critical tests run</div>
-      <div class="stat-label">Critical failures</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value neutral">6</div>
-      <div class="stat-fraction">1 failed, 5 passed</div>
-      <div class="stat-label">Total test cases</div>
-    </div>
-  
-  </div>
-
   
     <div class="card">
       <h2 class="card-title">
@@ -722,6 +724,28 @@ table.data-table, table.detail-table {
       
     </div>
   
+
+  <div class="stats-grid">
+    
+    <div class="stat-card">
+      <div class="stat-value neutral">83%</div>
+      <div class="stat-fraction">5 of 6 tests</div>
+      <div class="stat-label">GPT-4o</div>
+    </div>
+  
+    
+    <div class="stat-card">
+      <div class="stat-value fail">1</div>
+      <div class="stat-fraction">2 critical tests run</div>
+      <div class="stat-label">Critical failures</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value neutral">6</div>
+      <div class="stat-fraction">1 failed, 5 passed</div>
+      <div class="stat-label">Total test cases</div>
+    </div>
+  
+  </div>
 
 </div>
 </section>
@@ -1120,7 +1144,7 @@ table.data-table, table.detail-table {
     <span><strong>Framework:</strong> Evergreen 4-Dimension Eval</span>
     <span><strong>Test Source:</strong> Google Sheets</span>
     <span><strong>Metrics:</strong> Safety, Accuracy, Ease of Use, Effectiveness, Emotion</span>
-    <span><strong>Generated:</strong> 2026-02-24T00:27:07.975Z</span>
+    <span><strong>Generated:</strong> 2026-02-24T03:26:10.137Z</span>
   </div>
 </footer>
 

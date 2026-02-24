@@ -12,6 +12,31 @@ import * as path from 'path';
 import { PromptfooOutput } from './types';
 
 /**
+ * Validate that parsed JSON has the shape of a PromptfooOutput before we use it.
+ * Throws a descriptive error if the structure is wrong.
+ */
+function validatePromptfooOutput(parsed: unknown): PromptfooOutput {
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new Error('Promptfoo output is not a valid JSON object.');
+  }
+  const obj = parsed as Record<string, unknown>;
+  // New format: { evalId, results: { results: [...], stats: {...} } }
+  // Old format: { results: [...], stats: {...} }
+  if (!('results' in obj)) {
+    throw new Error('Promptfoo output is missing the "results" field. The evaluation may not have completed.');
+  }
+  if (obj.evalId && typeof obj.results === 'object' && !Array.isArray(obj.results)) {
+    const wrapper = obj.results as Record<string, unknown>;
+    if (!Array.isArray(wrapper.results)) {
+      throw new Error('Promptfoo output has an unexpected format — nested results is not an array.');
+    }
+  } else if (!Array.isArray(obj.results)) {
+    throw new Error('Promptfoo output has an unexpected format — results is not an array.');
+  }
+  return parsed as PromptfooOutput;
+}
+
+/**
  * Run Promptfoo eval against the generated config.
  *
  * @param configPath   Path to the Promptfoo YAML config
@@ -59,20 +84,19 @@ export function runPromptfoo(configPath: string, outputPath: string): PromptfooO
     // file wasn't produced.
     if (!fs.existsSync(absOutput)) {
       try { fs.rmSync(pfTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
-      const msg = err instanceof Error ? err.message : String(err);
       throw new Error(
-        `Promptfoo eval failed. This usually means:\n` +
-        `  - An API key is missing (set OPENAI_API_KEY or ANTHROPIC_API_KEY)\n` +
-        `  - The provider ID in your config is wrong\n` +
-        `  - Network issues connecting to the LLM provider\n\n` +
-        `Details: ${msg}`
+        `The evaluation could not complete. Common causes:\n` +
+        `  • Missing API key — make sure OPENAI_API_KEY or ANTHROPIC_API_KEY is set\n` +
+        `  • Wrong provider — check that the selected LLM provider is correct\n` +
+        `  • Network issue — check your internet connection\n` +
+        `Try again, or contact your technical team if the problem continues.`
       );
     }
   }
 
   const raw = fs.readFileSync(absOutput, 'utf-8');
   try { fs.rmSync(pfTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
-  return JSON.parse(raw) as PromptfooOutput;
+  return validatePromptfooOutput(JSON.parse(raw));
 }
 
 /**
@@ -105,14 +129,18 @@ export function runPromptfooAsync(configPath: string, outputPath: string): Promi
         try { fs.rmSync(pfTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
         if (err && !fs.existsSync(absOutput)) {
           reject(new Error(
-            `Promptfoo eval failed. Check API keys and provider config.\n\nDetails: ${err.message}`
+            `The evaluation could not complete. This usually means an API key is missing or the LLM provider couldn't be reached. ` +
+            `Check your settings and try again.`
           ));
           return;
         }
         try {
-          resolve(JSON.parse(fs.readFileSync(absOutput, 'utf-8')) as PromptfooOutput);
+          resolve(validatePromptfooOutput(JSON.parse(fs.readFileSync(absOutput, 'utf-8'))));
         } catch (readErr) {
-          reject(readErr);
+          reject(new Error(
+            `Could not read the evaluation results. The output file may be corrupted.\n` +
+            `Details: ${readErr instanceof Error ? readErr.message : String(readErr)}`
+          ));
         }
       },
     );
