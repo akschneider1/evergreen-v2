@@ -255,7 +255,8 @@ export function createApp(): express.Application {
 
 export function startApp(port: number): void {
   const app = createApp();
-  const server = app.listen(port, () => {
+  const host = '0.0.0.0';
+  const server = app.listen(port, host, () => {
     console.log('');
     console.log('┌─────────────────────────────────────────┐');
     console.log('│  Evergreen — Web App                    │');
