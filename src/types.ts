@@ -11,10 +11,18 @@ export interface SheetRow {
   question: string;
   expectedAnswer: string;
   context: string;
-  checkType: CheckType;
+  metric: EvalMetric;
   severity: Severity;
 }
 
+export type EvalMetric =
+  | 'safety'
+  | 'accuracy'
+  | 'ease-of-use'
+  | 'effectiveness'
+  | 'emotion';
+
+/** Internal Promptfoo assertion types — not exposed to test makers */
 export type CheckType =
   | 'contains'
   | 'not-contains'
@@ -139,7 +147,7 @@ export interface TestCaseResult {
   question: string;
   expected: string;
   context: string;
-  checkType: string;
+  metric: EvalMetric;
   severity: 'critical' | 'high' | 'medium' | 'low';
   /** One entry per provider, in same order as EvalResults.providers */
   results: ProviderResult[];

@@ -12,7 +12,7 @@
 
 import * as fs from 'fs';
 
-import { EvalResults, TestCaseResult, ProviderResult } from '../types';
+import { EvalResults, EvalMetric, TestCaseResult, ProviderResult } from '../types';
 export type { EvalResults, TestCaseResult, ProviderResult };
 
 // ---------- Internal Derived Types ----------
@@ -79,8 +79,8 @@ interface TestCaseView {
   number: number;
   question: string;
   severity: string;
-  checkType: string;
-  checkTypeLabel: string;
+  metric: EvalMetric;
+  metricLabel: string;
   expected: string;
   anyFailed: boolean;
   results: {
@@ -95,41 +95,46 @@ interface TestCaseView {
 
 // ---------- Helpers ----------
 
-function checkTypeLabel(ct: string): string {
-  const labels: Record<string, string> = {
-    'contains': 'Contains',
-    'not-contains': 'Not Contains',
-    'contains-all': 'Contains All',
-    'regex': 'Regex',
-    'llm-rubric': 'LLM Rubric',
-  };
-  return labels[ct] || ct;
-}
+const METRIC_LABELS: Record<EvalMetric, string> = {
+  'safety':        'Safety',
+  'accuracy':      'Accuracy',
+  'ease-of-use':   'Ease of Use',
+  'effectiveness': 'Effectiveness',
+  'emotion':       'Emotion',
+};
+
+const METRIC_FAILURE_NOTES: Record<EvalMetric, string> = {
+  'safety':        'Responses contained potentially harmful content',
+  'accuracy':      'Responses contained incorrect factual information',
+  'ease-of-use':   'Responses were difficult for non-experts to understand',
+  'effectiveness': 'Responses did not effectively help users accomplish their goal',
+  'emotion':       'Responses did not treat users with appropriate respect',
+};
+
+const METRIC_ORDER: EvalMetric[] = [
+  'safety', 'accuracy', 'ease-of-use', 'effectiveness', 'emotion',
+];
 
 function deriveImpact(tc: TestCaseResult): string {
-  if (tc.checkType === 'not-contains') return 'Potentially harmful misinformation could reach users';
-  if (tc.checkType === 'contains' || tc.checkType === 'regex') return 'Users may receive incorrect factual information';
-  return 'Users may not receive the guidance they need';
+  const impacts: Record<EvalMetric, string> = {
+    'safety':        'Response may contain harmful or dangerous misinformation',
+    'accuracy':      'Users may receive incorrect factual information',
+    'effectiveness': 'Users may not receive the guidance they need for their specific situation',
+    'ease-of-use':   'Users may not be able to understand or act on the response',
+    'emotion':       'Users may feel disrespected or unsupported',
+  };
+  return impacts[tc.metric] || 'Users may be negatively affected';
 }
 
-function enhanceGrading(gradingReason: string, passed: boolean, checkType: string, expected: string): string {
+function enhanceGrading(gradingReason: string, passed: boolean, metric: EvalMetric, expected: string): string {
   if (gradingReason !== 'Assertion failed' && gradingReason !== 'Assertion passed') {
-    return gradingReason;
+    return gradingReason; // LLM judge already provided a specific reason
   }
+  // Only Accuracy uses hard matching — provide a helpful fallback message
   const snippet = expected.length > 80 ? expected.slice(0, 80) + '…' : expected;
-  if (checkType === 'not-contains') {
-    return passed
-      ? 'Response correctly does not contain the flagged text'
-      : `Response contains text it should not: "${snippet}"`;
-  }
-  if (checkType === 'contains-all') {
-    return passed
-      ? 'Response contains all required items'
-      : `Response is missing one or more required items from: "${snippet}"`;
-  }
   return passed
-    ? 'Response contains the expected text'
-    : `Expected response to contain: "${snippet}"`;
+    ? 'Response contains the expected information'
+    : `Expected response to include: "${snippet}"`;
 }
 
 // ---------- Analysis ----------
@@ -158,7 +163,9 @@ function deriveReportData(input: EvalResults): ReportData {
 
   const criticalFailures: CriticalFailure[] = [];
   for (const tc of input.testCases) {
-    if (tc.severity !== 'critical') continue;
+    // Safety failures always surface as blockers regardless of severity field
+    const isBlocker = tc.metric === 'safety' || tc.severity === 'critical';
+    if (!isBlocker) continue;
     for (const r of tc.results) {
       if (!r.passed) {
         criticalFailures.push({
@@ -213,38 +220,28 @@ function deriveReportData(input: EvalResults): ReportData {
     ];
   }
 
-  // Dimensions — inferred from check type
-  const dimensionMap: Record<string, string> = {
-    'contains': 'Factual Accuracy',
-    'not-contains': 'Factual Accuracy',
-    'contains-all': 'Practical Navigation',
-    'regex': 'Factual Accuracy',
-    'llm-rubric': 'Communication Quality',
-  };
-  const dimCounts: Record<string, { passed: number; total: number }> = {};
+  // Dimensions — one per lead metric, in fixed order
+  const dimCounts: Partial<Record<EvalMetric, { passed: number; total: number }>> = {};
   for (const tc of input.testCases) {
-    const dim = dimensionMap[tc.checkType] || 'Other';
-    if (!dimCounts[dim]) dimCounts[dim] = { passed: 0, total: 0 };
+    if (!dimCounts[tc.metric]) dimCounts[tc.metric] = { passed: 0, total: 0 };
     const anyPassed = tc.results.some(r => r.passed);
-    dimCounts[dim].total++;
-    if (anyPassed) dimCounts[dim].passed++;
-  }
-  const contextualTests = input.testCases.filter(tc => tc.context && tc.context.trim() !== '');
-  if (contextualTests.length > 0) {
-    const passed = contextualTests.filter(tc => tc.results.some(r => r.passed)).length;
-    dimCounts['Contextual Understanding'] = { passed, total: contextualTests.length };
+    dimCounts[tc.metric]!.total++;
+    if (anyPassed) dimCounts[tc.metric]!.passed++;
   }
 
-  const dimensions: DimensionResult[] = Object.entries(dimCounts).map(([name, d]) => {
-    const rate = d.total > 0 ? Math.round((d.passed / d.total) * 100) : 0;
-    return {
-      name,
-      passRate: rate,
-      passedCount: d.passed,
-      totalCount: d.total,
-      barColor: rate >= 80 ? 'green' : rate >= 60 ? 'yellow' : 'red',
-    };
-  });
+  const dimensions: DimensionResult[] = METRIC_ORDER
+    .filter(m => dimCounts[m] !== undefined)
+    .map(m => {
+      const d = dimCounts[m]!;
+      const rate = d.total > 0 ? Math.round((d.passed / d.total) * 100) : 0;
+      return {
+        name: METRIC_LABELS[m],
+        passRate: rate,
+        passedCount: d.passed,
+        totalCount: d.total,
+        barColor: rate >= 80 ? 'green' : rate >= 60 ? 'yellow' : 'red',
+      };
+    });
 
   let patternNote = '';
   if (dimensions.length > 0) {
@@ -276,8 +273,8 @@ function deriveReportData(input: EvalResults): ReportData {
       number: tc.number,
       question: tc.question,
       severity: tc.severity,
-      checkType: tc.checkType,
-      checkTypeLabel: checkTypeLabel(tc.checkType),
+      metric: tc.metric,
+      metricLabel: METRIC_LABELS[tc.metric] || tc.metric,
       expected: tc.expected,
       anyFailed,
       colspan: 4 + input.providers.length + 1,
@@ -286,7 +283,7 @@ function deriveReportData(input: EvalResults): ReportData {
         resultClass: r.passed ? 'result-pass' : 'result-fail',
         resultLabel: r.passed ? 'PASS' : 'FAIL',
         response: r.response,
-        enhancedGradingReason: enhanceGrading(r.gradingReason, r.passed, tc.checkType, tc.expected),
+        enhancedGradingReason: enhanceGrading(r.gradingReason, r.passed, tc.metric, tc.expected),
       })),
     };
   });
@@ -306,7 +303,7 @@ function deriveReportData(input: EvalResults): ReportData {
     hasCriticalFailures: hasCritical,
     multipleProviders: input.providers.length > 1,
     testSource: input.testSource,
-    gradingMethods: [...new Set(input.testCases.map(tc => checkTypeLabel(tc.checkType)))].join(', '),
+    gradingMethods: METRIC_ORDER.filter(m => dimCounts[m]).map(m => METRIC_LABELS[m]).join(', '),
     generatedAt: new Date().toISOString(),
     providers,
     criticalFailures,
@@ -485,7 +482,7 @@ function renderHtml(data: ReportData): string {
           <td class="tc-num">${tc.number}</td>
           <td class="tc-question">${esc(tc.question)}</td>
           <td><span class="usa-tag severity-badge ${tc.severity}">${tc.severity}</span></td>
-          <td class="tc-check"><span class="check-badge">${esc(tc.checkTypeLabel)}</span></td>
+          <td class="tc-check"><span class="check-badge metric-${tc.metric}">${esc(tc.metricLabel)}</span></td>
           ${resultCells}
           <td class="tc-chevron"><span class="chevron" id="chevron-${tc.number}">▼</span></td>
         </tr>
@@ -930,6 +927,11 @@ table.data-table, table.detail-table {
   color: var(--text-2);
   white-space: nowrap;
 }
+.check-badge.metric-safety       { background: #fee2e2; color: #991b1b; }
+.check-badge.metric-accuracy     { background: #dbeafe; color: #1e40af; }
+.check-badge.metric-ease-of-use  { background: #d1fae5; color: #065f46; }
+.check-badge.metric-effectiveness{ background: #fef9c3; color: #854d0e; }
+.check-badge.metric-emotion      { background: #ede9fe; color: #5b21b6; }
 
 /* ── Details: filter bar ── */
 .filter-bar {
@@ -1191,7 +1193,7 @@ table.data-table, table.detail-table {
 <div class="grid-container">
 
   <div class="card">
-    <h2 class="card-title">Results by Evaluation Dimension</h2>
+    <h2 class="card-title">Results by Lead Metric</h2>
     <div class="bar-chart">${dimensionBarsHtml}</div>
     ${patternHtml}
   </div>
@@ -1241,7 +1243,7 @@ table.data-table, table.detail-table {
           <th>#</th>
           <th>Question</th>
           <th>Severity</th>
-          <th>Check</th>
+          <th>Metric</th>
           ${providerHeaders}
           <th></th>
         </tr>
@@ -1258,7 +1260,7 @@ table.data-table, table.detail-table {
   <div class="grid-container">
     <span><strong>Framework:</strong> Evergreen 4-Dimension Eval</span>
     <span><strong>Test Source:</strong> ${esc(data.testSource)}</span>
-    <span><strong>Grading:</strong> ${esc(data.gradingMethods)}</span>
+    <span><strong>Metrics:</strong> ${esc(data.gradingMethods)}</span>
     <span><strong>Generated:</strong> ${esc(data.generatedAt)}</span>
   </div>
 </footer>

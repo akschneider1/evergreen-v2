@@ -6,11 +6,17 @@
  * No API key or OAuth needed — just the sheet ID.
  */
 
-import { SheetRow, CheckType, Severity } from './types';
+import { SheetRow, EvalMetric, Severity } from './types';
 
-const VALID_CHECK_TYPES: CheckType[] = [
-  'contains', 'not-contains', 'contains-all', 'regex', 'llm-rubric',
-];
+/** Maps display names (as they appear in the Google Sheet) to EvalMetric values */
+const METRIC_DISPLAY_MAP: Record<string, EvalMetric> = {
+  'safety':        'safety',
+  'accuracy':      'accuracy',
+  'ease of use':   'ease-of-use',
+  'ease-of-use':   'ease-of-use',
+  'effectiveness': 'effectiveness',
+  'emotion':       'emotion',
+};
 
 const VALID_SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low'];
 
@@ -62,7 +68,7 @@ export async function fetchSheet(sheetId: string, gid = '0'): Promise<SheetRow[]
 
 /**
  * Parse CSV text into SheetRows.
- * Expected columns: Question, Expected Answer, Context, Check Type, Severity
+ * Expected columns: Question, What to check, Context, Metric, Severity
  * First row is treated as a header and skipped.
  */
 export function parseCsv(csv: string): SheetRow[] {
@@ -83,26 +89,26 @@ export function parseCsv(csv: string): SheetRow[] {
       continue;
     }
 
-    const [question, expectedAnswer, context, rawCheckType, rawSeverity] = cols;
+    const [question, expectedAnswer, context, rawMetric, rawSeverity] = cols;
 
     if (!question.trim()) {
       continue; // Skip blank questions
     }
 
-    const checkType = normalizeCheckType(rawCheckType.trim().toLowerCase(), i + 1);
+    const metric = normalizeMetric(rawMetric.trim().toLowerCase(), i + 1);
     const severity = normalizeSeverity(rawSeverity.trim().toLowerCase(), i + 1);
 
     rows.push({
       question: question.trim(),
       expectedAnswer: expectedAnswer.trim(),
       context: context.trim(),
-      checkType,
+      metric,
       severity,
     });
   }
 
   if (rows.length === 0) {
-    throw new Error('No valid test cases found in the sheet. Check that columns are: Question, Expected Answer, Context, Check Type, Severity');
+    throw new Error('No valid test cases found in the sheet. Check that columns are: Question, What to check, Context, Metric, Severity');
   }
 
   return rows;
@@ -142,17 +148,12 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
-function normalizeCheckType(raw: string, row: number): CheckType {
-  if (VALID_CHECK_TYPES.includes(raw as CheckType)) {
-    return raw as CheckType;
-  }
-  // Common aliases
-  if (raw === 'not-contain' || raw === 'notcontains' || raw === 'not_contains') return 'not-contains';
-  if (raw === 'containsall' || raw === 'contains_all' || raw === 'contains all') return 'contains-all';
-  if (raw === 'rubric' || raw === 'llm_rubric' || raw === 'llmrubric') return 'llm-rubric';
+function normalizeMetric(raw: string, row: number): EvalMetric {
+  const mapped = METRIC_DISPLAY_MAP[raw];
+  if (mapped) return mapped;
 
-  console.warn(`Row ${row}: unknown check type "${raw}", defaulting to "contains".`);
-  return 'contains';
+  console.warn(`Row ${row}: unknown metric "${raw}", defaulting to "accuracy". Valid values: Safety, Accuracy, Ease of Use, Effectiveness, Emotion.`);
+  return 'accuracy';
 }
 
 function normalizeSeverity(raw: string, row: number): Severity {

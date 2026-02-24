@@ -66,7 +66,7 @@ export function mapToEvalResults(
       question: row.question,
       expected: row.expectedAnswer,
       context: row.context,
-      checkType: row.checkType,
+      metric: row.metric,
       severity: row.severity,
       results: providerResults,
     });
