@@ -18,7 +18,8 @@ import { buildPromptfooConfig, writePromptfooConfig } from '../config';
 import { runPromptfooAsync } from '../runner';
 import { mapToEvalResults } from '../mapper';
 import { generateReport } from '../report/generator';
-import { normalizePromptfooOutput, EvergreenConfig } from '../types';
+import { normalizePromptfooOutput, EvergreenConfig, SheetRow } from '../types';
+import { getPreset } from '../presets/index';
 
 // ── Job state ────────────────────────────────────────────────────────────────
 
@@ -52,15 +53,33 @@ function newJobId(): string {
 
 async function runPipeline(
   jobId: string,
-  body: { description: string; sheetUrl: string; provider: string; aiDescription: string },
+  body: { description: string; sheetUrl?: string; provider: string; aiDescription?: string; presetId?: string },
 ): Promise<void> {
   const job = jobs.get(jobId)!;
 
   try {
-    // Step 1 — Fetch Google Sheet
+    // Step 1 — Load test cases (from preset or Google Sheet)
     job.step = 1;
-    const sheetId = extractSheetId(body.sheetUrl);
-    const rows = await fetchSheet(sheetId);
+    let rows: SheetRow[];
+    let systemPrompt: string | undefined;
+    let testSource: string;
+    let sheetId: string;
+
+    if (body.presetId) {
+      const preset = getPreset(body.presetId);
+      if (!preset) throw new Error(`Unknown preset: "${body.presetId}"`);
+      rows = preset.rows;
+      systemPrompt = preset.systemPrompt;
+      testSource = `Built-in: ${preset.name}`;
+      sheetId = '';
+    } else {
+      sheetId = extractSheetId(body.sheetUrl!);
+      rows = await fetchSheet(sheetId);
+      systemPrompt = body.aiDescription
+        ? `You are a helpful AI assistant. ${body.aiDescription} Be accurate, clear, and easy to understand.`
+        : undefined;
+      testSource = 'Google Sheets';
+    }
 
     // Step 2 — Build Promptfoo config
     job.step = 2;
@@ -68,12 +87,8 @@ async function runPipeline(
       description: body.description || 'Evergreen Evaluation',
       sheetId,
       sheetRange: 'A2:E',
-      providers: [{ id: body.provider, systemPrompt: body.aiDescription
-        ? `You are a helpful AI assistant. ${body.aiDescription} Be accurate, clear, and easy to understand.`
-        : undefined }],
-      defaultSystemPrompt: body.aiDescription
-        ? `You are a helpful AI assistant. ${body.aiDescription} Be accurate, clear, and easy to understand.`
-        : undefined,
+      providers: [{ id: body.provider, systemPrompt }],
+      defaultSystemPrompt: systemPrompt,
       outputPath: path.join(os.tmpdir(), `evergreen-results-${jobId}.json`),
     };
     const pfConfig = buildPromptfooConfig(rows, config);
@@ -87,7 +102,7 @@ async function runPipeline(
 
     // Step 4 — Generate report
     job.step = 4;
-    const evalResults = mapToEvalResults(pfOutput, rows, config.description);
+    const evalResults = mapToEvalResults(pfOutput, rows, config.description, testSource);
     job.reportHtml = generateReport(evalResults);
     job.status = 'complete';
 
@@ -121,12 +136,13 @@ export function createApp(): express.Application {
 
     // Validate that required fields are present and are strings
     const sheetUrl = typeof body?.sheetUrl === 'string' ? body.sheetUrl.trim() : '';
+    const presetId = typeof body?.presetId === 'string' ? body.presetId.trim() : '';
     const provider = typeof body?.provider === 'string' ? body.provider.trim() : '';
     const description = typeof body?.description === 'string' ? body.description.trim() : '';
     const aiDescription = typeof body?.aiDescription === 'string' ? body.aiDescription.trim() : '';
 
-    if (!sheetUrl) {
-      res.status(400).json({ error: 'sheetUrl is required' });
+    if (!presetId && !sheetUrl) {
+      res.status(400).json({ error: 'Either sheetUrl or presetId is required' });
       return;
     }
     if (!provider) {
@@ -140,7 +156,7 @@ export function createApp(): express.Application {
     jobs.set(jobId, { step: 0, status: 'running', createdAt: Date.now() });
 
     // Fire-and-forget — response returns immediately with jobId
-    runPipeline(jobId, { description, sheetUrl, provider, aiDescription });
+    runPipeline(jobId, { description, sheetUrl, presetId, provider, aiDescription });
 
     res.status(202).json({ jobId });
   });

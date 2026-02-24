@@ -18,6 +18,7 @@ export function mapToEvalResults(
   output: { results: PromptfooResult[]; stats: { successes: number; failures: number; errors: number } },
   rows: SheetRow[],
   title: string,
+  testSource = 'Google Sheets',
 ): EvalResults {
   // Extract unique providers from results
   const providerIds = [
@@ -76,7 +77,7 @@ export function mapToEvalResults(
     title,
     date: new Date().toISOString().split('T')[0],
     providers: providerIds,
-    testSource: 'Google Sheets',
+    testSource,
     testCases,
   };
 }

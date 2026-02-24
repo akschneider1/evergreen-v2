@@ -110,14 +110,52 @@
                      placeholder="My AI Chatbot Eval">
             </div>
 
+            <div class="usa-form-group">
+              <fieldset class="usa-fieldset">
+                <legend class="usa-legend">
+                  Test cases <span class="usa-required" aria-hidden="true">*</span>
+                  <span class="usa-hint">Use your own sheet or run a built-in suite</span>
+                </legend>
+                <div class="usa-radio">
+                  <input class="usa-radio__input" id="dataSource-sheet" type="radio"
+                         name="dataSource" value="sheet" checked onchange="handleDataSourceChange()">
+                  <label class="usa-radio__label" for="dataSource-sheet">My Google Sheet</label>
+                </div>
+                <div class="usa-radio">
+                  <input class="usa-radio__input" id="dataSource-preset" type="radio"
+                         name="dataSource" value="preset" onchange="handleDataSourceChange()">
+                  <label class="usa-radio__label" for="dataSource-preset">
+                    Built-in test suite
+                    <span style="font-size:0.8125rem; color:#71767a;">(recommended for demos)</span>
+                  </label>
+                </div>
+              </fieldset>
+            </div>
+
             <div class="usa-form-group" id="sheetUrl-group">
               <label class="usa-label" for="sheetUrl">
                 Google Sheet URL <span class="usa-required" aria-hidden="true">*</span>
                 <span class="usa-hint">Paste the full link to your test-case sheet</span>
               </label>
               <span class="usa-error-message" id="sheetUrl-error" role="alert" style="display:none">Please enter a Google Sheet URL.</span>
-              <input class="usa-input" id="sheetUrl" name="sheetUrl" type="url" required
+              <input class="usa-input" id="sheetUrl" name="sheetUrl" type="url"
                      placeholder="https://docs.google.com/spreadsheets/d/…">
+            </div>
+
+            <div class="usa-form-group" id="presetId-group" style="display:none">
+              <label class="usa-label" for="presetId">
+                Test suite <span class="usa-required" aria-hidden="true">*</span>
+                <span class="usa-hint">Choose a pre-built evaluation for your use case</span>
+              </label>
+              <span class="usa-error-message" id="presetId-error" role="alert" style="display:none">Please select a test suite.</span>
+              <select class="usa-select" id="presetId" name="presetId">
+                <option value="">-- Select a test suite --</option>
+                <option value="wheres-my-refund">Where's My Refund</option>
+                <option value="benefits-eligibility">Benefits Eligibility Checker</option>
+                <option value="agent-assist">Agent Assist</option>
+                <option value="call-center-summaries">Call Center Summaries</option>
+                <option value="permitting-assistant">Permitting Assistant</option>
+              </select>
             </div>
 
             <div class="usa-form-group" id="provider-group">
@@ -177,8 +215,8 @@
 
           <div class="usa-step-indicator margin-top-3" aria-label="Evaluation progress">
             <ol class="usa-step-indicator__segments">
-              <li class="usa-step-indicator__segment" id="step-1" aria-label="Fetch test cases">
-                <span class="usa-step-indicator__segment-label">Fetch test cases</span>
+              <li class="usa-step-indicator__segment" id="step-1" aria-label="Load test cases">
+                <span class="usa-step-indicator__segment-label">Load test cases</span>
               </li>
               <li class="usa-step-indicator__segment" id="step-2" aria-label="Generate config">
                 <span class="usa-step-indicator__segment-label">Generate config</span>
@@ -277,10 +315,13 @@
   });
 
   function clearValidationErrors() {
-    ['sheetUrl', 'provider', 'aiUseCase'].forEach(function(id) {
-      document.getElementById(id + '-group').classList.remove('usa-form-group--error');
-      document.getElementById(id + '-error').style.display = 'none';
-      document.getElementById(id).classList.remove('usa-input--error');
+    ['sheetUrl', 'presetId', 'provider', 'aiUseCase'].forEach(function(id) {
+      var grp = document.getElementById(id + '-group');
+      var err = document.getElementById(id + '-error');
+      var inp = document.getElementById(id);
+      if (grp) grp.classList.remove('usa-form-group--error');
+      if (err) err.style.display = 'none';
+      if (inp) inp.classList.remove('usa-input--error');
     });
   }
 
@@ -290,38 +331,53 @@
     document.getElementById(id).classList.add('usa-input--error');
   }
 
+  function handleDataSourceChange() {
+    var isPreset = document.getElementById('dataSource-preset').checked;
+    document.getElementById('sheetUrl-group').style.display    = isPreset ? 'none'  : 'block';
+    document.getElementById('presetId-group').style.display    = isPreset ? 'block' : 'none';
+    document.getElementById('aiUseCase-group').style.display   = isPreset ? 'none'  : 'block';
+    document.getElementById('aiDescription-group').style.display = 'none';
+  }
+
   function submitEval() {
     clearValidationErrors();
 
-    const sheetUrl = document.getElementById('sheetUrl').value.trim();
+    const isPreset = document.getElementById('dataSource-preset').checked;
     const provider = document.getElementById('provider').value;
-
     let valid = true;
-    if (!sheetUrl) {
-      showFieldError('sheetUrl');
-      valid = false;
+
+    if (isPreset) {
+      if (!document.getElementById('presetId').value) {
+        showFieldError('presetId');
+        valid = false;
+      }
+    } else {
+      if (!document.getElementById('sheetUrl').value.trim()) {
+        showFieldError('sheetUrl');
+        valid = false;
+      }
+      if (!document.getElementById('aiUseCase').value) {
+        showFieldError('aiUseCase');
+        valid = false;
+      }
     }
     if (!provider) {
       showFieldError('provider');
       valid = false;
     }
-    if (!document.getElementById('aiUseCase').value) {
-      showFieldError('aiUseCase');
-      valid = false;
-    }
     if (!valid) return;
 
-    const useCaseEl = document.getElementById('aiUseCase');
-    const aiDescription = useCaseEl.value === 'other'
-      ? document.getElementById('aiDescription').value.trim()
-      : useCaseEl.value;
+    const body = { description: document.getElementById('description').value.trim(), provider };
 
-    const body = {
-      description:   document.getElementById('description').value.trim(),
-      sheetUrl,
-      provider,
-      aiDescription,
-    };
+    if (isPreset) {
+      body.presetId = document.getElementById('presetId').value;
+    } else {
+      body.sheetUrl = document.getElementById('sheetUrl').value.trim();
+      const useCaseEl = document.getElementById('aiUseCase');
+      body.aiDescription = useCaseEl.value === 'other'
+        ? document.getElementById('aiDescription').value.trim()
+        : useCaseEl.value;
+    }
 
     document.getElementById('form-section').style.display    = 'none';
     document.getElementById('progress-section').style.display = 'block';
@@ -358,7 +414,7 @@
       .catch(err => { clearInterval(pollInterval); showError(err.message); });
   }
 
-  const stepNames = ['Fetch test cases', 'Generate config', 'Run evaluations', 'Generate report'];
+  const stepNames = ['Load test cases', 'Generate config', 'Run evaluations', 'Generate report'];
 
   function updateSteps(currentStep) {
     for (let i = 1; i <= 4; i++) {
@@ -411,9 +467,11 @@
     clearInterval(pollInterval);
     currentJobId = null;
     clearValidationErrors();
+    document.getElementById('dataSource-sheet').checked = true;
     document.getElementById('aiUseCase').value = '';
     document.getElementById('aiDescription').value = '';
-    document.getElementById('aiDescription-group').style.display = 'none';
+    document.getElementById('presetId').value = '';
+    handleDataSourceChange();
     document.getElementById('form-section').style.display    = 'block';
     document.getElementById('error-section').style.display   = 'none';
     document.getElementById('progress-section').style.display = 'none';
