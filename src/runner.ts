@@ -113,6 +113,7 @@ export function runPromptfooAsync(configPath: string, outputPath: string): Promi
   const childPath = `${nodeBinDir}${path.delimiter}${process.env.PATH ?? ''}`;
 
   return new Promise((resolve, reject) => {
+    const stderrChunks: Buffer[] = [];
     const child = execFile(
       'npx',
       ['promptfoo', 'eval', '--config', absConfig, '--output', absOutput, '--no-cache'],
@@ -127,12 +128,20 @@ export function runPromptfooAsync(configPath: string, outputPath: string): Promi
       },
       (err) => {
         try { fs.rmSync(pfTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
+        const stderrText = Buffer.concat(stderrChunks).toString().trim();
         if (err && !fs.existsSync(absOutput)) {
+          const hint = stderrText
+            ? `\n\nDetails from the eval engine:\n${stderrText.slice(0, 500)}`
+            : '';
           reject(new Error(
             `The evaluation could not complete. This usually means an API key is missing or the LLM provider couldn't be reached. ` +
-            `Check your settings and try again.`
+            `Check your settings and try again.${hint}`
           ));
           return;
+        }
+        // Log stderr for debugging (visible in server logs on Replit, etc.)
+        if (stderrText) {
+          console.warn(`[Promptfoo stderr for ${path.basename(absConfig)}]\n${stderrText.slice(0, 2000)}`);
         }
         try {
           resolve(validatePromptfooOutput(JSON.parse(fs.readFileSync(absOutput, 'utf-8'))));
@@ -144,8 +153,8 @@ export function runPromptfooAsync(configPath: string, outputPath: string): Promi
         }
       },
     );
-    // Suppress promptfoo's stdout/stderr from web server logs
+    // Capture stderr for diagnostics; discard stdout
     child.stdout?.resume();
-    child.stderr?.resume();
+    child.stderr?.on('data', (chunk: Buffer) => stderrChunks.push(chunk));
   });
 }

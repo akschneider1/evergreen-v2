@@ -127,6 +127,21 @@ async function runPipeline(
     const pfRaw = await runPromptfooAsync(pfConfigPath, config.outputPath!);
     const pfOutput = normalizePromptfooOutput(pfRaw);
 
+    // Check if all responses are empty — indicates an API key or provider issue
+    const allEmpty = pfOutput.results.every(
+      r => !r.response?.output || r.response.output === '(no response)',
+    );
+    if (allEmpty && pfOutput.results.length > 0) {
+      throw new Error(
+        `The evaluation ran, but the AI provider returned no responses for any test case. ` +
+        `This usually means:\n` +
+        `  • The API key is missing or invalid — check that the correct key is set (e.g., ANTHROPIC_API_KEY or OPENAI_API_KEY)\n` +
+        `  • The selected provider is incorrect — make sure the dropdown matches your API key\n` +
+        `  • The AI provider is unreachable — check your network connection\n` +
+        `Set the API key in your environment and try again.`
+      );
+    }
+
     // Step 4 — Generate report
     job.step = 4;
     const evalResults = mapToEvalResults(pfOutput, rows, config.description, testSource, systemPrompt);
