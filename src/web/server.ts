@@ -265,6 +265,12 @@ export function createApp(): express.Application {
     res.send(job.reportHtml);
   });
 
+  // Catch-all error handler — ensures unhandled errors return JSON, not plain text
+  app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const status = (err as any).status || 500;
+    res.status(status).json({ error: err.message || 'An unexpected error occurred.' });
+  });
+
   return app;
 }
 

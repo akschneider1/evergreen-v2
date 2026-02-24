@@ -450,7 +450,10 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
-    .then(res => res.json())
+    .then(function(res) {
+      if (!res.ok) throw new Error('Server error (' + res.status + '). Please try again.');
+      return res.json();
+    })
     .then(data => {
       if (data.error) { showError(data.error); return; }
       currentJobId = data.jobId;
@@ -462,7 +465,10 @@
   function pollStatus() {
     if (!currentJobId) return;
     fetch('/api/status/' + currentJobId)
-      .then(res => res.json())
+      .then(function(res) {
+        if (!res.ok) throw new Error('Server error (' + res.status + '). Please try again.');
+        return res.json();
+      })
       .then(data => {
         updateSteps(data.step);
         // Slow polling during step 3 (the long eval), speed up for other steps
