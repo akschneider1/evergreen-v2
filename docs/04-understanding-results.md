@@ -40,9 +40,9 @@ At the top of the Summary tab is a large coloured readiness card — the first t
 
 | Colour | Status | Meaning |
 |--------|--------|---------|
-| Green | **Ready for Deployment** | All critical tests passed, overall pass rate ≥ 80% |
-| Yellow | **Needs Improvement** | No critical failures, but pass rate is below 80% |
-| Red | **Not Ready for Deployment** | One or more critical failures — do not deploy |
+| Green | **Ready for Deployment** | No Safety failures, all critical tests passed, overall pass rate ≥ 80% |
+| Yellow | **Needs Improvement** | No Safety or critical failures, but pass rate is below 80% |
+| Red | **Not Ready for Deployment** | One or more Safety failures OR critical failures — do not deploy |
 
 Below the status, the card shows:
 - A plain-language explanation of why the system received that verdict
@@ -70,22 +70,23 @@ If any critical-severity test cases failed, they appear here. Each failure shows
 
 ## Analysis Tab
 
-This tab is for operations staff and program managers. It helps you understand **where** the AI is strong and weak, and what to do about it.
+This tab is for operations staff and program managers. It helps you understand **which metrics** the AI is strong and weak on, and what to do about it.
 
-### Results by Evaluation Dimension
+### Results by Metric
 
-A bar chart showing pass rates across four dimensions. Each bar shows the percentage **and** the underlying count (e.g. "2/5 tests"):
+A bar chart showing pass rates across all five lead metrics. Each bar shows the percentage **and** the underlying count (e.g. "2/5 tests"):
 
-| Dimension | What It Measures | Derived From |
-|-----------|-----------------|-------------|
-| **Factual Accuracy** | Does it get facts right? | `contains`, `not-contains`, `regex` test cases |
-| **Practical Navigation** | Does it help people take the right next step? | `contains-all` test cases |
-| **Communication Quality** | Is it clear, readable, appropriate? | `llm-rubric` test cases |
-| **Contextual Understanding** | Does it handle variations in situation? | Test cases that have a Context column filled in |
+| Metric | What It Measures |
+|--------|-----------------|
+| **Safety** | Does the AI avoid dangerous claims or harmful implications? |
+| **Accuracy** | Does the AI get specific facts, rates, and rules correct? |
+| **Effectiveness** | Does the AI help the person accomplish their goal in their situation? |
+| **Ease of Use** | Is the response clear and readable for a non-expert? |
+| **Emotion** | Does the AI handle sensitive situations with appropriate empathy? |
 
-If one dimension is significantly lower than others, focus your system prompt improvements there first.
+If one metric is significantly lower than others, focus your system prompt improvements there first.
 
-A **pattern note** beneath the bars names the weakest dimension and suggests what to do.
+A **pattern note** beneath the bars names the weakest metric and suggests what to do.
 
 ### Results by Severity
 
@@ -121,7 +122,7 @@ Each row shows:
 | **#** | Test case number |
 | **Question** | The question that was asked |
 | **Severity** | How impactful a wrong answer is |
-| **Check** | How the response was graded (`Contains`, `Not Contains`, etc.) |
+| **Metric** | Which of the five quality dimensions this test measures |
 | **Result** | PASS or FAIL for each provider |
 | **▼** | Expand indicator |
 
@@ -131,7 +132,7 @@ Click **anywhere on a row** to expand it and see:
 
 ### Grading Reasons
 
-For simple assertions (`contains`, `not-contains`, `contains-all`), the grading reason now explains specifically what text was expected or should not have appeared — not just "Assertion failed". For `llm-rubric` tests, it shows the judge's full reasoning.
+For **Accuracy** tests, the grading reason explains which expected item was found or missing. For all other metrics (Safety, Effectiveness, Ease of Use, Emotion), the grading reason shows the LLM judge's full reasoning — including what criteria it evaluated and why the response passed or failed.
 
 ---
 
@@ -141,20 +142,27 @@ Use this framework:
 
 ```
 ┌─────────────────────────────────────────────────┐
-│ Any critical failures?                           │
+│ Any Safety failures?                             │
 │                                                  │
 │   YES → Do NOT deploy.                           │
-│         Fix the critical issues, then re-run.    │
+│         Safety failures block deployment         │
+│         regardless of severity. Fix, re-run.     │
 │                                                  │
-│   NO → Check overall pass rate.                  │
+│   NO → Any critical failures?                    │
 │                                                  │
-│        Below 80% → Needs work.                   │
-│                    Tune system prompt or add      │
-│                    retrieval, then re-run.        │
+│        YES → Do NOT deploy.                      │
+│              Fix the critical issues, re-run.    │
 │                                                  │
-│        80%+ → Consider deploying.                │
-│               Share report with stakeholders.     │
-│               Schedule periodic re-evaluation.    │
+│        NO → Check overall pass rate.             │
+│                                                  │
+│             Below 80% → Needs work.              │
+│                         Tune system prompt or    │
+│                         add retrieval, re-run.   │
+│                                                  │
+│             80%+ → Consider deploying.           │
+│                    Share report with             │
+│                    stakeholders.                 │
+│                    Schedule periodic re-evals.   │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -179,7 +187,7 @@ The report serves as a concrete artifact of due diligence for procurement, overs
 | The AI gives wrong facts | The system prompt may need better instructions, or the AI may need access to authoritative data (retrieval-augmented generation) |
 | The AI misses required information | Add the missing information to the system prompt or knowledge base |
 | The AI says something it shouldn't | Add explicit instructions in the system prompt about what NOT to say |
-| The AI's tone is wrong | Use `llm-rubric` test cases to grade tone and clarity |
+| The AI's tone is wrong | Use `Emotion` metric test cases to grade tone and empathy |
 | Many tests fail for one provider but not another | Consider using the provider that performs better |
 
 After making changes, re-run `npx evergreen run` to see if the fixes worked.

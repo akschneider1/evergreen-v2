@@ -34,9 +34,9 @@ The template has five columns:
 | Column | What Goes Here |
 |--------|---------------|
 | **Question** | A question someone would ask the AI |
-| **Expected Answer** | What a correct response should include |
+| **What to Check** | What the response should include (or avoid) — depends on your Metric |
 | **Context** | Any situation that affects the correct answer (optional) |
-| **Check Type** | How to judge the response (`contains`, `llm-rubric`, etc.) |
+| **Metric** | What kind of quality this test measures (`Safety`, `Accuracy`, `Ease of Use`, `Effectiveness`, or `Emotion`) |
 | **Severity** | How bad is it if the AI gets this wrong? (`critical`, `high`, `medium`, `low`) |
 
 > **Note:** Row 1 is the header. Row 2 is a pre-filled example row that explains each column — leave it in place, it won't be included in the evaluation. Your test cases start at **row 3**.
@@ -78,15 +78,29 @@ Open **http://localhost:4000** in your browser.
 
 ### Step 5A: Fill In the Form
 
+The form lets you choose how to load test cases.
+
+**Option 1 — My Google Sheet:**
+
 | Field | What to Enter |
 |-------|--------------|
 | **Evaluation name** | A label for this run, e.g. "CO Tax Chatbot — March 2026" |
 | **Google Sheet URL** | Paste the full link from your browser |
+| **AI use case** | Select the category that best matches your AI |
 | **LLM provider** | Select from the dropdown (Claude Sonnet is recommended) |
-| **System prompt** | The instructions your AI uses before each question (optional) |
+
+**Option 2 — Built-in test suite** (no Sheet required):
+
+| Field | What to Enter |
+|-------|--------------|
+| **Evaluation name** | A label for this run |
+| **Select test suite** | Choose from five pre-built suites (Where's My Refund, Benefits Eligibility, Agent Assist, Call Center Summaries, Permitting Assistant) |
+| **LLM provider** | Select from the dropdown |
+
+> Built-in suites are a fast way to run a realistic demo without setting up a Google Sheet first. If you just want to see how the tool works, start here.
 
 Click **Run Evaluation**. A step-by-step progress indicator tracks the pipeline:
-1. Fetch test cases from Google Sheet
+1. Load test cases
 2. Generate evaluation config
 3. Run AI evaluations
 4. Generate report
@@ -192,7 +206,7 @@ Alternatively, open `report.html` directly as a file. See [Understanding Results
 | "Failed to fetch Google Sheet" | Make sure the sheet is shared as "Anyone with the link can view" |
 | "API key is missing" | Set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in your terminal |
 | "Config file not found" | Make sure `evergreen.yaml` is in the folder where you run the command |
-| "No valid test cases found" | Check your Sheet has the 5 required columns with data starting in **row 3** (row 1 = header, row 2 = example) |
+| "No valid test cases found" | Check your Sheet has the 5 required columns (`Question`, `What to Check`, `Context`, `Metric`, `Severity`) with data starting in **row 3** (row 1 = header, row 2 = example) |
 | "Report not found" when running `serve` | Run `npx evergreen run` first to generate the report |
 | Anthropic provider error about unknown model type | Use the `anthropic:messages:` prefix, e.g. `anthropic:messages:claude-sonnet-4-20250514` |
 

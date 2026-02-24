@@ -84,9 +84,9 @@ Open **http://localhost:4000** in your browser. The form accepts:
 | Field | Required | Description |
 |-------|----------|-------------|
 | Evaluation name | No | A human-readable label for this run |
-| Google Sheet URL | Yes | Full browser URL — the app extracts the Sheet ID automatically |
+| Test cases | Yes | Choose "My Google Sheet" (paste a URL) or "Built-in test suite" (select a preset) |
+| AI use case | When using Google Sheet | Select the use case category for the AI being tested |
 | LLM provider | Yes | Selected from a dropdown; same providers as `evergreen run` |
-| System prompt | No | Instructions given to the AI before each question |
 
 The server runs the same four-step pipeline as `evergreen run` (fetch → config → eval → report). When the pipeline completes, the report is served at `/report/:jobId` on the same server — no separate `evergreen serve` needed. Each report is held in memory for the lifetime of the server process.
 
@@ -95,7 +95,7 @@ The server runs the same four-step pipeline as `evergreen run` (fetch → config
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/` | Input form (HTML) |
-| `POST` | `/api/run` | Start a job; body: `{ sheetUrl, provider, description?, systemPrompt? }`; returns `{ jobId }` |
+| `POST` | `/api/run` | Start a job; body: `{ provider, description?, sheetUrl? }` or `{ provider, description?, presetId? }`; returns `{ jobId }` |
 | `GET` | `/api/status/:jobId` | Poll job progress; returns `{ step, status, error? }` |
 | `GET` | `/report/:jobId` | Serve completed report HTML |
 
@@ -179,20 +179,24 @@ The Google Sheet must have these five columns in order. **Row 1 is the header. R
 | Column | Name | Required |
 |--------|------|----------|
 | A | Question | Yes |
-| B | Expected Answer | Yes |
+| B | What to Check | Yes |
 | C | Context | No (can be blank) |
-| D | Check Type | Yes |
+| D | Metric | Yes |
 | E | Severity | Yes |
 
-### Check Types
+### Metric Values
 
-| Value in Sheet | Promptfoo Assertion | Behavior |
-|---------------|-------------------|----------|
-| `contains` | `contains` | Response must include the exact text |
-| `not-contains` | `not-contains` | Response must NOT include the text |
-| `contains-all` | Multiple `contains` | Each comma-separated item must appear (all must match) |
-| `regex` | `regex` | Response must match the regular expression |
-| `llm-rubric` | `llm-rubric` | An LLM judge scores against the description |
+| Value in Sheet | How Evergreen Grades It |
+|----------------|------------------------|
+| `Safety` | LLM judge checks that the response does NOT make the described claim |
+| `Accuracy` | Checks that the exact text in "What to Check" appears in the response; comma-separated values each become a separate required match |
+| `Effectiveness` | LLM judge evaluates whether the response genuinely helps the person in their situation |
+| `Ease of Use` | LLM judge evaluates plain language, clarity, and readability for a non-expert |
+| `Emotion` | LLM judge evaluates tone, empathy, and appropriate handling of sensitive situations |
+
+The tool accepts common capitalization variants (`safety`, `SAFETY`, `Ease of Use`, `ease-of-use`). Unknown values default to `Accuracy` with a warning logged.
+
+> **Power-user option:** Within the `Accuracy` metric, prefix the value in "What to Check" with `regex:` to use a regular expression instead of a literal match. For example, `regex:4\.4%|four point four` matches either form.
 
 ### Severity Levels
 
@@ -203,7 +207,7 @@ The Google Sheet must have these five columns in order. **Row 1 is the header. R
 | `medium` | Wrong answer is unhelpful |
 | `low` | Minor quality issue |
 
-The tool accepts common typos and aliases (e.g., `not_contains`, `containsAll`, `rubric`).
+> **Safety note:** All Safety failures block deployment regardless of severity.
 
 ---
 
@@ -221,7 +225,8 @@ The tool accepts common typos and aliases (e.g., `not_contains`, `containsAll`, 
 Both `npx evergreen run` and `npx evergreen app` execute the same four-step pipeline:
 
 ```
-1. FETCH    Google Sheet → CSV → SheetRow[]     (src/sheets.ts)
+1. FETCH    Google Sheet → SheetRow[]  (src/sheets.ts)
+            or: Built-in preset rows   (src/presets/)
 2. GENERATE SheetRow[] → Promptfoo YAML          (src/config.ts)
 3. EVAL     Promptfoo CLI → JSON results          (src/runner.ts)
 4. REPORT   JSON → EvalResults → HTML             (src/mapper.ts + src/report/generator.ts)
@@ -230,7 +235,7 @@ Both `npx evergreen run` and `npx evergreen app` execute the same four-step pipe
 The difference: `evergreen run` runs the pipeline synchronously in the terminal; `evergreen app` runs it asynchronously in a background job and serves the result over HTTP.
 
 ### Step 1: Fetch
-Fetches the Google Sheet as a CSV export (no API key needed — the sheet just needs to be publicly viewable). Parses the CSV into typed `SheetRow` objects.
+Fetches the Google Sheet as a CSV export (no API key needed — the sheet just needs to be publicly viewable) and parses it into typed `SheetRow` objects. When using a built-in test suite (`presetId`), loads the bundled rows directly from `src/presets/` instead.
 
 ### Step 2: Generate
 Converts the sheet rows + your `evergreen.yaml` config into a Promptfoo-compatible YAML config file. This is written to `.promptfoo-config.yaml` (temporary, deleted after run).
@@ -277,7 +282,7 @@ For complex grading beyond what `contains` or `llm-rubric` provides, you can wri
 | Promptfoo errors about provider | Invalid provider ID or missing API key | Check provider ID spelling and env vars |
 | Promptfoo timeout | LLM provider is slow or unreachable | Check network, try again, or increase timeout |
 | Report shows "(no response)" | LLM returned empty or Promptfoo errored | Check Promptfoo's console output for details |
-| All `llm-rubric` tests fail | No judge provider configured | Set `llmRubricProvider` in config |
+| Safety / Effectiveness / Ease of Use / Emotion tests all fail | No judge provider configured | Set `llmRubricProvider` in config, or ensure your API key is set |
 | `evergreen serve` — "Report not found" | `report.html` doesn't exist yet | Run `evergreen run` first to generate it |
 | `evergreen serve` — "address already in use" | Another process is on port 4000 | Use `-p 3001` (or any free port) |
 | `evergreen app` — "address already in use" | Port 4000 is taken | Use `evergreen app -p 3001` |

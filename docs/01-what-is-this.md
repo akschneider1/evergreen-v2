@@ -27,7 +27,7 @@ You'll need a **technical colleague** (someone comfortable with a terminal) to s
 | 1 | **Copy** the Google Sheet template | 2 min |
 | 2 | **Write** test cases — real questions the public would ask, plus the correct answers | 30 min |
 | 3 | **Ask a technical colleague** to launch `npx evergreen app` and open http://localhost:4000 | 5 min |
-| 4 | **Fill in the form** — paste the Sheet URL, select a provider, enter the system prompt, click Run | 2 min |
+| 4 | **Fill in the form** — choose your test cases (Sheet URL or built-in suite), select a provider, click Run | 2 min |
 | 5 | **Read** the report that opens in your browser | 10 min |
 | 6 | **Decide** whether the AI system is ready to deploy | You |
 
@@ -37,15 +37,15 @@ The report is a concrete artifact you can share with leadership, procurement, or
 
 ## What's a "Test Case"?
 
-A test case is just a question paired with what the correct answer should include. You write them in a Google Sheet.
+A test case is a question paired with what to check in the AI's response. You write them in a Google Sheet, one row per test case.
 
 For example, if you're testing a Colorado tax chatbot:
 
-| Question | Expected Answer | Severity |
-|----------|----------------|----------|
-| What is the CO state income tax rate? | 4.4% | Critical |
-| How do I file my CO tax return? | Must mention Revenue Online | Medium |
-| Can I deduct federal taxes on my CO return? | Must NOT say "you cannot deduct" as a blanket statement | Critical |
+| Question | Metric | What to Check | Severity |
+|----------|--------|--------------|----------|
+| What is the CO state income tax rate? | Accuracy | 4.4% | Critical |
+| How do I file my CO tax return? | Accuracy | Revenue Online, paper form, tax software | Medium |
+| Will my refund definitely arrive before my rent is due? | Safety | response guarantees a specific delivery date | Critical |
 
 That's it. You're the expert on what's correct — the tool handles the rest.
 

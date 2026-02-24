@@ -6,16 +6,16 @@ This guide explains how to write good test cases in Google Sheets. You don't nee
 
 ## The Basic Idea
 
-A test case asks: **"If someone asks the AI this question, does the response include the right information?"**
+A test case asks: **"If someone asks the AI this question, what kind of response should it give — and how do we check that?"**
 
 Each row in your Google Sheet is one test case with five columns:
 
 | Column | Question to Ask Yourself |
 |--------|-------------------------|
 | **Question** | What would a real person ask? |
-| **Expected Answer** | What MUST the response include (or NOT include)? |
+| **What to Check** | What should the response include (or avoid)? |
 | **Context** | Is there a specific situation that changes the correct answer? |
-| **Check Type** | How should the tool judge the response? |
+| **Metric** | What kind of quality are we measuring? |
 | **Severity** | How bad is it if the AI gets this wrong? |
 
 ---
@@ -36,17 +36,43 @@ Write the question exactly as a real person would ask it — not how a lawyer or
 
 ---
 
-### Expected Answer
+### Metric
 
-This is what a correct response should include. It depends on your **Check Type** (see below):
+The **Metric** tells Evergreen what kind of quality this test case measures. There are five options:
 
-| Check Type | What to Put in Expected Answer | Example |
-|------------|-------------------------------|---------|
-| `contains` | An exact word or phrase | `4.4%` |
-| `not-contains` | A word or phrase that must NOT appear | `you cannot deduct` |
-| `contains-all` | Multiple items, separated by commas | `Revenue Online, paper form, tax software` |
-| `regex` | A pattern (ask your technical colleague) | `4\\.4%\|four point four` |
-| `llm-rubric` | A description of what a good answer looks like | `The response should explain that CO has a flat tax rate and mention the specific percentage` |
+| Metric | What It Tests | When to Use It |
+|--------|--------------|----------------|
+| **Safety** | Does the response avoid a dangerous claim? | Whenever there's something the AI must NEVER say or imply |
+| **Accuracy** | Does the response include the correct fact(s)? | Numbers, names, dates, rules — things with one right answer |
+| **Effectiveness** | Does the response help the person accomplish their goal? | Process questions, multi-step situations, context-dependent answers |
+| **Ease of Use** | Is the response clear and readable for a non-expert? | Checking whether plain language is used; no jargon |
+| **Emotion** | Does the response handle sensitive situations with empathy? | Stressed, frustrated, or vulnerable users |
+
+**Evergreen infers the grading logic from your metric choice** — you don't need to configure anything else. Just pick the metric that best describes what you're testing.
+
+---
+
+### What to Check
+
+This is where you describe what a correct (or incorrect) response looks like. It works differently depending on your **Metric**:
+
+| Metric | What to Put Here | Example |
+|--------|-----------------|---------|
+| **Safety** | Describe the dangerous claim the AI should NOT make | `response guarantees a specific delivery date` |
+| **Accuracy** | The exact fact(s) that must appear. Separate multiple items with commas. | `4.4%` or `Revenue Online, paper form, tax software` |
+| **Effectiveness** | Describe what a genuinely helpful response looks like | `Should advise checking Revenue Online and contacting DOR if there is no update` |
+| **Ease of Use** | Optional — leave blank for a general plain-language check, or describe the specific quality | `uses numbered steps` |
+| **Emotion** | Optional — leave blank for a general empathy check, or describe the specific tone expected | `Should acknowledge frustration and provide actionable next steps` |
+
+**Safety works in reverse:** you describe the wrong answer, not the right one. Evergreen checks that the AI avoids making that claim.
+
+**For Accuracy**, separate multiple required items with commas:
+
+```
+Revenue Online, paper form, tax software
+```
+
+All items must appear in the response to pass.
 
 ---
 
@@ -64,24 +90,6 @@ If there's no special context, leave this column blank.
 
 ---
 
-### Check Type
-
-This tells the tool HOW to judge the AI's response. Pick the one that fits:
-
-| Check Type | In Plain English | Best For |
-|------------|-----------------|----------|
-| `contains` | The response must include this exact text | Specific numbers, names, URLs, dates |
-| `not-contains` | The response must NOT include this text | Catching dangerous misinformation |
-| `contains-all` | The response must include ALL of these items | Lists of required steps or elements |
-| `regex` | The response must match this pattern | Flexible matching (ask your tech colleague) |
-| `llm-rubric` | An AI judge scores the response against your description | Nuanced quality — tone, completeness, accuracy |
-
-**When in doubt, start with `contains`.** It's the simplest and most predictable.
-
-**Use `llm-rubric` when** the correct answer can't be reduced to a keyword — for example, "The response should acknowledge the complexity and recommend consulting a tax professional."
-
----
-
 ### Severity
 
 How bad is it if the AI gets this wrong? This determines how the report prioritizes failures.
@@ -95,20 +103,24 @@ How bad is it if the AI gets this wrong? This determines how the report prioriti
 
 **Rule of thumb:** If a wrong answer could cost someone money, delay their benefits, or send them to the wrong place, it's **critical** or **high**.
 
+> **Note:** All **Safety** failures are treated as deployment blockers regardless of severity. Even a low-severity Safety failure will prevent a "Ready for Deployment" verdict.
+
 ---
 
 ## How Many Test Cases Do I Need?
 
 **Start with 5-10.** That's enough to get meaningful results and learn the process.
 
-A good first set covers:
+A good first set covers all five metrics:
 
-| Category | Count | Examples |
-|----------|-------|---------|
-| **Factual accuracy** (things with one right answer) | 3-4 | Tax rates, deadlines, eligibility thresholds |
-| **Practical navigation** (how-to questions) | 2-3 | How to file, where to apply, what documents to bring |
-| **Dangerous misinformation** (things it must NOT say) | 1-2 | Wrong eligibility, incorrect legal advice |
-| **Nuanced judgment** (complex questions) | 1-2 | Situations that depend on context |
+| Metric | Count | Examples |
+|--------|-------|---------|
+| **Safety** | 1-2 | Things the AI must never claim or promise |
+| **Accuracy** | 3-4 | Specific facts, rates, deadlines, eligibility rules |
+| **Effectiveness** | 2-3 | How-to questions and context-dependent situations |
+| **Ease of Use** | 1 | Whether the response is readable for a non-expert |
+| **Emotion** | 1 | Whether the response handles a stressed user appropriately |
+| **Total** | **8-11** | |
 
 You can always add more test cases later. The Sheet is a living document.
 
@@ -133,12 +145,13 @@ If you can, involve all three when writing your test cases. At minimum, review y
 | Writing questions in formal policy language | Real users don't talk that way | Use plain language |
 | Making all test cases `medium` severity | The report can't prioritize what matters | Be honest about impact |
 | Only testing "happy path" questions | Misses the cases where AI is most dangerous | Add edge cases and "what if" scenarios |
-| Expected answer is the entire correct response | `contains` will fail if the AI words it differently | Focus on the KEY fact that must be present |
-| Too many `llm-rubric` test cases | LLM-as-judge is slower and less predictable | Use `contains` when you can |
+| "What to Check" contains the entire correct response | Accuracy checks for exact matches | Focus on the KEY fact that must be present |
+| All test cases use the same metric | Misses whole categories of failure | Cover all five metrics |
+| Safety test describes the CORRECT answer | Safety is a negation test — it checks what to avoid | Describe the dangerous claim the AI must NOT make |
 
 ---
 
 ## Next Steps
 
 - [Understanding Results](./04-understanding-results.md) — how to read what the report tells you
-- [Evaluation Design](./05-evaluation-design.md) — the four-dimension framework for comprehensive testing
+- [Evaluation Design](./05-evaluation-design.md) — the five lead metrics framework for comprehensive testing
