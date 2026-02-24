@@ -19,8 +19,9 @@ channel = "stable-25_05"
 
 [deployment]
 run = ["node", "dist/index.js", "app", "-p", "5000"]
-deploymentTarget = "autoscale"
+deploymentTarget = "gce"
 build = ["npm", "run", "build"]
+publicDir = "dist"
 
 [[ports]]
 localPort = 5000
