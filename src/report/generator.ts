@@ -97,6 +97,8 @@ interface TestCaseView {
 
 // ---------- Helpers ----------
 
+/** Minimum pass rate (%) below which the system is "Not Ready" regardless of critical failures. */
+const PASS_RATE_FLOOR = 50;
 /** Minimum pass rate (%) to be considered deployment-ready. */
 const PASS_RATE_THRESHOLD = 80;
 
@@ -209,6 +211,16 @@ function deriveReportData(input: EvalResults): ReportData {
       'Update the system prompt or knowledge base to address the gaps',
       'Re-run the evaluation to confirm the fixes',
       'Escalate to technical staff if the issue requires model or retrieval changes',
+    ];
+  } else if (bestPassRate < PASS_RATE_FLOOR) {
+    readinessClass = 'not-ready';
+    readinessLabel = 'Not Ready for Deployment';
+    readinessExplanation = `The overall pass rate (${bestPassRate}%) is below the minimum ${PASS_RATE_FLOOR}% floor. The system needs significant improvement before deployment.`;
+    nextSteps = [
+      'Open the Analysis tab to identify which dimensions are weakest',
+      'Review failing test cases in the Details tab for patterns',
+      'Update the system prompt or knowledge base to address widespread gaps',
+      'Re-run the evaluation after making changes',
     ];
   } else if (bestPassRate < PASS_RATE_THRESHOLD) {
     readinessClass = 'caution';
@@ -521,7 +533,7 @@ function renderHtml(data: ReportData): string {
     .filter(m => data.testCases.some(tc => tc.metric === m))
     .map(m => {
       const count = data.testCases.filter(tc => tc.metric === m).length;
-      return `<button class="usa-button usa-button--outline filter-btn" data-filter="metric-${m}" onclick="applyFilter('metric-${m}')">
+      return `<button class="usa-button usa-button--outline filter-btn filter-btn-metric" data-filter="metric-${m}" onclick="applyFilter('metric-${m}')">
       ${esc(METRIC_LABELS[m])} <span class="filter-count">${count}</span>
     </button>`;
     }).join('\n    ');
@@ -978,8 +990,6 @@ table.data-table, table.detail-table {
   cursor: pointer;
   transition: all .15s;
 }
-.filter-btn:hover { border-color: var(--brand); color: var(--brand); }
-.filter-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
 .filter-btn .filter-count {
   background: rgba(255,255,255,.25);
   border-radius: 10px;
@@ -988,6 +998,13 @@ table.data-table, table.detail-table {
   margin-left: 4px;
 }
 .filter-btn:not(.active) .filter-count { background: var(--border-sub); color: var(--text-3); }
+.filter-group-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; margin-right: 2px; }
+/* Status/severity group — warm amber accent */
+.filter-btn-status:hover { border-color: #c05600; color: #c05600; }
+.filter-btn-status.active { background: #c05600; border-color: #c05600; color: #fff; font-weight: 600; }
+/* Metric group — blue accent */
+.filter-btn-metric:hover { border-color: var(--brand); color: var(--brand); }
+.filter-btn-metric.active { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
 .filter-divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
 .filter-result { font-size: 13px; color: var(--text-3); margin-left: auto; }
 .toggle-expand { font-size: 12px; color: var(--brand); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
@@ -1274,17 +1291,18 @@ table.data-table, table.detail-table {
 <div class="grid-container">
 
   <div class="filter-bar">
-    <span class="filter-label">Show</span>
-    <button class="usa-button filter-btn active" data-filter="all" onclick="applyFilter('all')">
+    <span class="filter-group-label">Status</span>
+    <button class="usa-button filter-btn filter-btn-status active" data-filter="all" onclick="applyFilter('all')">
       All <span class="filter-count">${data.testCaseCount}</span>
     </button>
-    <button class="usa-button usa-button--outline filter-btn" data-filter="failures" onclick="applyFilter('failures')">
+    <button class="usa-button usa-button--outline filter-btn filter-btn-status" data-filter="failures" onclick="applyFilter('failures')">
       Failures <span class="filter-count">${failedCount}</span>
     </button>
-    <button class="usa-button usa-button--outline filter-btn" data-filter="critical" onclick="applyFilter('critical')">
+    <button class="usa-button usa-button--outline filter-btn filter-btn-status" data-filter="critical" onclick="applyFilter('critical')">
       Critical <span class="filter-count">${data.criticalCaseCount}</span>
     </button>
     <span class="filter-divider"></span>
+    <span class="filter-group-label">Metric</span>
     ${metricFilterButtons}
     <span class="filter-result" id="filter-result"></span>
     <button class="usa-button usa-button--unstyled toggle-expand" id="toggle-expand" onclick="toggleExpandAll()">Expand all</button>

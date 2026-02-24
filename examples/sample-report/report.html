@@ -448,8 +448,6 @@ table.data-table, table.detail-table {
   cursor: pointer;
   transition: all .15s;
 }
-.filter-btn:hover { border-color: var(--brand); color: var(--brand); }
-.filter-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
 .filter-btn .filter-count {
   background: rgba(255,255,255,.25);
   border-radius: 10px;
@@ -458,6 +456,13 @@ table.data-table, table.detail-table {
   margin-left: 4px;
 }
 .filter-btn:not(.active) .filter-count { background: var(--border-sub); color: var(--text-3); }
+.filter-group-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; margin-right: 2px; }
+/* Status/severity group — warm amber accent */
+.filter-btn-status:hover { border-color: #c05600; color: #c05600; }
+.filter-btn-status.active { background: #c05600; border-color: #c05600; color: #fff; font-weight: 600; }
+/* Metric group — blue accent */
+.filter-btn-metric:hover { border-color: var(--brand); color: var(--brand); }
+.filter-btn-metric.active { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
 .filter-divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
 .filter-result { font-size: 13px; color: var(--text-3); margin-left: auto; }
 .toggle-expand { font-size: 12px; color: var(--brand); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
@@ -899,30 +904,31 @@ table.data-table, table.detail-table {
 <div class="grid-container">
 
   <div class="filter-bar">
-    <span class="filter-label">Show</span>
-    <button class="usa-button filter-btn active" data-filter="all" onclick="applyFilter('all')">
+    <span class="filter-group-label">Status</span>
+    <button class="usa-button filter-btn filter-btn-status active" data-filter="all" onclick="applyFilter('all')">
       All <span class="filter-count">6</span>
     </button>
-    <button class="usa-button usa-button--outline filter-btn" data-filter="failures" onclick="applyFilter('failures')">
+    <button class="usa-button usa-button--outline filter-btn filter-btn-status" data-filter="failures" onclick="applyFilter('failures')">
       Failures <span class="filter-count">1</span>
     </button>
-    <button class="usa-button usa-button--outline filter-btn" data-filter="critical" onclick="applyFilter('critical')">
+    <button class="usa-button usa-button--outline filter-btn filter-btn-status" data-filter="critical" onclick="applyFilter('critical')">
       Critical <span class="filter-count">2</span>
     </button>
     <span class="filter-divider"></span>
-    <button class="usa-button usa-button--outline filter-btn" data-filter="metric-safety" onclick="applyFilter('metric-safety')">
+    <span class="filter-group-label">Metric</span>
+    <button class="usa-button usa-button--outline filter-btn filter-btn-metric" data-filter="metric-safety" onclick="applyFilter('metric-safety')">
       Safety <span class="filter-count">1</span>
     </button>
-    <button class="usa-button usa-button--outline filter-btn" data-filter="metric-accuracy" onclick="applyFilter('metric-accuracy')">
+    <button class="usa-button usa-button--outline filter-btn filter-btn-metric" data-filter="metric-accuracy" onclick="applyFilter('metric-accuracy')">
       Accuracy <span class="filter-count">2</span>
     </button>
-    <button class="usa-button usa-button--outline filter-btn" data-filter="metric-ease-of-use" onclick="applyFilter('metric-ease-of-use')">
+    <button class="usa-button usa-button--outline filter-btn filter-btn-metric" data-filter="metric-ease-of-use" onclick="applyFilter('metric-ease-of-use')">
       Ease of Use <span class="filter-count">1</span>
     </button>
-    <button class="usa-button usa-button--outline filter-btn" data-filter="metric-effectiveness" onclick="applyFilter('metric-effectiveness')">
+    <button class="usa-button usa-button--outline filter-btn filter-btn-metric" data-filter="metric-effectiveness" onclick="applyFilter('metric-effectiveness')">
       Effectiveness <span class="filter-count">1</span>
     </button>
-    <button class="usa-button usa-button--outline filter-btn" data-filter="metric-emotion" onclick="applyFilter('metric-emotion')">
+    <button class="usa-button usa-button--outline filter-btn filter-btn-metric" data-filter="metric-emotion" onclick="applyFilter('metric-emotion')">
       Emotion <span class="filter-count">1</span>
     </button>
     <span class="filter-result" id="filter-result"></span>
@@ -1164,7 +1170,7 @@ table.data-table, table.detail-table {
     <span><strong>Framework:</strong> Evergreen 4-Dimension Eval</span>
     <span><strong>Test Source:</strong> Google Sheets</span>
     <span><strong>Metrics:</strong> Safety, Accuracy, Ease of Use, Effectiveness, Emotion</span>
-    <span><strong>Generated:</strong> 2026-02-24T03:57:57.550Z</span>
+    <span><strong>Generated:</strong> 2026-02-24T15:16:40.480Z</span>
     
   </div>
 </footer>

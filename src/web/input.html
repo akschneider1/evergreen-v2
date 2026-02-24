@@ -146,7 +146,6 @@
                          name="dataSource" value="preset" onchange="handleDataSourceChange()">
                   <label class="usa-radio__label" for="dataSource-preset">
                     Built-in test suite
-                    <span style="font-size:0.8125rem; color:#71767a;">(recommended for demos)</span>
                   </label>
                 </div>
               </fieldset>
@@ -173,11 +172,17 @@
               <span class="usa-error-message" id="presetId-error" role="alert" style="display:none">Please select a test suite.</span>
               <select class="usa-select" id="presetId" name="presetId" required aria-describedby="presetId-error" onchange="handlePresetChange()">
                 <option value="">-- Select a test suite --</option>
-                <option value="wheres-my-refund">Where's My Refund (25 tests)</option>
-                <option value="benefits-eligibility">Benefits Eligibility Checker (25 tests)</option>
-                <option value="agent-assist">Agent Assist (25 tests)</option>
-                <option value="call-center-summaries">Call Center Summaries (25 tests)</option>
-                <option value="permitting-assistant">Permitting Assistant (25 tests)</option>
+                <optgroup label="Live test suites (requires API key)">
+                  <option value="wheres-my-refund">Where's My Refund (25 tests)</option>
+                  <option value="benefits-eligibility">Benefits Eligibility Checker (25 tests)</option>
+                  <option value="agent-assist">Agent Assist (25 tests)</option>
+                  <option value="call-center-summaries">Call Center Summaries (25 tests)</option>
+                  <option value="permitting-assistant">Permitting Assistant (25 tests)</option>
+                </optgroup>
+                <optgroup label="Demo suites (requires API key)">
+                  <option value="demo-ready">Ready for Deployment — Test (5 tests)</option>
+                  <option value="demo-needs-improvement">Needs Improvement — Test (5 tests)</option>
+                </optgroup>
               </select>
             </div>
 
