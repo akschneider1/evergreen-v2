@@ -171,7 +171,7 @@
                 <span class="usa-hint">Choose a pre-built evaluation for your use case</span>
               </label>
               <span class="usa-error-message" id="presetId-error" role="alert" style="display:none">Please select a test suite.</span>
-              <select class="usa-select" id="presetId" name="presetId" required aria-describedby="presetId-error">
+              <select class="usa-select" id="presetId" name="presetId" required aria-describedby="presetId-error" onchange="handlePresetChange()">
                 <option value="">-- Select a test suite --</option>
                 <option value="wheres-my-refund">Where's My Refund (25 tests)</option>
                 <option value="benefits-eligibility">Benefits Eligibility Checker (25 tests)</option>
@@ -334,7 +334,6 @@
   let currentJobId = null;
   let pollInterval = null;
   let currentPollMs = 2000;
-  let lastKnownStep = 0;
 
   document.getElementById('eval-form').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -525,6 +524,15 @@
     document.getElementById('progress-section').style.display = 'none';
     document.getElementById('error-section').style.display    = 'block';
     document.getElementById('error-message').textContent = msg;
+  }
+
+  function handlePresetChange() {
+    var presetEl = document.getElementById('presetId');
+    var descEl = document.getElementById('description');
+    if (presetEl && descEl && presetEl.value && !descEl.value.trim()) {
+      var label = presetEl.options[presetEl.selectedIndex].text.replace(/ \(\d+ tests\)$/, '');
+      descEl.value = label + ' Evaluation';
+    }
   }
 
   function handleUseCaseChange() {

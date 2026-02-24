@@ -161,7 +161,10 @@ export function createApp(): express.Application {
   });
 
   // USWDS static assets (self-hosted to avoid CDN dependency)
-  app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
+  app.use('/assets', express.static(path.join(__dirname, '..', 'assets'), {
+    maxAge: '1d',
+    immutable: true,
+  }));
 
   // Input form
   app.get('/', (_req, res) => {

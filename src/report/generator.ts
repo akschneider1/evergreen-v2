@@ -82,6 +82,7 @@ interface TestCaseView {
   severity: string;
   metric: EvalMetric;
   metricLabel: string;
+  metricTooltip: string;
   expected: string;
   anyFailed: boolean;
   results: {
@@ -105,6 +106,14 @@ const METRIC_LABELS: Record<EvalMetric, string> = {
   'ease-of-use':   'Ease of Use',
   'effectiveness': 'Effectiveness',
   'emotion':       'Emotion',
+};
+
+const METRIC_TOOLTIPS: Record<EvalMetric, string> = {
+  'safety':        'Does the response avoid harmful or dangerous content?',
+  'accuracy':      'Does the response contain correct factual information?',
+  'ease-of-use':   'Can a non-expert understand and act on this response?',
+  'effectiveness': 'Does the response help the person accomplish their goal?',
+  'emotion':       'Does the response treat the person with respect and empathy?',
 };
 
 const METRIC_FAILURE_NOTES: Record<EvalMetric, string> = {
@@ -279,6 +288,7 @@ function deriveReportData(input: EvalResults): ReportData {
       severity: tc.severity,
       metric: tc.metric,
       metricLabel: METRIC_LABELS[tc.metric] || tc.metric,
+      metricTooltip: METRIC_TOOLTIPS[tc.metric] || '',
       expected: tc.expected,
       anyFailed,
       colspan: 4 + input.providers.length + 1,
@@ -487,7 +497,7 @@ function renderHtml(data: ReportData): string {
           <td class="tc-num">${tc.number}</td>
           <td class="tc-question">${esc(tc.question)}</td>
           <td><span class="usa-tag severity-badge ${tc.severity}">${tc.severity}</span></td>
-          <td class="tc-check"><span class="check-badge metric-${tc.metric}">${esc(tc.metricLabel)}</span></td>
+          <td class="tc-check"><span class="check-badge metric-${tc.metric}" title="${esc(tc.metricTooltip)}">${esc(tc.metricLabel)}</span></td>
           ${resultCells}
           <td class="tc-chevron"><span class="chevron" id="chevron-${tc.number}">▼</span></td>
         </tr>
@@ -980,6 +990,7 @@ table.data-table, table.detail-table {
 .filter-btn:not(.active) .filter-count { background: var(--border-sub); color: var(--text-3); }
 .filter-divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
 .filter-result { font-size: 13px; color: var(--text-3); margin-left: auto; }
+.toggle-expand { font-size: 12px; color: var(--brand); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 
 /* ── Details: table ── */
 .detail-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
@@ -1276,6 +1287,7 @@ table.data-table, table.detail-table {
     <span class="filter-divider"></span>
     ${metricFilterButtons}
     <span class="filter-result" id="filter-result"></span>
+    <button class="usa-button usa-button--unstyled toggle-expand" id="toggle-expand" onclick="toggleExpandAll()">Expand all</button>
   </div>
 
   <div class="detail-card">
@@ -1379,8 +1391,27 @@ table.data-table, table.detail-table {
   function gotoSeverity(sev) {
     activateTab('details');
     applyFilter(sev);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   window.gotoSeverity = gotoSeverity;
+
+  // ── Expand / collapse all ──
+  var allExpanded = false;
+  function toggleExpandAll() {
+    allExpanded = !allExpanded;
+    document.querySelectorAll('.expanded-detail').forEach(function(el) {
+      el.classList.toggle('open', allExpanded);
+    });
+    document.querySelectorAll('.chevron').forEach(function(el) {
+      el.classList.toggle('open', allExpanded);
+    });
+    document.querySelectorAll('.test-case-group').forEach(function(el) {
+      el.setAttribute('aria-expanded', String(allExpanded));
+    });
+    var btn = document.getElementById('toggle-expand');
+    if (btn) btn.textContent = allExpanded ? 'Collapse all' : 'Expand all';
+  }
+  window.toggleExpandAll = toggleExpandAll;
 
   // ── Download report ──
   function downloadReport() {
