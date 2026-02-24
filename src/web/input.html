@@ -173,11 +173,11 @@
               <span class="usa-error-message" id="presetId-error" role="alert" style="display:none">Please select a test suite.</span>
               <select class="usa-select" id="presetId" name="presetId" required aria-describedby="presetId-error">
                 <option value="">-- Select a test suite --</option>
-                <option value="wheres-my-refund">Where's My Refund</option>
-                <option value="benefits-eligibility">Benefits Eligibility Checker</option>
-                <option value="agent-assist">Agent Assist</option>
-                <option value="call-center-summaries">Call Center Summaries</option>
-                <option value="permitting-assistant">Permitting Assistant</option>
+                <option value="wheres-my-refund">Where's My Refund (25 tests)</option>
+                <option value="benefits-eligibility">Benefits Eligibility Checker (25 tests)</option>
+                <option value="agent-assist">Agent Assist (25 tests)</option>
+                <option value="call-center-summaries">Call Center Summaries (25 tests)</option>
+                <option value="permitting-assistant">Permitting Assistant (25 tests)</option>
               </select>
             </div>
 
@@ -263,6 +263,7 @@
             </div>
           </div>
           <div class="step-spinner" id="step-spinner">Running test cases against the LLM — this is the longest step…</div>
+          <div class="usa-sr-only" aria-live="polite" id="step-announce"></div>
         </div>
 
         <!-- Error Section -->
@@ -332,6 +333,8 @@
 <script>
   let currentJobId = null;
   let pollInterval = null;
+  let currentPollMs = 2000;
+  let lastKnownStep = 0;
 
   document.getElementById('eval-form').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -458,6 +461,13 @@
       .then(res => res.json())
       .then(data => {
         updateSteps(data.step);
+        // Slow polling during step 3 (the long eval), speed up for other steps
+        var targetMs = data.step === 3 ? 4000 : 2000;
+        if (targetMs !== currentPollMs) {
+          currentPollMs = targetMs;
+          clearInterval(pollInterval);
+          pollInterval = setInterval(pollStatus, currentPollMs);
+        }
         if (data.status === 'complete') {
           clearInterval(pollInterval);
           showSuccess('/report/' + currentJobId);
@@ -493,6 +503,8 @@
     if (currentStepEl) currentStepEl.textContent = String(Math.min(currentStep, 4));
     if (headingTextEl) headingTextEl.textContent = stepNames[Math.min(currentStep, 4) - 1] || '';
     if (spinnerEl) spinnerEl.classList.toggle('active', currentStep === 3);
+    var announceEl = document.getElementById('step-announce');
+    if (announceEl) announceEl.textContent = 'Step ' + Math.min(currentStep, 4) + ' of 4: ' + (stepNames[Math.min(currentStep, 4) - 1] || '');
   }
 
   function showSuccess(reportUrl) {

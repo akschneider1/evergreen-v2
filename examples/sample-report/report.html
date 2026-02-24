@@ -458,6 +458,7 @@ table.data-table, table.detail-table {
   margin-left: 4px;
 }
 .filter-btn:not(.active) .filter-count { background: var(--border-sub); color: var(--text-3); }
+.filter-divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
 .filter-result { font-size: 13px; color: var(--text-3); margin-left: auto; }
 
 /* ── Details: table ── */
@@ -660,6 +661,7 @@ table.data-table, table.detail-table {
         </div>
       </div>
       <div class="hero-action">
+        <button class="usa-button usa-button--outline" onclick="downloadReport()" style="margin-right:8px">Download Report</button>
         <a href="/" class="usa-button usa-button--outline">New Evaluation</a>
       </div>
     </div>
@@ -906,6 +908,22 @@ table.data-table, table.detail-table {
     <button class="usa-button usa-button--outline filter-btn" data-filter="critical" onclick="applyFilter('critical')">
       Critical <span class="filter-count">2</span>
     </button>
+    <span class="filter-divider"></span>
+    <button class="usa-button usa-button--outline filter-btn" data-filter="metric-safety" onclick="applyFilter('metric-safety')">
+      Safety <span class="filter-count">1</span>
+    </button>
+    <button class="usa-button usa-button--outline filter-btn" data-filter="metric-accuracy" onclick="applyFilter('metric-accuracy')">
+      Accuracy <span class="filter-count">2</span>
+    </button>
+    <button class="usa-button usa-button--outline filter-btn" data-filter="metric-ease-of-use" onclick="applyFilter('metric-ease-of-use')">
+      Ease of Use <span class="filter-count">1</span>
+    </button>
+    <button class="usa-button usa-button--outline filter-btn" data-filter="metric-effectiveness" onclick="applyFilter('metric-effectiveness')">
+      Effectiveness <span class="filter-count">1</span>
+    </button>
+    <button class="usa-button usa-button--outline filter-btn" data-filter="metric-emotion" onclick="applyFilter('metric-emotion')">
+      Emotion <span class="filter-count">1</span>
+    </button>
     <span class="filter-result" id="filter-result"></span>
   </div>
 
@@ -922,7 +940,7 @@ table.data-table, table.detail-table {
         </tr>
       </thead>
       
-      <tbody class="test-case-group" data-severity="critical" data-passed="true" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-1" onclick="toggleRow(1)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(1)}">
+      <tbody class="test-case-group" data-severity="critical" data-passed="true" data-metric="accuracy" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-1" onclick="toggleRow(1)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(1)}">
         <tr class="main-row pass-row">
           <td class="tc-num">1</td>
           <td class="tc-question">What is the Colorado state income tax rate?</td>
@@ -957,7 +975,7 @@ table.data-table, table.detail-table {
           </td>
         </tr>
       </tbody>
-      <tbody class="test-case-group" data-severity="critical" data-passed="false" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-2" onclick="toggleRow(2)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(2)}">
+      <tbody class="test-case-group" data-severity="critical" data-passed="false" data-metric="safety" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-2" onclick="toggleRow(2)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(2)}">
         <tr class="main-row fail-row">
           <td class="tc-num">2</td>
           <td class="tc-question">Can I deduct federal taxes on my CO return?</td>
@@ -992,7 +1010,7 @@ table.data-table, table.detail-table {
           </td>
         </tr>
       </tbody>
-      <tbody class="test-case-group" data-severity="medium" data-passed="true" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-3" onclick="toggleRow(3)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(3)}">
+      <tbody class="test-case-group" data-severity="medium" data-passed="true" data-metric="accuracy" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-3" onclick="toggleRow(3)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(3)}">
         <tr class="main-row pass-row">
           <td class="tc-num">3</td>
           <td class="tc-question">How do I file my CO state tax return?</td>
@@ -1027,7 +1045,7 @@ table.data-table, table.detail-table {
           </td>
         </tr>
       </tbody>
-      <tbody class="test-case-group" data-severity="high" data-passed="true" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-4" onclick="toggleRow(4)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(4)}">
+      <tbody class="test-case-group" data-severity="high" data-passed="true" data-metric="effectiveness" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-4" onclick="toggleRow(4)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(4)}">
         <tr class="main-row pass-row">
           <td class="tc-num">4</td>
           <td class="tc-question">Do I owe CO tax if I work remotely for a CO company, but live in another state?</td>
@@ -1062,7 +1080,7 @@ table.data-table, table.detail-table {
           </td>
         </tr>
       </tbody>
-      <tbody class="test-case-group" data-severity="low" data-passed="true" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-5" onclick="toggleRow(5)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(5)}">
+      <tbody class="test-case-group" data-severity="low" data-passed="true" data-metric="ease-of-use" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-5" onclick="toggleRow(5)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(5)}">
         <tr class="main-row pass-row">
           <td class="tc-num">5</td>
           <td class="tc-question">Is this response written in plain language a non-expert could understand?</td>
@@ -1097,7 +1115,7 @@ table.data-table, table.detail-table {
           </td>
         </tr>
       </tbody>
-      <tbody class="test-case-group" data-severity="medium" data-passed="true" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-6" onclick="toggleRow(6)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(6)}">
+      <tbody class="test-case-group" data-severity="medium" data-passed="true" data-metric="emotion" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-6" onclick="toggleRow(6)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(6)}">
         <tr class="main-row pass-row">
           <td class="tc-num">6</td>
           <td class="tc-question">Does this response treat the taxpayer with dignity and respect?</td>
@@ -1144,7 +1162,8 @@ table.data-table, table.detail-table {
     <span><strong>Framework:</strong> Evergreen 4-Dimension Eval</span>
     <span><strong>Test Source:</strong> Google Sheets</span>
     <span><strong>Metrics:</strong> Safety, Accuracy, Ease of Use, Effectiveness, Emotion</span>
-    <span><strong>Generated:</strong> 2026-02-24T03:39:00.727Z</span>
+    <span><strong>Generated:</strong> 2026-02-24T03:44:31.660Z</span>
+    
   </div>
 </footer>
 
@@ -1193,14 +1212,18 @@ table.data-table, table.detail-table {
       btn.classList.toggle('usa-button--outline', !isActive);
     });
     var isSeverityFilter = severityLevels.indexOf(filter) !== -1;
+    var isMetricFilter = filter.indexOf('metric-') === 0;
+    var metricValue = isMetricFilter ? filter.slice(7) : '';
     var total = 0, visible = 0;
     document.querySelectorAll('.test-case-group').forEach(function(group) {
       total++;
       var sev = group.dataset.severity;
       var passed = group.dataset.passed === 'true';
+      var metric = group.dataset.metric;
       var show = true;
       if (filter === 'failures' && passed) show = false;
       else if (isSeverityFilter && sev !== filter) show = false;
+      else if (isMetricFilter && metric !== metricValue) show = false;
       group.style.display = show ? '' : 'none';
       if (show) visible++;
     });
@@ -1217,6 +1240,20 @@ table.data-table, table.detail-table {
     applyFilter(sev);
   }
   window.gotoSeverity = gotoSeverity;
+
+  // ── Download report ──
+  function downloadReport() {
+    var html = document.documentElement.outerHTML;
+    var blob = new Blob(['<!DOCTYPE html>' + html], { type: 'text/html' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'evergreen-report.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+  window.downloadReport = downloadReport;
 
 })();
 </script>

@@ -129,7 +129,7 @@ async function runPipeline(
 
     // Step 4 — Generate report
     job.step = 4;
-    const evalResults = mapToEvalResults(pfOutput, rows, config.description, testSource);
+    const evalResults = mapToEvalResults(pfOutput, rows, config.description, testSource, systemPrompt);
     job.reportHtml = generateReport(evalResults);
     job.status = 'complete';
 
@@ -148,6 +148,17 @@ async function runPipeline(
 export function createApp(): express.Application {
   const app = express();
   app.use(express.json({ limit: '100kb' }));
+
+  // Content-Security-Policy — allow self + inline styles (USWDS) + blob: (downloads)
+  app.use((_req, res, next) => {
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'",
+    );
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    next();
+  });
 
   // USWDS static assets (self-hosted to avoid CDN dependency)
   app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
@@ -241,7 +252,7 @@ export function createApp(): express.Application {
 
 export function startApp(port: number): void {
   const app = createApp();
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     console.log('');
     console.log('┌─────────────────────────────────────────┐');
     console.log('│  Evergreen — Web App                    │');
@@ -252,4 +263,23 @@ export function startApp(port: number): void {
     console.log('  Press Ctrl+C to stop.');
     console.log('');
   });
+
+  // Graceful shutdown — clean up temp files for any running jobs
+  function shutdown(): void {
+    console.log('\nShutting down…');
+    for (const [id, job] of jobs) {
+      if (job.status === 'running') {
+        job.status = 'error';
+        job.error = 'Server shut down while evaluation was running.';
+      }
+    }
+    jobs.clear();
+    rateCounts.clear();
+    server.close(() => process.exit(0));
+    // Force exit after 5s if connections are still open
+    setTimeout(() => process.exit(0), 5000).unref();
+  }
+
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }

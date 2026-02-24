@@ -19,6 +19,7 @@ export function mapToEvalResults(
   rows: SheetRow[],
   title: string,
   testSource = 'Google Sheets',
+  systemPrompt?: string,
 ): EvalResults {
   // Extract unique providers from results
   const providerIds = [
@@ -78,6 +79,7 @@ export function mapToEvalResults(
     date: new Date().toISOString().split('T')[0],
     providers: providerIds,
     testSource,
+    ...(systemPrompt ? { systemPrompt } : {}),
     testCases,
   };
 }

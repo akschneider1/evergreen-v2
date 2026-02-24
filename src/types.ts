@@ -141,6 +141,7 @@ export interface EvalResults {
   date: string;
   providers: string[];
   testSource: string;
+  systemPrompt?: string;
   testCases: TestCaseResult[];
 }
 

@@ -39,6 +39,7 @@ interface ReportData {
   dimensions: DimensionResult[];
   patternNote: string;
   severities: SeverityRow[];
+  systemPrompt: string;
   testCases: TestCaseView[];
 }
 
@@ -306,6 +307,7 @@ function deriveReportData(input: EvalResults): ReportData {
     hasCriticalFailures: hasCritical,
     multipleProviders: input.providers.length > 1,
     testSource: input.testSource,
+    systemPrompt: input.systemPrompt || '',
     gradingMethods: METRIC_ORDER.filter(m => dimCounts[m]).map(m => METRIC_LABELS[m]).join(', '),
     generatedAt: new Date().toISOString(),
     providers,
@@ -480,7 +482,7 @@ function renderHtml(data: ReportData): string {
     `).join('');
 
     return `
-      <tbody class="test-case-group" data-severity="${tc.severity}" data-passed="${!tc.anyFailed}" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-${tc.number}" onclick="toggleRow(${tc.number})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(${tc.number})}">
+      <tbody class="test-case-group" data-severity="${tc.severity}" data-passed="${!tc.anyFailed}" data-metric="${tc.metric}" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-${tc.number}" onclick="toggleRow(${tc.number})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(${tc.number})}">
         <tr class="main-row ${tc.anyFailed ? 'fail-row' : 'pass-row'}">
           <td class="tc-num">${tc.number}</td>
           <td class="tc-question">${esc(tc.question)}</td>
@@ -504,6 +506,15 @@ function renderHtml(data: ReportData): string {
   }).join('');
 
   const failedCount = data.testCases.filter(tc => tc.anyFailed).length;
+
+  const metricFilterButtons = METRIC_ORDER
+    .filter(m => data.testCases.some(tc => tc.metric === m))
+    .map(m => {
+      const count = data.testCases.filter(tc => tc.metric === m).length;
+      return `<button class="usa-button usa-button--outline filter-btn" data-filter="metric-${m}" onclick="applyFilter('metric-${m}')">
+      ${esc(METRIC_LABELS[m])} <span class="filter-count">${count}</span>
+    </button>`;
+    }).join('\n    ');
 
   // ── Full HTML ──────────────────────────────────────────────────────────
 
@@ -967,6 +978,7 @@ table.data-table, table.detail-table {
   margin-left: 4px;
 }
 .filter-btn:not(.active) .filter-count { background: var(--border-sub); color: var(--text-3); }
+.filter-divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
 .filter-result { font-size: 13px; color: var(--text-3); margin-left: auto; }
 
 /* ── Details: table ── */
@@ -1169,6 +1181,7 @@ table.data-table, table.detail-table {
         </div>
       </div>
       <div class="hero-action">
+        <button class="usa-button usa-button--outline" onclick="downloadReport()" style="margin-right:8px">Download Report</button>
         <a href="/" class="usa-button usa-button--outline">New Evaluation</a>
       </div>
     </div>
@@ -1260,6 +1273,8 @@ table.data-table, table.detail-table {
     <button class="usa-button usa-button--outline filter-btn" data-filter="critical" onclick="applyFilter('critical')">
       Critical <span class="filter-count">${data.criticalCaseCount}</span>
     </button>
+    <span class="filter-divider"></span>
+    ${metricFilterButtons}
     <span class="filter-result" id="filter-result"></span>
   </div>
 
@@ -1289,6 +1304,7 @@ table.data-table, table.detail-table {
     <span><strong>Test Source:</strong> ${esc(data.testSource)}</span>
     <span><strong>Metrics:</strong> ${esc(data.gradingMethods)}</span>
     <span><strong>Generated:</strong> ${esc(data.generatedAt)}</span>
+    ${data.systemPrompt ? `<span><strong>System Prompt:</strong> ${esc(data.systemPrompt.length > 120 ? data.systemPrompt.slice(0, 120) + '…' : data.systemPrompt)}</span>` : ''}
   </div>
 </footer>
 
@@ -1337,14 +1353,18 @@ table.data-table, table.detail-table {
       btn.classList.toggle('usa-button--outline', !isActive);
     });
     var isSeverityFilter = severityLevels.indexOf(filter) !== -1;
+    var isMetricFilter = filter.indexOf('metric-') === 0;
+    var metricValue = isMetricFilter ? filter.slice(7) : '';
     var total = 0, visible = 0;
     document.querySelectorAll('.test-case-group').forEach(function(group) {
       total++;
       var sev = group.dataset.severity;
       var passed = group.dataset.passed === 'true';
+      var metric = group.dataset.metric;
       var show = true;
       if (filter === 'failures' && passed) show = false;
       else if (isSeverityFilter && sev !== filter) show = false;
+      else if (isMetricFilter && metric !== metricValue) show = false;
       group.style.display = show ? '' : 'none';
       if (show) visible++;
     });
@@ -1361,6 +1381,20 @@ table.data-table, table.detail-table {
     applyFilter(sev);
   }
   window.gotoSeverity = gotoSeverity;
+
+  // ── Download report ──
+  function downloadReport() {
+    var html = document.documentElement.outerHTML;
+    var blob = new Blob(['<!DOCTYPE html>' + html], { type: 'text/html' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'evergreen-report.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+  window.downloadReport = downloadReport;
 
 })();
 </script>
