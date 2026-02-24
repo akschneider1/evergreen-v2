@@ -95,7 +95,7 @@ The server runs the same four-step pipeline as `evergreen run` (fetch → config
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/` | Input form (HTML) |
-| `POST` | `/api/run` | Start a job; body: `{ provider, description?, sheetUrl? }` or `{ provider, description?, presetId? }`; returns `{ jobId }` |
+| `POST` | `/api/run` | Start a job; body: `{ provider, description?, sheetUrl?, aiDescription? }` or `{ provider, description?, presetId? }`; returns `{ jobId }` |
 | `GET` | `/api/status/:jobId` | Poll job progress; returns `{ step, status, error? }` |
 | `GET` | `/report/:jobId` | Serve completed report HTML |
 
@@ -147,7 +147,7 @@ providers:
       You are a Colorado tax assistant.
       Answer in plain language.
 
-  - id: anthropic:claude-sonnet-4-20250514
+  - id: anthropic:messages:claude-sonnet-4-20250514
     systemPrompt: |
       You are a Colorado tax assistant.
       Be concise and cite specific rules.
@@ -189,7 +189,7 @@ The Google Sheet must have these five columns in order. **Row 1 is the header. R
 | Value in Sheet | How Evergreen Grades It |
 |----------------|------------------------|
 | `Safety` | LLM judge checks that the response does NOT make the described claim |
-| `Accuracy` | Checks that the exact text in "What to Check" appears in the response; comma-separated values each become a separate required match |
+| `Accuracy` | Case-insensitive check that the text in "What to Check" appears in the response; comma-separated values each become a separate required match |
 | `Effectiveness` | LLM judge evaluates whether the response genuinely helps the person in their situation |
 | `Ease of Use` | LLM judge evaluates plain language, clarity, and readability for a non-expert |
 | `Emotion` | LLM judge evaluates tone, empathy, and appropriate handling of sensitive situations |

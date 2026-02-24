@@ -6,7 +6,9 @@ After running `npx evergreen run`, you'll get an HTML report. This guide explain
 
 ## Opening the Report
 
-The easiest way is to run the report server:
+**If you used the web app** (`npx evergreen app`): the report opens automatically when the evaluation finishes. You can also click the **Download Report** button in the report header to save a copy.
+
+**If you used the CLI** (`npx evergreen run`): start the report server:
 
 ```bash
 npx evergreen serve
@@ -108,10 +110,19 @@ This tab is for technical staff who need to triage failures and understand gradi
 
 ### Filter Bar
 
-Three filter buttons at the top let you narrow the table instantly:
+The top of the Details tab has filter buttons to narrow the table:
+
+**Status filters:**
 - **All** — show every test case
 - **Failures** — show only test cases where at least one provider failed
 - **Critical** — show only critical-severity test cases
+
+**Metric filters** (after the divider):
+- One button per metric in the evaluation (e.g., Safety, Accuracy, Ease of Use, Effectiveness, Emotion), each showing a count
+
+An **Expand all / Collapse all** toggle on the right lets you open or close all test case details at once.
+
+A count label (e.g., "5 of 25 shown") appears when a filter is active.
 
 ### Test Case Table
 
@@ -172,6 +183,7 @@ Use this framework:
 
 The report is a single HTML file. You can:
 
+- **Download it** directly from the report using the **Download Report** button in the header — saves the full report as a standalone HTML file
 - **Email it** as an attachment
 - **Upload it** to a shared drive
 - **Print it** to PDF (use File > Print in your browser — it has print-friendly styles)

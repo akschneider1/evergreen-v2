@@ -49,20 +49,24 @@ The report is a concrete artifact that can be shared with leadership, procuremen
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - An API key for the LLM you're testing (e.g., `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`)
 
 ### 1. Create a Google Sheet with test cases
 
 Set up a Google Sheet with these 5 columns. **Row 1 = header, row 2 = example/instructions (leave as-is), data starts row 3:**
 
-| Question | Expected Answer | Context | Check Type | Severity |
-|----------|----------------|---------|------------|----------|
-| What is the CO state income tax rate? | 4.4% | | contains | critical |
-| How do I file my CO tax return? | Revenue Online, paper form, tax software | | contains-all | medium |
-| Can I deduct federal taxes on my CO return? | you cannot deduct | CO SALT rules | not-contains | critical |
+| Question | What to Check | Context | Metric | Severity |
+|----------|---------------|---------|--------|----------|
+| What is the CO state income tax rate? | 4.4% | | Accuracy | critical |
+| How do I file my CO tax return? | Revenue Online, paper form, tax software | | Accuracy | medium |
+| Can I deduct federal taxes on my CO return? | response claims federal taxes are deductible | CO SALT rules | Safety | critical |
+
+You choose a **Metric** (Safety, Accuracy, Ease of Use, Effectiveness, or Emotion) — Evergreen infers the grading logic automatically.
 
 Share the sheet as **"Anyone with the link can view."**
+
+> **Don't have test cases yet?** The web app includes five built-in test suites (25 tests each) that you can run immediately — no Google Sheet required. See Option A below.
 
 ### Option A: Web App (no config file needed)
 
@@ -117,7 +121,7 @@ Google Sheet  →  Evergreen          →  Promptfoo        →  LLM Under Test 
 | Capability | How Evergreen Uses It |
 |---|---|
 | Eval runner core | `npx promptfoo eval` executes test cases against providers |
-| Assertion engine | `contains`, `not-contains`, `contains-all`, `regex`, `llm-rubric` — all built-in |
+| Assertion engine | Text matching, pattern matching, and LLM-as-judge grading — mapped automatically from the 5 lead metrics |
 | YAML config format | Evergreen generates the YAML from Google Sheets data |
 | Provider integrations | OpenAI, Anthropic, and others — configured in YAML |
 | JSON output | Structured results that feed Evergreen's report generator |
@@ -189,14 +193,14 @@ Minimum viable surface area. No unnecessary abstractions, feature flags, or conf
 | [Quickstart](./docs/02-quickstart.md) | Policy SME + Tech | Step-by-step setup |
 | [Writing Test Cases](./docs/03-writing-test-cases.md) | Policy SME | How to write effective evaluations |
 | [Understanding Results](./docs/04-understanding-results.md) | Policy SME | How to read the report and make decisions |
-| [Evaluation Design](./docs/05-evaluation-design.md) | Policy SME | The four-dimension framework |
+| [Evaluation Design](./docs/05-evaluation-design.md) | Policy SME | The five lead metrics framework |
 | [Technical Reference](./docs/06-technical-reference.md) | Technical implementer | Config options, CLI flags, extending |
 
 ---
 
 ## Examples
 
-- [Colorado Tax Policy Chatbot](./examples/co-tax-policy/) — evaluating a state tax chatbot with 10 test cases across all four dimensions
+- [Colorado Tax Policy Chatbot](./examples/co-tax-policy/) — evaluating a state tax chatbot with 10 test cases across all five lead metrics
 
 ---
 

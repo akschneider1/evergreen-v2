@@ -18,7 +18,7 @@ There are two ways to run Evergreen:
 | Item | Who Provides It |
 |------|----------------|
 | A Google account (to copy the Sheet template) | You |
-| Node.js 18 or later installed | Your technical colleague |
+| Node.js 20 or later installed | Your technical colleague |
 | An API key for the LLM you're testing (e.g., OpenAI) | Your technical colleague |
 
 ---
