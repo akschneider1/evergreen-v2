@@ -100,6 +100,7 @@
 <!-- Hero Header -->
 <div class="evergreen-hero">
   <div class="grid-container">
+    <div style="margin-bottom:0.5rem;"><a href="/" style="color:#dce4ef;text-decoration:none;font-size:0.875rem;">&larr; Back to home</a></div>
     <div class="usa-prose">
       <h1>Pre-Deployment AI Evaluation</h1>
       <p>Test whether your AI system gives safe, accurate answers before you deploy it to the public.</p>
@@ -176,6 +177,7 @@
               <select class="usa-select" id="presetId" name="presetId" required aria-describedby="presetId-error" onchange="handlePresetChange()">
                 <option value="">-- Select a test suite --</option>
                 <optgroup label="Live test suites (requires API key)">
+                  <option value="snap-food-assistance">SNAP / Food Assistance (25 tests)</option>
                   <option value="wheres-my-refund">Where's My Refund (25 tests)</option>
                   <option value="benefits-eligibility">Benefits Eligibility Checker (25 tests)</option>
                   <option value="agent-assist">Agent Assist (25 tests)</option>
@@ -216,6 +218,7 @@
               <span class="usa-error-message" id="aiUseCase-error" role="alert" style="display:none">Please select an approved use case.</span>
               <select class="usa-select" id="aiUseCase" name="aiUseCase" required aria-describedby="aiUseCase-error" onchange="handleUseCaseChange()">
                 <option value="">-- Select a use case --</option>
+                <option value="Helps residents check eligibility and apply for SNAP food assistance">SNAP / Food Assistance</option>
                 <option value="Helps residents look up the status of their state tax refund">Where's My Refund</option>
                 <option value="Helps residents determine eligibility for public assistance programs">Benefits Eligibility Checker</option>
                 <option value="Provides real-time guidance to human agents during resident support calls">Agent Assist</option>
@@ -233,6 +236,30 @@
               <input class="usa-input" id="aiDescription" name="aiDescription" type="text"
                      placeholder="e.g. Helps Colorado residents with state tax questions">
             </div>
+
+            <details style="margin-top:1.5rem;">
+              <summary class="usa-label" style="cursor:pointer; font-size:0.875rem; color:#71767a;">Evaluation context (optional)</summary>
+              <div style="margin-top:0.75rem;">
+                <div class="usa-form-group">
+                  <label class="usa-label" for="agencyName">Agency name</label>
+                  <input class="usa-input" id="agencyName" type="text" placeholder="e.g. Colorado Dept. of Human Services">
+                </div>
+                <div class="usa-form-group">
+                  <label class="usa-label" for="evaluatorName">Evaluator name</label>
+                  <input class="usa-input" id="evaluatorName" type="text" placeholder="e.g. Jane Smith, Policy Division">
+                </div>
+                <div class="usa-form-group">
+                  <label class="usa-label" for="evaluationReason">Reason for evaluation</label>
+                  <select class="usa-select" id="evaluationReason">
+                    <option value="">-- Optional --</option>
+                    <option value="Initial evaluation">Initial evaluation</option>
+                    <option value="Post-update re-evaluation">Post-update re-evaluation</option>
+                    <option value="Periodic review">Periodic review</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+            </details>
 
             <button type="submit" class="usa-button" id="run-btn">Run Evaluation</button>
 
@@ -444,6 +471,14 @@
         : useCaseEl.value;
     }
 
+    // Eval context (optional)
+    var agency = document.getElementById('agencyName').value.trim();
+    var evaluator = document.getElementById('evaluatorName').value.trim();
+    var reason = document.getElementById('evaluationReason').value;
+    if (agency) body.agencyName = agency;
+    if (evaluator) body.evaluatorName = evaluator;
+    if (reason && reason !== 'other') body.evaluationReason = reason;
+
     document.getElementById('form-section').style.display    = 'none';
     document.getElementById('progress-section').style.display = 'block';
     document.getElementById('error-section').style.display   = 'none';
@@ -567,6 +602,22 @@
     document.getElementById('error-section').style.display   = 'none';
     document.getElementById('progress-section').style.display = 'none';
   }
+
+  // Handle ?preset= query param — auto-select preset on page load
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    var presetParam = params.get('preset');
+    if (presetParam) {
+      var presetEl = document.getElementById('presetId');
+      var presetRadio = document.getElementById('dataSource-preset');
+      if (presetEl && presetRadio) {
+        presetRadio.checked = true;
+        handleDataSourceChange();
+        presetEl.value = presetParam;
+        handlePresetChange();
+      }
+    }
+  })();
 </script>
 </body>
 </html>

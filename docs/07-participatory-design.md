@@ -39,7 +39,7 @@ You need two types of participants. Aim for 2–4 people from each group. Fewer 
 
 ## Before the Session
 
-- [ ] Make a copy of the [Google Sheet template](https://docs.google.com/spreadsheets/d/1ysiHznH64SB9CjedjVnZOg5YkMrPyYofSAXXHXa0w0I/edit?usp=sharing) and set sharing to "Anyone with the link can edit"
+- [ ] Open the **Test Suite Builder** at `/builder` (or make a copy of the [Google Sheet template](https://docs.google.com/spreadsheets/d/1ysiHznH64SB9CjedjVnZOg5YkMrPyYofSAXXHXa0w0I/edit?usp=sharing)) — the Builder works well for in-person workshops where you can project the screen
 - [ ] Write a one-sentence description of the AI system: *"This chatbot helps Colorado residents check the status of their state tax refund."*
 - [ ] Prepare 2–3 example rows in the sheet so participants can see a finished test case
 - [ ] Decide whether the facilitator will also be a subject-matter expert — if so, plan for a separate note-taker, because it's very hard to facilitate and contribute at the same time
@@ -109,7 +109,7 @@ Before you start filling in the sheet, spend a few minutes organizing what you'v
 2. **Look for failures first**: what are the things that could go wrong? Safety failures, dangerous claims, confusing answers, cold responses to distressed users.
 3. **Then look for variety**: make sure you have test cases across all five metrics, not just the ones that came up most in conversation.
 
-Now fill in the sheet together. Use the reference table below for the **Metric** and **Severity** columns.
+Now fill in the Builder or sheet together. If using the Builder, the guided steps (metric → severity → question → criteria) make this process easier for first-time participants. Use the reference table below for the **Metric** and **Severity** fields.
 
 ---
 

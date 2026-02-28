@@ -1,6 +1,12 @@
 # Writing Test Cases
 
-This guide explains how to write good test cases in Google Sheets. You don't need any technical background — just knowledge of your domain.
+This guide explains how to write good test cases. You don't need any technical background — just knowledge of your domain.
+
+You can write test cases in two ways:
+- **Test Suite Builder** — built into Evergreen at `/builder`. Edit test cases visually with guided steps for metric, severity, question, and criteria.
+- **Google Sheets** — use the template spreadsheet. Good for collaboration and when you want a shareable document.
+
+Both methods produce the same result. The Builder is often easier for first-time users; Google Sheets is better for large teams editing together.
 
 ---
 
@@ -8,7 +14,7 @@ This guide explains how to write good test cases in Google Sheets. You don't nee
 
 A test case asks: **"If someone asks the AI this question, what kind of response should it give — and how do we check that?"**
 
-Each row in your Google Sheet is one test case with five columns:
+Each test case has five fields (columns in a Google Sheet, or steps in the Builder):
 
 | Column | Question to Ask Yourself |
 |--------|-------------------------|

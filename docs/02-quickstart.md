@@ -76,9 +76,17 @@ npx evergreen app
 
 Open **http://localhost:4000** in your browser.
 
-### Step 5A: Fill In the Form
+### Step 5A: Use the Web App
 
-The form lets you choose how to load test cases.
+When you open http://localhost:4000 you'll see the **landing page** with an overview of how Evergreen works and a library of template test suites.
+
+**Two ways to get started:**
+
+1. **Browse templates** — Click "Open in Builder" on any template card to view and customize test cases in the built-in **Test Suite Builder** at `/builder`. When you're ready, click "Run Evaluation" to jump to the run form.
+
+2. **Run now** — Click "Run now" on a template card (or go directly to `/run`) to start an evaluation immediately.
+
+**On the run form** (`/run`), choose how to load test cases:
 
 **Option 1 — My Google Sheet:**
 
@@ -94,8 +102,16 @@ The form lets you choose how to load test cases.
 | Field | What to Enter |
 |-------|--------------|
 | **Evaluation name** | A label for this run |
-| **Select test suite** | Choose from five pre-built suites (Where's My Refund, Benefits Eligibility, Agent Assist, Call Center Summaries, Permitting Assistant) |
+| **Select test suite** | Choose from six pre-built suites (Where's My Refund, Benefits Eligibility, SNAP / Food Assistance, Agent Assist, Call Center Summaries, Permitting Assistant) |
 | **LLM provider** | Select from the dropdown |
+
+**Optional — Evaluation context** (click "Add evaluation context" to expand):
+
+| Field | What to Enter |
+|-------|--------------|
+| **Agency name** | Your agency or department name |
+| **Evaluator name** | Your name (appears in the report header) |
+| **Reason for evaluation** | Initial evaluation, post-update re-evaluation, or periodic review |
 
 > Built-in suites are a fast way to run a realistic demo without setting up a Google Sheet first. If you just want to see how the tool works, start here.
 

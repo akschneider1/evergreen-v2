@@ -79,7 +79,18 @@ npx evergreen app
 npx evergreen app -p 3000
 ```
 
-Open **http://localhost:4000** in your browser. The form accepts:
+Open **http://localhost:4000** in your browser. The landing page shows an overview, template library, and links to the Builder and Run form.
+
+**Pages:**
+
+| Path | Description |
+|------|-------------|
+| `/` | Landing page — hero, how it works, template cards, regression testing guidance |
+| `/builder` | Test Suite Builder — browse templates, create/edit test cases, export CSV |
+| `/run` | Eval runner form — select test cases + provider, run evaluation |
+| `/report/:jobId` | Completed report (generated after eval) |
+
+**Run form fields** (`/run`):
 
 | Field | Required | Description |
 |-------|----------|-------------|
@@ -87,6 +98,9 @@ Open **http://localhost:4000** in your browser. The form accepts:
 | Test cases | Yes | Choose "My Google Sheet" (paste a URL) or "Built-in test suite" (select a preset) |
 | AI use case | When using Google Sheet | Select the use case category for the AI being tested |
 | LLM provider | Yes | Selected from a dropdown; same providers as `evergreen run` |
+| Agency name | No | Your agency (appears in report header) |
+| Evaluator name | No | Your name (appears in report header) |
+| Reason for evaluation | No | Initial, post-update, or periodic (appears in report header) |
 
 The server runs the same four-step pipeline as `evergreen run` (fetch → config → eval → report). When the pipeline completes, the report is served at `/report/:jobId` on the same server — no separate `evergreen serve` needed. Each report is held in memory for the lifetime of the server process.
 
@@ -94,8 +108,13 @@ The server runs the same four-step pipeline as `evergreen run` (fetch → config
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/` | Input form (HTML) |
-| `POST` | `/api/run` | Start a job; body: `{ provider, description?, sheetUrl?, aiDescription? }` or `{ provider, description?, presetId? }`; returns `{ jobId }` |
+| `GET` | `/` | Landing page (HTML) |
+| `GET` | `/builder` | Test Suite Builder (HTML) |
+| `GET` | `/run` | Eval runner form (HTML) |
+| `GET` | `/api/templates` | List all template presets (JSON); returns `[{ id, name, icon, domain, caseCount, description, metricDistribution }]` |
+| `GET` | `/api/templates/:id` | Get a single template with builder cases (JSON) |
+| `POST` | `/api/export-sheet` | Export builder cases as CSV; body: `{ cases: BuilderTestCase[] }` |
+| `POST` | `/api/run` | Start a job; body: `{ provider, description?, sheetUrl?, aiDescription?, presetId?, agencyName?, evaluatorName?, evaluationReason? }`; returns `{ jobId }` |
 | `GET` | `/api/status/:jobId` | Poll job progress; returns `{ step, status, error? }` |
 | `GET` | `/report/:jobId` | Serve completed report HTML |
 
@@ -236,6 +255,17 @@ The difference: `evergreen run` runs the pipeline synchronously in the terminal;
 
 ### Step 1: Fetch
 Fetches the Google Sheet as a CSV export (no API key needed — the sheet just needs to be publicly viewable) and parses it into typed `SheetRow` objects. When using a built-in test suite (`presetId`), loads the bundled rows directly from `src/presets/` instead.
+
+**Built-in test suites:**
+
+| ID | Name | Cases | Domain |
+|----|------|-------|--------|
+| `wheres-my-refund` | Where's My Refund | 25 | Revenue |
+| `benefits-eligibility` | Benefits Eligibility | 25 | Benefits |
+| `snap-food-assistance` | SNAP / Food Assistance | 25 | Benefits |
+| `agent-assist` | Agent Assist | 25 | Support |
+| `call-center-summaries` | Call Center Summaries | 25 | Support |
+| `permitting-assistant` | Permitting Assistant | 25 | Licensing |
 
 ### Step 2: Generate
 Converts the sheet rows + your `evergreen.yaml` config into a Promptfoo-compatible YAML config file. This is written to `.promptfoo-config.yaml` (temporary, deleted after run).

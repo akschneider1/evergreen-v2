@@ -33,6 +33,18 @@ export type CheckType =
 
 export type Severity = 'critical' | 'high' | 'medium' | 'low';
 
+// ── Builder test case (structured criteria for the builder UI) ──
+
+export interface BuilderTestCase {
+  question: string;
+  context: string;
+  metric: EvalMetric | '';
+  severity: Severity | '';
+  should: string[];
+  shouldNot: string[];
+  capability?: string;
+}
+
 // ── Evergreen config (evergreen.yaml) ──
 
 export interface EvergreenConfig {
@@ -143,6 +155,10 @@ export interface EvalResults {
   testSource: string;
   systemPrompt?: string;
   testCases: TestCaseResult[];
+  agencyName?: string;
+  evaluatorName?: string;
+  evaluationReason?: string;
+  presetId?: string;
 }
 
 export interface TestCaseResult {

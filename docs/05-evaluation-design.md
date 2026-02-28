@@ -209,7 +209,7 @@ For a first evaluation, aim for this distribution:
 
 You can always expand later. The Sheet is a living document — add test cases as you learn what the AI gets wrong or as community feedback reveals new failure modes.
 
-> **Want to see examples?** The five built-in test suites in Evergreen each contain 25 test cases (5 per metric) covering Colorado-specific scenarios. Run one from the web app to see what a comprehensive evaluation looks like before writing your own.
+> **Want to see examples?** The six built-in test suites in Evergreen each contain 25 test cases covering real government domains — revenue, benefits, licensing, and support. Open the **Test Suite Builder** at `/builder` to browse templates and see how test cases are structured before writing your own.
 
 ---
 

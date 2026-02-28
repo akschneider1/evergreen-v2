@@ -2,7 +2,12 @@
  * Evergreen Web App — Express server
  *
  * Routes:
- *   GET  /                    — USWDS input form
+ *   GET  /                    — Landing page
+ *   GET  /builder             — Test suite builder
+ *   GET  /run                 — Eval runner form (was /)
+ *   GET  /api/templates       — List all template presets
+ *   GET  /api/templates/:id   — Get a single template with builder cases
+ *   POST /api/export-sheet    — Export builder cases as CSV
  *   POST /api/run             — Start an eval job, returns { jobId }
  *   GET  /api/status/:jobId   — Poll job progress { step, status, error? }
  *   GET  /report/:jobId       — Serve completed report HTML
@@ -19,7 +24,8 @@ import { runPromptfooAsync } from '../runner';
 import { mapToEvalResults } from '../mapper';
 import { generateReport } from '../report/generator';
 import { normalizePromptfooOutput, EvergreenConfig, SheetRow } from '../types';
-import { getPreset } from '../presets/index';
+import { getPreset, getAllPresets } from '../presets/index';
+import { getBuilderCases, builderCasesToCsv, metricDistribution } from '../builder';
 
 // ── Job state ────────────────────────────────────────────────────────────────
 
@@ -80,7 +86,10 @@ function newJobId(): string {
 
 async function runPipeline(
   jobId: string,
-  body: { description: string; sheetUrl?: string; provider: string; aiDescription?: string; presetId?: string },
+  body: {
+    description: string; sheetUrl?: string; provider: string; aiDescription?: string; presetId?: string;
+    agencyName?: string; evaluatorName?: string; evaluationReason?: string;
+  },
 ): Promise<void> {
   const job = jobs.get(jobId)!;
 
@@ -145,6 +154,10 @@ async function runPipeline(
     // Step 4 — Generate report
     job.step = 4;
     const evalResults = mapToEvalResults(pfOutput, rows, config.description, testSource, systemPrompt);
+    evalResults.agencyName = body.agencyName;
+    evalResults.evaluatorName = body.evaluatorName;
+    evalResults.evaluationReason = body.evaluationReason;
+    evalResults.presetId = body.presetId;
     job.reportHtml = generateReport(evalResults);
     job.status = 'complete';
 
@@ -181,9 +194,70 @@ export function createApp(): express.Application {
     immutable: true,
   }));
 
-  // Input form
+  // Landing page
   app.get('/', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'landing.html'));
+  });
+
+  // Test suite builder
+  app.get('/builder', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'builder.html'));
+  });
+
+  // Eval runner form (was /)
+  app.get('/run', (_req, res) => {
     res.sendFile(path.join(__dirname, 'input.html'));
+  });
+
+  // ── Template API ──
+
+  // List all templates (summaries for sidebar/landing)
+  app.get('/api/templates', (_req, res) => {
+    const presets = getAllPresets()
+      .filter(p => !p.id.startsWith('demo-'))
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        icon: p.icon || '',
+        domain: p.domain || '',
+        caseCount: p.rows.length,
+        description: p.description,
+        metricDistribution: metricDistribution(getBuilderCases(p)),
+      }));
+    res.json(presets);
+  });
+
+  // Get a single template with full builder cases
+  app.get('/api/templates/:id', (req, res) => {
+    const preset = getPreset(req.params.id);
+    if (!preset) {
+      res.status(404).json({ error: 'Template not found' });
+      return;
+    }
+    res.json({
+      id: preset.id,
+      name: preset.name,
+      icon: preset.icon || '',
+      domain: preset.domain || '',
+      description: preset.description,
+      source: preset.source || '',
+      sourceUrl: preset.sourceUrl || '',
+      systemPrompt: preset.systemPrompt,
+      builderCases: getBuilderCases(preset),
+    });
+  });
+
+  // Export builder cases as CSV
+  app.post('/api/export-sheet', (req, res) => {
+    const cases = req.body?.cases;
+    if (!Array.isArray(cases) || cases.length === 0) {
+      res.status(400).json({ error: 'No test cases to export.' });
+      return;
+    }
+    const csv = builderCasesToCsv(cases);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="evergreen-test-cases.csv"');
+    res.send(csv);
   });
 
   // Start eval job
@@ -238,8 +312,13 @@ export function createApp(): express.Application {
     const jobId = newJobId();
     jobs.set(jobId, { step: 0, status: 'running', createdAt: Date.now() });
 
+    // Optional eval context fields
+    const agencyName = typeof body?.agencyName === 'string' ? body.agencyName.trim().slice(0, 200) : undefined;
+    const evaluatorName = typeof body?.evaluatorName === 'string' ? body.evaluatorName.trim().slice(0, 200) : undefined;
+    const evaluationReason = typeof body?.evaluationReason === 'string' ? body.evaluationReason.trim().slice(0, 200) : undefined;
+
     // Fire-and-forget — response returns immediately with jobId
-    runPipeline(jobId, { description, sheetUrl, presetId, provider, aiDescription });
+    runPipeline(jobId, { description, sheetUrl, presetId, provider, aiDescription, agencyName, evaluatorName, evaluationReason });
 
     res.status(202).json({ jobId });
   });

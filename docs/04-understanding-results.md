@@ -6,7 +6,9 @@ After running `npx evergreen run`, you'll get an HTML report. This guide explain
 
 ## Opening the Report
 
-**If you used the web app** (`npx evergreen app`): the report opens automatically when the evaluation finishes. You can also click the **Download Report** button in the report header to save a copy.
+**If you used the web app** (`npx evergreen app`): the report opens automatically when the evaluation finishes. You can also click the **Download Report** button in the report header to save a copy. If you provided evaluation context (agency name, evaluator name, reason), these appear in the report header.
+
+If the evaluation used a built-in test suite, the report includes an **Edit Test Cases** button that links back to the Builder — so you can refine your test cases and re-run.
 
 **If you used the CLI** (`npx evergreen run`): start the report server:
 
@@ -65,6 +67,7 @@ If any critical-severity test cases failed, they appear here. Each failure shows
 - **Expected** — what the correct answer should have contained (green panel)
 - **Actual** — what the AI responded (red panel)
 - The real-world impact of getting this wrong
+- **Remediation guidance** — a plain-language suggestion for how to fix the failure, tailored to the metric (e.g., "Work with your AI team to add guardrails" for Safety failures, "Verify the source data your AI system uses" for Accuracy failures)
 
 **These are the most important items in the report.** If there are critical failures, the system should not be deployed until they are resolved.
 
@@ -202,7 +205,7 @@ The report serves as a concrete artifact of due diligence for procurement, overs
 | The AI's tone is wrong | Use `Emotion` metric test cases to grade tone and empathy |
 | Many tests fail for one provider but not another | Consider using the provider that performs better |
 
-After making changes, re-run `npx evergreen run` to see if the fixes worked.
+After making changes, re-run the evaluation to see if the fixes worked. In the web app, click **Edit Test Cases** in the report header to go back to the Builder, refine your test cases, then run again.
 
 ---
 

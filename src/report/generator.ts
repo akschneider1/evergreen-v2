@@ -41,6 +41,10 @@ interface ReportData {
   severities: SeverityRow[];
   systemPrompt: string;
   testCases: TestCaseView[];
+  agencyName: string;
+  evaluatorName: string;
+  evaluationReason: string;
+  presetId: string;
 }
 
 interface ProviderSummary {
@@ -60,6 +64,7 @@ interface CriticalFailure {
   expectedSummary: string;
   responseSummary: string;
   impact: string;
+  remediation: string;
 }
 
 interface DimensionResult {
@@ -141,6 +146,18 @@ function deriveImpact(tc: TestCaseResult): string {
   return impacts[tc.metric] || 'Users may be negatively affected';
 }
 
+const METRIC_REMEDIATION: Record<EvalMetric, string> = {
+  'safety':        'Work with your AI team to add guardrails for this type of question. Consider updating the system prompt to explicitly prohibit this kind of response.',
+  'accuracy':      'Verify the source data your AI system uses and consider adding this fact to the system\u2019s knowledge base or system prompt.',
+  'ease-of-use':   'Ask your AI team to simplify the response and avoid jargon. Consider adding plain-language guidance to the system prompt.',
+  'effectiveness': 'Review the system prompt to ensure it covers this scenario. The AI should help the user take the right next step.',
+  'emotion':       'Consider adding guidance about tone in the system prompt. The AI should acknowledge sensitive situations with empathy.',
+};
+
+function deriveRemediation(metric: EvalMetric): string {
+  return METRIC_REMEDIATION[metric] || 'Review this test case and work with your AI team to address the issue.';
+}
+
 function enhanceGrading(gradingReason: string, passed: boolean, metric: EvalMetric, expected: string): string {
   if (gradingReason !== 'Assertion failed' && gradingReason !== 'Assertion passed') {
     return gradingReason; // LLM judge already provided a specific reason
@@ -190,6 +207,7 @@ function deriveReportData(input: EvalResults): ReportData {
           expectedSummary: tc.expected.length > 120 ? tc.expected.slice(0, 120) + '…' : tc.expected,
           responseSummary: r.response.length > 180 ? r.response.slice(0, 180) + '…' : r.response,
           impact: deriveImpact(tc),
+          remediation: deriveRemediation(tc.metric),
         });
       }
     }
@@ -338,6 +356,10 @@ function deriveReportData(input: EvalResults): ReportData {
     patternNote,
     severities,
     testCases,
+    agencyName: input.agencyName || '',
+    evaluatorName: input.evaluatorName || '',
+    evaluationReason: input.evaluationReason || '',
+    presetId: input.presetId || '',
   };
 }
 
@@ -393,6 +415,9 @@ function renderHtml(data: ReportData): string {
             </div>
           </div>
           <div class="cf-impact">⚠ ${esc(cf.impact)}</div>
+          <div class="cf-remediation" style="margin-top:8px;padding:8px 12px;background:#f0f4f8;border-radius:4px;font-size:0.8125rem;color:#334155;">
+            <strong>Suggested fix:</strong> ${esc(cf.remediation)}
+          </div>
         </div>
       `).join('')}
     </div>
@@ -1206,10 +1231,14 @@ table.data-table, table.detail-table {
           <span>${data.testCaseCount} test cases</span>
           <span>${esc(data.providerList)}</span>
           <span>${esc(data.testSource)}</span>
+          ${data.agencyName ? `<span>${esc(data.agencyName)}</span>` : ''}
+          ${data.evaluatorName ? `<span>Evaluator: ${esc(data.evaluatorName)}</span>` : ''}
+          ${data.evaluationReason ? `<span>${esc(data.evaluationReason)}</span>` : ''}
         </div>
       </div>
       <div class="hero-action">
         <button class="usa-button usa-button--outline" onclick="downloadReport()" style="margin-right:8px">Download Report</button>
+        ${data.presetId ? `<a href="/builder?template=${encodeURIComponent(data.presetId)}" class="usa-button usa-button--outline" style="margin-right:8px">Edit Test Cases</a>` : ''}
         <a href="/" class="usa-button usa-button--outline">New Evaluation</a>
       </div>
     </div>

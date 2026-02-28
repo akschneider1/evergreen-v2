@@ -60,6 +60,12 @@ When reviewing the report:
 
 ---
 
+## Using the Test Suite Builder
+
+You can also create and edit test cases visually in the **Test Suite Builder**. Launch the web app (`npx evergreen app`) and go to http://localhost:4000/builder. Start from scratch or customize an existing template, then export as CSV or run directly.
+
+---
+
 ## Adapting for Your Domain
 
 Replace the Colorado tax questions with questions from your domain:

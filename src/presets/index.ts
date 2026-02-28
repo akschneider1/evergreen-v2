@@ -10,7 +10,7 @@
  * reliably produce a specific readiness grade for training purposes.
  */
 
-import { SheetRow } from '../types';
+import { SheetRow, BuilderTestCase } from '../types';
 
 export interface PresetSuite {
   id: string;
@@ -18,6 +18,11 @@ export interface PresetSuite {
   description: string;
   systemPrompt: string;
   rows: SheetRow[];
+  icon?: string;
+  domain?: string;
+  source?: string;
+  sourceUrl?: string;
+  builderCases?: BuilderTestCase[];
 }
 
 // ── Presets ──
@@ -26,6 +31,9 @@ const wheresMyRefund: PresetSuite = {
   id: 'wheres-my-refund',
   name: "Where's My Refund",
   description: 'Helps residents look up the status of their state tax refund',
+  icon: '💰',
+  domain: 'Revenue',
+  source: 'Colorado Department of Revenue call center data',
   systemPrompt:
     'You are a helpful assistant for the Colorado Department of Revenue. ' +
     'Help residents check the status of their state tax refund. ' +
@@ -222,6 +230,9 @@ const benefitsEligibility: PresetSuite = {
   id: 'benefits-eligibility',
   name: 'Benefits Eligibility Checker',
   description: 'Helps residents determine eligibility for public assistance programs',
+  icon: '✅',
+  domain: 'Benefits',
+  source: 'Colorado Department of Human Services',
   systemPrompt:
     'You are a helpful assistant helping Colorado residents understand eligibility for ' +
     'public assistance programs including SNAP, Medicaid, TANF, and unemployment insurance. ' +
@@ -418,6 +429,9 @@ const agentAssist: PresetSuite = {
   id: 'agent-assist',
   name: 'Agent Assist',
   description: 'Provides real-time guidance to human agents during resident support calls',
+  icon: '🎧',
+  domain: 'Support',
+  source: 'Call center operations template',
   systemPrompt:
     'You assist call center agents at a state benefits agency handling resident calls. ' +
     'Provide accurate, brief guidance that agents can relay to callers in real time. ' +
@@ -614,6 +628,9 @@ const callCenterSummaries: PresetSuite = {
   id: 'call-center-summaries',
   name: 'Call Center Summaries',
   description: 'Summarizes call center conversations for quality review and record-keeping',
+  icon: '📋',
+  domain: 'Support',
+  source: 'Call center QA template',
   systemPrompt:
     'You summarize call center conversations for quality review and record-keeping at a state agency. ' +
     'Be accurate, concise, and neutral. Do not include unnecessary personal information.',
@@ -828,6 +845,9 @@ const permittingAssistant: PresetSuite = {
   id: 'permitting-assistant',
   name: 'Permitting Assistant',
   description: 'Answers questions about applying for, renewing, or checking the status of permits',
+  icon: '📝',
+  domain: 'Licensing',
+  source: 'Template — customize for your permit type',
   systemPrompt:
     'You are a helpful assistant for residents and contractors navigating the permit application process. ' +
     'Provide accurate information about requirements, timelines, and next steps. ' +
@@ -1168,9 +1188,28 @@ const demoNeedsImprovement: PresetSuite = {
   ],
 };
 
+// ── SNAP preset (separate file) ──
+
+import { snapFoodAssistance } from './snap-food-assistance';
+
+// ── Blank preset (for builder "Start from Scratch") ──
+
+const blank: PresetSuite = {
+  id: 'blank',
+  name: 'Start from Scratch',
+  description: 'Empty template. Add a test case, pick a metric and severity, then write your question and criteria.',
+  systemPrompt: 'You are a helpful assistant for [your agency].',
+  icon: '✏️',
+  domain: 'Custom',
+  source: 'Your domain knowledge, call center data, and community input',
+  rows: [],
+  builderCases: [],
+};
+
 // ── Public API ──
 
 export const PRESETS: Record<string, PresetSuite> = {
+  [snapFoodAssistance.id]:    snapFoodAssistance,
   [wheresMyRefund.id]:        wheresMyRefund,
   [benefitsEligibility.id]:   benefitsEligibility,
   [agentAssist.id]:           agentAssist,
@@ -1178,8 +1217,13 @@ export const PRESETS: Record<string, PresetSuite> = {
   [permittingAssistant.id]:   permittingAssistant,
   [demoReady.id]:             demoReady,
   [demoNeedsImprovement.id]:  demoNeedsImprovement,
+  [blank.id]:                 blank,
 };
 
 export function getPreset(id: string): PresetSuite | undefined {
   return PRESETS[id];
+}
+
+export function getAllPresets(): PresetSuite[] {
+  return Object.values(PRESETS);
 }

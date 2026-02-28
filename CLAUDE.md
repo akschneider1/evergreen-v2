@@ -20,6 +20,24 @@ Google Sheet → CSV → SheetRow[] → Promptfoo YAML → subprocess eval → H
 
 Same 4-step pipeline runs in both CLI (`src/index.ts`) and web app (`src/web/server.ts`).
 
+### Web App Routes
+| Route | File | Purpose |
+|-------|------|---------|
+| `GET /` | `landing.html` | Landing page — hero, how it works, template cards |
+| `GET /builder` | `builder.html` | Test Suite Builder — edit/create test cases |
+| `GET /run` | `input.html` | Eval runner form (start an evaluation) |
+| `GET /api/templates` | `server.ts` | JSON list of template presets |
+| `GET /api/templates/:id` | `server.ts` | Single template with builder cases |
+| `POST /api/export-sheet` | `server.ts` | Export builder cases as CSV |
+| `POST /api/run` | `server.ts` | Start an eval job |
+| `GET /api/status/:jobId` | `server.ts` | Poll job progress |
+| `GET /report/:jobId` | `server.ts` | Serve completed report |
+
+### Key Source Files
+- `src/builder.ts` — Conversion between `BuilderTestCase` and `SheetRow`, CSV export
+- `src/presets/` — Built-in test suites (6 presets + blank + 2 demo)
+- `src/report/generator.ts` — Single-file HTML report with remediation hints
+
 ## Constraints
 - USWDS only for UI — no Tailwind, Bootstrap, or custom CSS frameworks
 - Reports must be single-file, self-contained HTML (no external assets)
