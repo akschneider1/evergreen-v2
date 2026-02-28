@@ -3,68 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Evergreen — Pre-Deployment AI Evaluation</title>
+  <title>Evergreen — Run an Evaluation</title>
   <link rel="stylesheet" href="/assets/css/uswds.min.css">
   <style>
-    .evergreen-hero {
-      background: linear-gradient(135deg, #112e51 0%, #205493 100%);
-      color: #fff;
-      padding: 2.5rem 0 2rem;
+    :root {
+      --ev-navy: #1b3a5c;
+      --ev-blue: #2672de;
+      --ev-blue-light: #e8f0fe;
+      --ev-green: #0d7a3e;
+      --ev-green-bg: #e6f4ea;
+      --ev-orange: #c75300;
+      --ev-orange-bg: #fff3e0;
+      --ev-red: #b71c1c;
+      --ev-red-bg: #fce8e8;
+      --ev-purple: #6a3d9a;
+      --ev-purple-bg: #f3e8ff;
+      --ev-g50: #f8f9fa;
+      --ev-g100: #f1f3f5;
+      --ev-g200: #dee2e6;
+      --ev-g300: #ced4da;
+      --ev-g400: #adb5bd;
+      --ev-g500: #868e96;
+      --ev-g600: #495057;
+      --ev-g700: #343a40;
+      --ev-g800: #212529;
     }
-    .evergreen-hero .usa-prose h1 { color: #fff; margin-bottom: 0.5rem; }
-    .evergreen-hero .usa-prose p  { color: #dce4ef; margin-top: 0; }
+    body { margin: 0; }
+    /* Unified header */
+    .ev-header { background: #fff; border-bottom: 1px solid var(--ev-g200); position: sticky; top: 0; z-index: 100; }
+    .ev-header-inner { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .ev-header-logo { font-size: 1.125rem; font-weight: 700; color: var(--ev-navy); text-decoration: none; }
+    .ev-header-logo:hover { color: var(--ev-navy); }
+    .ev-header-nav { display: flex; align-items: center; gap: 1rem; }
+    .ev-header-nav a { color: var(--ev-g600); text-decoration: none; font-size: 0.875rem; }
+    .ev-header-nav a:hover { color: var(--ev-navy); }
+    /* Page content */
+    .ev-page { max-width: 640px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+    .ev-page h1 { font-size: 1.5rem; color: var(--ev-g800); margin: 0 0 0.25rem; }
+    .ev-page .ev-subtitle { color: var(--ev-g600); font-size: 0.9375rem; margin: 0 0 1.5rem; }
     .form-card {
       background: #fff;
-      border: 1px solid #dfe1e2;
-      border-radius: 4px;
-      padding: 2rem;
+      border: 1px solid var(--ev-g200);
+      border-radius: 6px;
+      padding: 1.5rem;
       margin-bottom: 1.5rem;
     }
     .step-description {
       font-size: 0.875rem;
-      color: #71767a;
+      color: var(--ev-g500);
       margin-top: 0.25rem;
     }
     #progress-section { display: none; }
     #error-section    { display: none; }
-    .how-it-works {
-      background: #f0f0f0;
-      border: 1px solid #dfe1e2;
-      border-radius: 4px;
-      padding: 1.25rem 1.5rem;
-      box-sizing: border-box;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-    /* Distribute process list items evenly to fill the card height */
-    .how-it-works .usa-process-list {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 0;
-    }
-    .how-it-works .usa-process-list__item {
-      flex: 1;
-      margin-bottom: 0;
-      padding-bottom: 0;
-    }
-    /* Slightly smaller text — just one notch down from USWDS defaults */
-    .how-it-works h3 { font-size: 0.9375rem !important; }
-    .how-it-works .usa-process-list__heading { font-size: 0.9375rem; }
-    .how-it-works .usa-process-list p { font-size: 0.875rem; margin-top: 0.2rem; margin-bottom: 0; }
-    /* Hide per-segment labels — the heading counter already shows current step */
+    /* Hide per-segment labels */
     .usa-step-indicator__segment-label { display: none; }
-    /* Prevent the segments bar and header from overlapping */
     .usa-step-indicator__segments { margin-bottom: 1rem; }
-    /* Give the Run button a clear top margin */
     #run-btn { margin-top: 1.5rem; }
     /* Spinner for step 3 */
     .step-spinner {
       display: none;
       margin-top: 1rem;
       font-size: 0.875rem;
-      color: #71767a;
+      color: var(--ev-g500);
       align-items: center;
       gap: 0.5rem;
     }
@@ -72,13 +72,16 @@
     .step-spinner::before {
       content: '';
       width: 16px; height: 16px;
-      border: 2px solid #dfe1e2;
+      border: 2px solid var(--ev-g200);
       border-top-color: #005ea2;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       flex-shrink: 0;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    /* Footer */
+    .ev-footer { background: var(--ev-g50); border-top: 1px solid var(--ev-g200); padding: 1.5rem; text-align: center; font-size: 0.8125rem; color: var(--ev-g500); }
+    .ev-footer a { color: var(--ev-g600); }
   </style>
 </head>
 <body>
@@ -97,271 +100,221 @@
   </div>
 </section>
 
-<!-- Hero Header -->
-<div class="evergreen-hero">
-  <div class="grid-container">
-    <div style="margin-bottom:0.5rem;"><a href="/" style="color:#dce4ef;text-decoration:none;font-size:0.875rem;">&larr; Back to home</a></div>
-    <div class="usa-prose">
-      <h1>Pre-Deployment AI Evaluation</h1>
-      <p>Test whether your AI system gives safe, accurate answers before you deploy it to the public.</p>
-    </div>
+<!-- Header -->
+<header class="ev-header">
+  <div class="ev-header-inner">
+    <a href="/" class="ev-header-logo">Evergreen</a>
+    <nav class="ev-header-nav" aria-label="Primary navigation">
+      <a href="/builder">&larr; Back to Builder</a>
+    </nav>
   </div>
-</div>
+</header>
 
 <!-- Main Content -->
-<main id="main-content">
-  <div class="grid-container margin-y-4">
-    <div class="grid-row grid-gap">
+<main class="ev-page">
+  <h1>Run an Evaluation</h1>
+  <p class="ev-subtitle">Choose your test cases and AI provider, then click Run.</p>
 
-      <!-- Form Column -->
-      <div class="grid-col-12 tablet:grid-col-8">
+  <!-- Input Form -->
+  <div class="form-card" id="form-section">
 
-        <!-- Input Form -->
-        <div class="form-card" id="form-section">
-          <h2 class="usa-prose" style="margin-top:0">Run an Evaluation</h2>
+    <form id="eval-form" novalidate>
 
-          <form id="eval-form" novalidate>
-
-            <div class="usa-form-group">
-              <label class="usa-label" for="description">
-                Evaluation name
-                <span class="usa-hint">e.g. "CO Tax Chatbot — March 2026"</span>
-              </label>
-              <input class="usa-input" id="description" name="description" type="text"
-                     placeholder="My AI Chatbot Eval">
-            </div>
-
-            <div class="usa-form-group">
-              <fieldset class="usa-fieldset">
-                <legend class="usa-legend">
-                  Test cases <span class="usa-required" aria-hidden="true">*</span>
-                  <span class="usa-hint">Use your own sheet or run a built-in suite</span>
-                </legend>
-                <div class="usa-radio">
-                  <input class="usa-radio__input" id="dataSource-sheet" type="radio"
-                         name="dataSource" value="sheet" checked onchange="handleDataSourceChange()">
-                  <label class="usa-radio__label" for="dataSource-sheet">My Google Sheet</label>
-                </div>
-                <div class="usa-radio">
-                  <input class="usa-radio__input" id="dataSource-preset" type="radio"
-                         name="dataSource" value="preset" onchange="handleDataSourceChange()">
-                  <label class="usa-radio__label" for="dataSource-preset">
-                    Built-in test suite
-                  </label>
-                </div>
-              </fieldset>
-            </div>
-
-            <div class="usa-form-group" id="sheetUrl-group">
-              <label class="usa-label" for="sheetUrl">
-                Google Sheet URL <span class="usa-required" aria-hidden="true">*</span>
-                <span class="usa-hint">Paste the full link to your test-case sheet</span>
-              </label>
-              <span class="usa-error-message" id="sheetUrl-error" role="alert" style="display:none">Please enter a Google Sheet URL.</span>
-              <input class="usa-input" id="sheetUrl" name="sheetUrl" type="url"
-                     placeholder="https://docs.google.com/spreadsheets/d/…"
-                     required
-                     aria-describedby="sheetUrl-error"
-                     onblur="validateSheetUrlField()">
-              <span class="usa-hint" style="margin-top:0.4rem; display:block;">
-                Don't have a sheet yet? <a class="usa-link" href="https://docs.google.com/spreadsheets/d/1ysiHznH64SB9CjedjVnZOg5YkMrPyYofSAXXHXa0w0I/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Use this template</a>
-              </span>
-            </div>
-
-            <div class="usa-form-group" id="presetId-group" style="display:none">
-              <label class="usa-label" for="presetId">
-                Test suite <span class="usa-required" aria-hidden="true">*</span>
-                <span class="usa-hint">Choose a pre-built evaluation for your use case</span>
-              </label>
-              <span class="usa-error-message" id="presetId-error" role="alert" style="display:none">Please select a test suite.</span>
-              <select class="usa-select" id="presetId" name="presetId" required aria-describedby="presetId-error" onchange="handlePresetChange()">
-                <option value="">-- Select a test suite --</option>
-                <optgroup label="Live test suites (requires API key)">
-                  <option value="snap-food-assistance">SNAP / Food Assistance (25 tests)</option>
-                  <option value="wheres-my-refund">Where's My Refund (25 tests)</option>
-                  <option value="benefits-eligibility">Benefits Eligibility Checker (25 tests)</option>
-                  <option value="agent-assist">Agent Assist (25 tests)</option>
-                  <option value="call-center-summaries">Call Center Summaries (25 tests)</option>
-                  <option value="permitting-assistant">Permitting Assistant (25 tests)</option>
-                </optgroup>
-                <optgroup label="Demo suites (requires API key)">
-                  <option value="demo-ready">Ready for Deployment — Test (5 tests)</option>
-                  <option value="demo-needs-improvement">Needs Improvement — Test (6 tests)</option>
-                </optgroup>
-              </select>
-            </div>
-
-            <div class="usa-form-group" id="provider-group">
-              <label class="usa-label" for="provider">
-                LLM provider <span class="usa-required" aria-hidden="true">*</span>
-              </label>
-              <span class="usa-error-message" id="provider-error" role="alert" style="display:none">Please select an LLM provider.</span>
-              <select class="usa-select" id="provider" name="provider" required aria-describedby="provider-error">
-                <option value="">-- Select a provider --</option>
-                <optgroup label="Anthropic">
-                  <option value="anthropic:messages:claude-sonnet-4-20250514">Claude Sonnet 4 (Recommended)</option>
-                  <option value="anthropic:messages:claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
-                  <option value="anthropic:messages:claude-opus-4-5">Claude Opus 4.5</option>
-                </optgroup>
-                <optgroup label="OpenAI">
-                  <option value="openai:gpt-4o">GPT-4o</option>
-                  <option value="openai:gpt-4o-mini">GPT-4o mini</option>
-                </optgroup>
-              </select>
-            </div>
-
-            <div class="usa-form-group" id="aiUseCase-group">
-              <label class="usa-label" for="aiUseCase">
-                Approved AI use case <span class="usa-required" aria-hidden="true">*</span>
-                <span class="usa-hint">Choose what you are evaluating today</span>
-              </label>
-              <span class="usa-error-message" id="aiUseCase-error" role="alert" style="display:none">Please select an approved use case.</span>
-              <select class="usa-select" id="aiUseCase" name="aiUseCase" required aria-describedby="aiUseCase-error" onchange="handleUseCaseChange()">
-                <option value="">-- Select a use case --</option>
-                <option value="Helps residents check eligibility and apply for SNAP food assistance">SNAP / Food Assistance</option>
-                <option value="Helps residents look up the status of their state tax refund">Where's My Refund</option>
-                <option value="Helps residents determine eligibility for public assistance programs">Benefits Eligibility Checker</option>
-                <option value="Provides real-time guidance to human agents during resident support calls">Agent Assist</option>
-                <option value="Summarizes call center conversations for quality review and record-keeping">Call Center Summaries</option>
-                <option value="Answers questions about applying for, renewing, or checking the status of permits">Permitting Assistant</option>
-                <option value="other">Other (describe below)</option>
-              </select>
-            </div>
-
-            <div class="usa-form-group" id="aiDescription-group" style="display:none">
-              <label class="usa-label" for="aiDescription">
-                Describe this AI
-                <span class="usa-hint">One sentence describing what this chatbot does</span>
-              </label>
-              <input class="usa-input" id="aiDescription" name="aiDescription" type="text"
-                     placeholder="e.g. Helps Colorado residents with state tax questions">
-            </div>
-
-            <details style="margin-top:1.5rem;">
-              <summary class="usa-label" style="cursor:pointer; font-size:0.875rem; color:#71767a;">Evaluation context (optional)</summary>
-              <div style="margin-top:0.75rem;">
-                <div class="usa-form-group">
-                  <label class="usa-label" for="agencyName">Agency name</label>
-                  <input class="usa-input" id="agencyName" type="text" placeholder="e.g. Colorado Dept. of Human Services">
-                </div>
-                <div class="usa-form-group">
-                  <label class="usa-label" for="evaluatorName">Evaluator name</label>
-                  <input class="usa-input" id="evaluatorName" type="text" placeholder="e.g. Jane Smith, Policy Division">
-                </div>
-                <div class="usa-form-group">
-                  <label class="usa-label" for="evaluationReason">Reason for evaluation</label>
-                  <select class="usa-select" id="evaluationReason">
-                    <option value="">-- Optional --</option>
-                    <option value="Initial evaluation">Initial evaluation</option>
-                    <option value="Post-update re-evaluation">Post-update re-evaluation</option>
-                    <option value="Periodic review">Periodic review</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-              </div>
-            </details>
-
-            <button type="submit" class="usa-button" id="run-btn">Run Evaluation</button>
-
-          </form>
-        </div>
-
-        <!-- Progress Section -->
-        <div class="form-card" id="progress-section">
-          <h2 class="usa-prose" style="margin-top:0">Running evaluation…</h2>
-          <p class="usa-hint margin-top-1">This usually takes 1–2 minutes. You can leave this page open.</p>
-
-          <div class="usa-step-indicator margin-top-3" aria-label="Evaluation progress">
-            <ol class="usa-step-indicator__segments">
-              <li class="usa-step-indicator__segment" id="step-1" aria-label="Load test cases">
-                <span class="usa-step-indicator__segment-label">Load test cases</span>
-              </li>
-              <li class="usa-step-indicator__segment" id="step-2" aria-label="Generate config">
-                <span class="usa-step-indicator__segment-label">Generate config</span>
-              </li>
-              <li class="usa-step-indicator__segment" id="step-3" aria-label="Run evaluations">
-                <span class="usa-step-indicator__segment-label">Run evaluations</span>
-              </li>
-              <li class="usa-step-indicator__segment" id="step-4" aria-label="Generate report">
-                <span class="usa-step-indicator__segment-label">Generate report</span>
-              </li>
-            </ol>
-            <div class="usa-step-indicator__header">
-              <h4 class="usa-step-indicator__heading">
-                <span class="usa-step-indicator__heading-counter">
-                  <span class="usa-sr-only">Step</span>
-                  <span class="usa-step-indicator__current-step" id="step-current">1</span>
-                  <span class="usa-step-indicator__total-steps"> of 4</span>
-                </span>
-                <span class="usa-step-indicator__heading-text" id="step-heading-text">Fetch test cases</span>
-              </h4>
-            </div>
-          </div>
-          <div class="step-spinner" id="step-spinner">Running test cases against the LLM — this is the longest step…</div>
-          <div class="usa-sr-only" aria-live="polite" id="step-announce"></div>
-        </div>
-
-        <!-- Error Section -->
-        <div id="error-section">
-          <div class="usa-alert usa-alert--error" role="alert">
-            <div class="usa-alert__body">
-              <h4 class="usa-alert__heading">Evaluation failed</h4>
-              <p class="usa-alert__text" id="error-message">An unexpected error occurred.</p>
-            </div>
-          </div>
-          <button class="usa-button usa-button--outline margin-top-2" onclick="resetForm()">Try again</button>
-        </div>
-
+      <div class="usa-form-group">
+        <label class="usa-label" for="description">
+          Evaluation name
+          <span class="usa-hint">e.g. "CO Tax Chatbot — March 2026"</span>
+        </label>
+        <input class="usa-input" id="description" name="description" type="text"
+               placeholder="My AI Chatbot Eval">
       </div>
 
-      <!-- How it works sidebar -->
-      <div class="grid-col-12 tablet:grid-col-4" style="display:flex; flex-direction:column;">
-        <div class="how-it-works">
-          <h3 class="usa-prose" style="margin-top:0; font-size:1rem;">How it works</h3>
-          <ol class="usa-process-list">
-            <li class="usa-process-list__item">
-              <h4 class="usa-process-list__heading">Create a Google Sheet</h4>
-              <p>Add your test cases using the required columns.</p>
-            </li>
-            <li class="usa-process-list__item">
-              <h4 class="usa-process-list__heading">Share the sheet</h4>
-              <p>Set sharing to "Anyone with the link can view."</p>
-            </li>
-            <li class="usa-process-list__item">
-              <h4 class="usa-process-list__heading">Run the evaluation</h4>
-              <p>Paste the URL, choose your AI provider, and click Run.</p>
-            </li>
-            <li class="usa-process-list__item">
-              <h4 class="usa-process-list__heading">Review the report</h4>
-              <p>See pass/fail results across three stakeholder views.</p>
-            </li>
-          </ol>
-
-        </div>
+      <div class="usa-form-group">
+        <fieldset class="usa-fieldset">
+          <legend class="usa-legend">
+            Test cases <span class="usa-required" aria-hidden="true">*</span>
+            <span class="usa-hint">Use your own sheet or run a built-in suite</span>
+          </legend>
+          <div class="usa-radio">
+            <input class="usa-radio__input" id="dataSource-sheet" type="radio"
+                   name="dataSource" value="sheet" checked onchange="handleDataSourceChange()">
+            <label class="usa-radio__label" for="dataSource-sheet">My Google Sheet</label>
+          </div>
+          <div class="usa-radio">
+            <input class="usa-radio__input" id="dataSource-preset" type="radio"
+                   name="dataSource" value="preset" onchange="handleDataSourceChange()">
+            <label class="usa-radio__label" for="dataSource-preset">
+              Built-in test suite
+            </label>
+          </div>
+        </fieldset>
       </div>
 
-    </div>
+      <div class="usa-form-group" id="sheetUrl-group">
+        <label class="usa-label" for="sheetUrl">
+          Google Sheet URL <span class="usa-required" aria-hidden="true">*</span>
+          <span class="usa-hint">Paste the full link to your test-case sheet</span>
+        </label>
+        <span class="usa-error-message" id="sheetUrl-error" role="alert" style="display:none">Please enter a Google Sheet URL.</span>
+        <input class="usa-input" id="sheetUrl" name="sheetUrl" type="url"
+               placeholder="https://docs.google.com/spreadsheets/d/…"
+               required
+               aria-describedby="sheetUrl-error"
+               onblur="validateSheetUrlField()">
+        <span class="usa-hint" style="margin-top:0.4rem; display:block;">
+          Don't have a sheet yet? <a class="usa-link" href="https://docs.google.com/spreadsheets/d/1ysiHznH64SB9CjedjVnZOg5YkMrPyYofSAXXHXa0w0I/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Use this template</a>
+        </span>
+      </div>
+
+      <div class="usa-form-group" id="presetId-group" style="display:none">
+        <label class="usa-label" for="presetId">
+          Test suite <span class="usa-required" aria-hidden="true">*</span>
+          <span class="usa-hint">Choose a pre-built evaluation for your use case</span>
+        </label>
+        <span class="usa-error-message" id="presetId-error" role="alert" style="display:none">Please select a test suite.</span>
+        <select class="usa-select" id="presetId" name="presetId" required aria-describedby="presetId-error" onchange="handlePresetChange()">
+          <option value="">-- Select a test suite --</option>
+          <optgroup label="Live test suites (requires API key)">
+            <option value="snap-food-assistance">SNAP / Food Assistance (25 tests)</option>
+            <option value="wheres-my-refund">Where's My Refund (25 tests)</option>
+            <option value="benefits-eligibility">Benefits Eligibility Checker (25 tests)</option>
+            <option value="agent-assist">Agent Assist (25 tests)</option>
+            <option value="call-center-summaries">Call Center Summaries (25 tests)</option>
+            <option value="permitting-assistant">Permitting Assistant (25 tests)</option>
+          </optgroup>
+          <optgroup label="Demo suites (requires API key)">
+            <option value="demo-ready">Ready for Deployment — Test (5 tests)</option>
+            <option value="demo-needs-improvement">Needs Improvement — Test (6 tests)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="usa-form-group" id="provider-group">
+        <label class="usa-label" for="provider">
+          LLM provider <span class="usa-required" aria-hidden="true">*</span>
+        </label>
+        <span class="usa-error-message" id="provider-error" role="alert" style="display:none">Please select an LLM provider.</span>
+        <select class="usa-select" id="provider" name="provider" required aria-describedby="provider-error">
+          <option value="">-- Select a provider --</option>
+          <optgroup label="Anthropic">
+            <option value="anthropic:messages:claude-sonnet-4-20250514">Claude Sonnet 4 (Recommended)</option>
+            <option value="anthropic:messages:claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+            <option value="anthropic:messages:claude-opus-4-5">Claude Opus 4.5</option>
+          </optgroup>
+          <optgroup label="OpenAI">
+            <option value="openai:gpt-4o">GPT-4o</option>
+            <option value="openai:gpt-4o-mini">GPT-4o mini</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="usa-form-group" id="aiUseCase-group">
+        <label class="usa-label" for="aiUseCase">
+          Approved AI use case <span class="usa-required" aria-hidden="true">*</span>
+          <span class="usa-hint">Choose what you are evaluating today</span>
+        </label>
+        <span class="usa-error-message" id="aiUseCase-error" role="alert" style="display:none">Please select an approved use case.</span>
+        <select class="usa-select" id="aiUseCase" name="aiUseCase" required aria-describedby="aiUseCase-error" onchange="handleUseCaseChange()">
+          <option value="">-- Select a use case --</option>
+          <option value="Helps residents check eligibility and apply for SNAP food assistance">SNAP / Food Assistance</option>
+          <option value="Helps residents look up the status of their state tax refund">Where's My Refund</option>
+          <option value="Helps residents determine eligibility for public assistance programs">Benefits Eligibility Checker</option>
+          <option value="Provides real-time guidance to human agents during resident support calls">Agent Assist</option>
+          <option value="Summarizes call center conversations for quality review and record-keeping">Call Center Summaries</option>
+          <option value="Answers questions about applying for, renewing, or checking the status of permits">Permitting Assistant</option>
+          <option value="other">Other (describe below)</option>
+        </select>
+      </div>
+
+      <div class="usa-form-group" id="aiDescription-group" style="display:none">
+        <label class="usa-label" for="aiDescription">
+          Describe this AI
+          <span class="usa-hint">One sentence describing what this chatbot does</span>
+        </label>
+        <input class="usa-input" id="aiDescription" name="aiDescription" type="text"
+               placeholder="e.g. Helps Colorado residents with state tax questions">
+      </div>
+
+      <details style="margin-top:1.5rem;">
+        <summary class="usa-label" style="cursor:pointer; font-size:0.875rem; color:var(--ev-g500);">Evaluation context (optional)</summary>
+        <div style="margin-top:0.75rem;">
+          <div class="usa-form-group">
+            <label class="usa-label" for="agencyName">Agency name</label>
+            <input class="usa-input" id="agencyName" type="text" placeholder="e.g. Colorado Dept. of Human Services">
+          </div>
+          <div class="usa-form-group">
+            <label class="usa-label" for="evaluatorName">Evaluator name</label>
+            <input class="usa-input" id="evaluatorName" type="text" placeholder="e.g. Jane Smith, Policy Division">
+          </div>
+          <div class="usa-form-group">
+            <label class="usa-label" for="evaluationReason">Reason for evaluation</label>
+            <select class="usa-select" id="evaluationReason">
+              <option value="">-- Optional --</option>
+              <option value="Initial evaluation">Initial evaluation</option>
+              <option value="Post-update re-evaluation">Post-update re-evaluation</option>
+              <option value="Periodic review">Periodic review</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+      </details>
+
+      <button type="submit" class="usa-button" id="run-btn">Run Evaluation</button>
+
+    </form>
   </div>
+
+  <!-- Progress Section -->
+  <div class="form-card" id="progress-section">
+    <h2 class="usa-prose" style="margin-top:0">Running evaluation&hellip;</h2>
+    <p class="usa-hint margin-top-1">This usually takes 1&ndash;2 minutes. You can leave this page open.</p>
+
+    <div class="usa-step-indicator margin-top-3" aria-label="Evaluation progress">
+      <ol class="usa-step-indicator__segments">
+        <li class="usa-step-indicator__segment" id="step-1" aria-label="Load test cases">
+          <span class="usa-step-indicator__segment-label">Load test cases</span>
+        </li>
+        <li class="usa-step-indicator__segment" id="step-2" aria-label="Generate config">
+          <span class="usa-step-indicator__segment-label">Generate config</span>
+        </li>
+        <li class="usa-step-indicator__segment" id="step-3" aria-label="Run evaluations">
+          <span class="usa-step-indicator__segment-label">Run evaluations</span>
+        </li>
+        <li class="usa-step-indicator__segment" id="step-4" aria-label="Generate report">
+          <span class="usa-step-indicator__segment-label">Generate report</span>
+        </li>
+      </ol>
+      <div class="usa-step-indicator__header">
+        <h4 class="usa-step-indicator__heading">
+          <span class="usa-step-indicator__heading-counter">
+            <span class="usa-sr-only">Step</span>
+            <span class="usa-step-indicator__current-step" id="step-current">1</span>
+            <span class="usa-step-indicator__total-steps"> of 4</span>
+          </span>
+          <span class="usa-step-indicator__heading-text" id="step-heading-text">Fetch test cases</span>
+        </h4>
+      </div>
+    </div>
+    <div class="step-spinner" id="step-spinner">Running test cases against the LLM &mdash; this is the longest step&hellip;</div>
+    <div class="usa-sr-only" aria-live="polite" id="step-announce"></div>
+  </div>
+
+  <!-- Error Section -->
+  <div id="error-section">
+    <div class="usa-alert usa-alert--error" role="alert">
+      <div class="usa-alert__body">
+        <h4 class="usa-alert__heading">Evaluation failed</h4>
+        <p class="usa-alert__text" id="error-message">An unexpected error occurred.</p>
+      </div>
+    </div>
+    <button class="usa-button usa-button--outline margin-top-2" onclick="resetForm()">Try again</button>
+  </div>
+
 </main>
 
-<!-- USWDS Footer -->
-<footer class="usa-footer usa-footer--slim">
-  <div class="usa-footer__secondary-section">
-    <div class="grid-container">
-      <div class="grid-row grid-gap">
-        <div class="usa-footer__logo grid-row mobile-lg:grid-col-6 mobile-lg:grid-gap-2">
-          <div class="mobile-lg:grid-col-auto">
-            <p class="usa-footer__logo-heading">Evergreen</p>
-          </div>
-        </div>
-        <div class="usa-footer__contact-links mobile-lg:grid-col-6">
-          <p style="font-size:0.8125rem; color:#565c65; margin:0">
-            Powered by <a href="https://www.promptfoo.dev" class="usa-link">Promptfoo</a> under the Apache 2.0 License
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
+<!-- Footer -->
+<footer class="ev-footer">
+  <p>Evergreen &mdash; Pre-Deployment AI Evaluation. <a href="https://github.com/akschneider1/Evergreen-v2" target="_blank" rel="noopener">Open source</a> &middot; Powered by <a href="https://www.promptfoo.dev/" target="_blank" rel="noopener">Promptfoo</a>.</p>
 </footer>
 
 <script src="/assets/js/uswds.min.js"></script>
@@ -509,7 +462,6 @@
       })
       .then(data => {
         updateSteps(data.step);
-        // Slow polling during step 3 (the long eval), speed up for other steps
         var targetMs = data.step === 3 ? 4000 : 2000;
         if (targetMs !== currentPollMs) {
           currentPollMs = targetMs;
@@ -556,7 +508,6 @@
   }
 
   function showSuccess(reportUrl) {
-    // Mark all steps complete, then navigate directly to the report
     for (let i = 1; i <= 4; i++) {
       const seg = document.getElementById('step-' + i);
       if (!seg) continue;
