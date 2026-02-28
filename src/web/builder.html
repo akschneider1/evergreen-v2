@@ -191,6 +191,17 @@
     .empty-state h3 { color: var(--ev-g700); margin: 0 0 0.5rem; }
     .empty-state p { font-size: 0.875rem; max-width: 320px; margin: 0 auto; }
 
+    /* ── Run CTA ── */
+    .run-cta { text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--ev-g200); }
+    .run-cta p { font-size: 0.875rem; color: var(--ev-g600); margin: 0 0 0.75rem; }
+
+    /* ── Coverage bar label ── */
+    .cov-label { font-size: 0.8125rem; font-weight: 600; color: var(--ev-g600); margin-right: 0.25rem; }
+
+    /* ── Mobile template select ── */
+    .mobile-template-select { display: none; padding: 0.75rem 1rem; background: #fff; border-bottom: 1px solid var(--ev-g200); }
+    .mobile-template-select .usa-label { margin-top: 0; }
+
     /* ── Footer ── */
     .ev-footer { background: var(--ev-g50); border-top: 1px solid var(--ev-g200); padding: 1.5rem; text-align: center; font-size: 0.8125rem; color: var(--ev-g500); }
     .ev-footer a { color: var(--ev-g600); }
@@ -198,6 +209,7 @@
     /* ── Responsive ── */
     @media (max-width: 768px) {
       .sidebar { display: none; }
+      .mobile-template-select { display: block; }
       .main { padding: 1rem; }
     }
   </style>
@@ -229,11 +241,19 @@
   </div>
 </header>
 
+<!-- Mobile template select (visible on narrow screens) -->
+<div class="mobile-template-select" id="mobile-select">
+  <label class="usa-label" for="mobile-template">Test suite</label>
+  <select class="usa-select" id="mobile-template" onchange="if(this.value) loadTemplate(this.value)">
+    <option value="">Choose a test suite&hellip;</option>
+  </select>
+</div>
+
 <!-- Layout -->
 <div class="layout">
   <aside class="sidebar" id="sidebar"></aside>
   <main class="main" id="main-panel">
-    <p style="color:var(--ev-g500);">Loading templates&hellip;</p>
+    <p style="color:var(--ev-g500);">Loading test suites&hellip;</p>
   </main>
 </div>
 
@@ -304,13 +324,24 @@ function renderSidebar() {
     });
   });
   document.getElementById('sidebar').innerHTML = html;
+
+  // Populate mobile template select
+  var mobileSelect = document.getElementById('mobile-template');
+  if (mobileSelect) {
+    var opts = '<option value="">Choose a test suite\u2026</option>';
+    state.templates.forEach(function(t) {
+      var sel = t.id === state.selectedTemplateId ? ' selected' : '';
+      opts += '<option value="' + esc(t.id) + '"' + sel + '>' + esc((t.icon || '') + ' ' + t.name) + '</option>';
+    });
+    mobileSelect.innerHTML = opts;
+  }
 }
 
 function renderCoverageBar() {
   var counts = { safety: 0, accuracy: 0, 'ease-of-use': 0, effectiveness: 0, emotion: 0 };
   state.cases.forEach(function(c) { if (c.metric && counts.hasOwnProperty(c.metric)) counts[c.metric]++; });
   var total = state.cases.length;
-  var html = '';
+  var html = '<span class="cov-label">Metric coverage</span>';
   METRICS.forEach(function(m) {
     var n = counts[m.id];
     var cls = n === 0 ? ' cov-zero' : '';
@@ -422,7 +453,7 @@ function renderCard(c, idx) {
 function renderMain() {
   var panel = document.getElementById('main-panel');
   if (!state.template) {
-    panel.innerHTML = '<div class="empty-state"><div class="empty-icon">\u{1F4CB}</div><h3>Select a template</h3><p>Choose a template from the sidebar to get started, or start from scratch.</p></div>';
+    panel.innerHTML = '<div class="empty-state"><div class="empty-icon">\u{1F4CB}</div><h3>Build a test suite</h3><p>Choose a test suite from the sidebar, or <a href="#" onclick="loadTemplate(\'blank\'); return false;">start from scratch</a>.</p></div>';
     return;
   }
 
@@ -464,10 +495,19 @@ function renderMain() {
   // Add case button
   html += '<button class="add-case-btn" data-action="add-case">+ Add test case</button>';
 
+  // Run CTA (only if there are cases)
+  if (state.cases.length > 0) {
+    html += '<div class="run-cta">';
+    html += '<p>Your test suite is ready.</p>';
+    html += '<button class="usa-button usa-button--big" onclick="runEval()">Run Evaluation &rarr;</button>';
+    html += '</div>';
+  }
+
   panel.innerHTML = html;
 
-  // Update export button state
-  document.getElementById('export-btn').disabled = state.cases.length === 0;
+  // Update export button state — require at least one complete case
+  var hasComplete = state.cases.some(caseComplete);
+  document.getElementById('export-btn').disabled = !hasComplete;
 }
 
 // ── Data loading ──
@@ -486,7 +526,7 @@ function loadTemplate(id) {
       renderMain();
     })
     .catch(function() {
-      document.getElementById('main-panel').innerHTML = '<p style="color:var(--ev-red);">Failed to load template.</p>';
+      document.getElementById('main-panel').innerHTML = '<p style="color:var(--ev-red);">Failed to load test suite.</p>';
     });
 }
 
@@ -653,7 +693,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     })
     .catch(function() {
-      document.getElementById('main-panel').innerHTML = '<p style="color:var(--ev-red);">Failed to load templates.</p>';
+      document.getElementById('main-panel').innerHTML = '<p style="color:var(--ev-red);">Failed to load test suites.</p>';
     });
 });
 </script>

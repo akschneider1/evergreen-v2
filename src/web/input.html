@@ -120,20 +120,12 @@
 
     <form id="eval-form" novalidate>
 
-      <div class="usa-form-group">
-        <label class="usa-label" for="description">
-          Evaluation name
-          <span class="usa-hint">e.g. "CO Tax Chatbot — March 2026"</span>
-        </label>
-        <input class="usa-input" id="description" name="description" type="text"
-               placeholder="My AI Chatbot Eval">
-      </div>
-
+      <!-- 1. Test cases — what am I testing? -->
       <div class="usa-form-group">
         <fieldset class="usa-fieldset">
           <legend class="usa-legend">
             Test cases <span class="usa-required" aria-hidden="true">*</span>
-            <span class="usa-hint">Use your own sheet or run a built-in suite</span>
+            <span class="usa-hint">Use your own sheet or run a built-in test suite</span>
           </legend>
           <div class="usa-radio">
             <input class="usa-radio__input" id="dataSource-sheet" type="radio"
@@ -189,15 +181,27 @@
         </select>
       </div>
 
+      <!-- 2. What does this AI do? (only for sheet-based runs) -->
+      <div class="usa-form-group" id="aiDescription-group">
+        <label class="usa-label" for="aiDescription">
+          What does this AI do? <span class="usa-required" aria-hidden="true">*</span>
+          <span class="usa-hint">One sentence, e.g. "Helps residents check SNAP eligibility"</span>
+        </label>
+        <span class="usa-error-message" id="aiDescription-error" role="alert" style="display:none">Please describe what this AI does.</span>
+        <input class="usa-input" id="aiDescription" name="aiDescription" type="text"
+               placeholder="e.g. Helps Colorado residents with state tax questions"
+               aria-describedby="aiDescription-error">
+      </div>
+
+      <!-- 3. LLM provider (defaulted) -->
       <div class="usa-form-group" id="provider-group">
         <label class="usa-label" for="provider">
-          LLM provider <span class="usa-required" aria-hidden="true">*</span>
+          LLM provider
+          <span class="usa-hint">The AI model to evaluate</span>
         </label>
-        <span class="usa-error-message" id="provider-error" role="alert" style="display:none">Please select an LLM provider.</span>
-        <select class="usa-select" id="provider" name="provider" required aria-describedby="provider-error">
-          <option value="">-- Select a provider --</option>
+        <select class="usa-select" id="provider" name="provider" required>
           <optgroup label="Anthropic">
-            <option value="anthropic:messages:claude-sonnet-4-20250514">Claude Sonnet 4 (Recommended)</option>
+            <option value="anthropic:messages:claude-sonnet-4-20250514" selected>Claude Sonnet 4 (Recommended)</option>
             <option value="anthropic:messages:claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
             <option value="anthropic:messages:claude-opus-4-5">Claude Opus 4.5</option>
           </optgroup>
@@ -208,33 +212,17 @@
         </select>
       </div>
 
-      <div class="usa-form-group" id="aiUseCase-group">
-        <label class="usa-label" for="aiUseCase">
-          Approved AI use case <span class="usa-required" aria-hidden="true">*</span>
-          <span class="usa-hint">Choose what you are evaluating today</span>
+      <!-- 4. Evaluation name (auto-filled) -->
+      <div class="usa-form-group">
+        <label class="usa-label" for="description">
+          Evaluation name
+          <span class="usa-hint">A label for this run — auto-filled, editable</span>
         </label>
-        <span class="usa-error-message" id="aiUseCase-error" role="alert" style="display:none">Please select an approved use case.</span>
-        <select class="usa-select" id="aiUseCase" name="aiUseCase" required aria-describedby="aiUseCase-error" onchange="handleUseCaseChange()">
-          <option value="">-- Select a use case --</option>
-          <option value="Helps residents check eligibility and apply for SNAP food assistance">SNAP / Food Assistance</option>
-          <option value="Helps residents look up the status of their state tax refund">Where's My Refund</option>
-          <option value="Helps residents determine eligibility for public assistance programs">Benefits Eligibility Checker</option>
-          <option value="Provides real-time guidance to human agents during resident support calls">Agent Assist</option>
-          <option value="Summarizes call center conversations for quality review and record-keeping">Call Center Summaries</option>
-          <option value="Answers questions about applying for, renewing, or checking the status of permits">Permitting Assistant</option>
-          <option value="other">Other (describe below)</option>
-        </select>
+        <input class="usa-input" id="description" name="description" type="text"
+               placeholder="My AI Chatbot Eval">
       </div>
 
-      <div class="usa-form-group" id="aiDescription-group" style="display:none">
-        <label class="usa-label" for="aiDescription">
-          Describe this AI
-          <span class="usa-hint">One sentence describing what this chatbot does</span>
-        </label>
-        <input class="usa-input" id="aiDescription" name="aiDescription" type="text"
-               placeholder="e.g. Helps Colorado residents with state tax questions">
-      </div>
-
+      <!-- 5. Evaluation context (optional, collapsed) -->
       <details style="margin-top:1.5rem;">
         <summary class="usa-label" style="cursor:pointer; font-size:0.875rem; color:var(--ev-g500);">Evaluation context (optional)</summary>
         <div style="margin-top:0.75rem;">
@@ -329,7 +317,7 @@
   });
 
   function clearValidationErrors() {
-    ['sheetUrl', 'presetId', 'provider', 'aiUseCase'].forEach(function(id) {
+    ['sheetUrl', 'presetId', 'aiDescription'].forEach(function(id) {
       var grp = document.getElementById(id + '-group');
       var err = document.getElementById(id + '-error');
       var inp = document.getElementById(id);
@@ -372,12 +360,22 @@
     }
   }
 
+  function getDateLabel() {
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var d = new Date();
+    return months[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
   function handleDataSourceChange() {
     var isPreset = document.getElementById('dataSource-preset').checked;
-    document.getElementById('sheetUrl-group').style.display    = isPreset ? 'none'  : 'block';
-    document.getElementById('presetId-group').style.display    = isPreset ? 'block' : 'none';
-    document.getElementById('aiUseCase-group').style.display   = isPreset ? 'none'  : 'block';
-    document.getElementById('aiDescription-group').style.display = 'none';
+    document.getElementById('sheetUrl-group').style.display     = isPreset ? 'none'  : 'block';
+    document.getElementById('presetId-group').style.display     = isPreset ? 'block' : 'none';
+    document.getElementById('aiDescription-group').style.display = isPreset ? 'none'  : 'block';
+    // Auto-fill eval name when switching to sheet mode
+    var descEl = document.getElementById('description');
+    if (!isPreset && !descEl.value.trim()) {
+      descEl.value = 'Evaluation \u2014 ' + getDateLabel();
+    }
   }
 
   function submitEval() {
@@ -401,27 +399,20 @@
         showFieldErrorMsg('sheetUrl', "That doesn't look like a valid Google Sheet URL. Copy the full link from your browser.");
         valid = false;
       }
-      if (!document.getElementById('aiUseCase').value) {
-        showFieldError('aiUseCase');
+      if (!document.getElementById('aiDescription').value.trim()) {
+        showFieldError('aiDescription');
         valid = false;
       }
     }
-    if (!provider) {
-      showFieldError('provider');
-      valid = false;
-    }
     if (!valid) return;
 
-    const body = { description: document.getElementById('description').value.trim(), provider };
+    const body = { description: document.getElementById('description').value.trim(), provider: provider };
 
     if (isPreset) {
       body.presetId = document.getElementById('presetId').value;
     } else {
       body.sheetUrl = document.getElementById('sheetUrl').value.trim();
-      const useCaseEl = document.getElementById('aiUseCase');
-      body.aiDescription = useCaseEl.value === 'other'
-        ? document.getElementById('aiDescription').value.trim()
-        : useCaseEl.value;
+      body.aiDescription = document.getElementById('aiDescription').value.trim();
     }
 
     // Eval context (optional)
@@ -529,15 +520,10 @@
   function handlePresetChange() {
     var presetEl = document.getElementById('presetId');
     var descEl = document.getElementById('description');
-    if (presetEl && descEl && presetEl.value && !descEl.value.trim()) {
+    if (presetEl && descEl && presetEl.value) {
       var label = presetEl.options[presetEl.selectedIndex].text.replace(/ \(\d+ tests\)$/, '');
-      descEl.value = label + ' Evaluation';
+      descEl.value = label + ' \u2014 ' + getDateLabel();
     }
-  }
-
-  function handleUseCaseChange() {
-    var val = document.getElementById('aiUseCase').value;
-    document.getElementById('aiDescription-group').style.display = val === 'other' ? 'block' : 'none';
   }
 
   function resetForm() {
@@ -545,9 +531,9 @@
     currentJobId = null;
     clearValidationErrors();
     document.getElementById('dataSource-sheet').checked = true;
-    document.getElementById('aiUseCase').value = '';
     document.getElementById('aiDescription').value = '';
     document.getElementById('presetId').value = '';
+    document.getElementById('description').value = '';
     handleDataSourceChange();
     document.getElementById('form-section').style.display    = 'block';
     document.getElementById('error-section').style.display   = 'none';

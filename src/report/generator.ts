@@ -1201,6 +1201,7 @@ table.data-table, table.detail-table {
   .expanded-detail { display: block !important; }
   .chevron { display: none; }
   .sev-link { display: none; }
+  .report-nav { display: none; }
 }
 </style>
 </head>
@@ -1219,6 +1220,13 @@ table.data-table, table.detail-table {
     </div>
   </div>
 </section>
+
+<!-- ── Report Nav ── -->
+<nav class="report-nav" style="background:#f8f9fa; border-bottom:1px solid #dee2e6; padding:0.5rem 1.5rem; font-size:0.875rem;">
+  <a href="/builder" style="color:#495057; text-decoration:none;">&larr; Back to Builder</a>
+  <span style="margin:0 0.5rem; color:#adb5bd;">&middot;</span>
+  <a href="/run" style="color:#495057; text-decoration:none;">Run another evaluation</a>
+</nav>
 
 <!-- ── Header ── -->
 <header class="evergreen-hero">
