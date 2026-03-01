@@ -113,8 +113,43 @@
 
     <form id="eval-form" novalidate>
 
-      <!-- 1. Test cases — what am I testing? -->
+      <!-- 1. Evaluation name (auto-filled) -->
       <div class="usa-form-group">
+        <label class="usa-label" for="description">
+          Evaluation name
+          <span class="usa-hint">A label for this run — auto-filled, editable</span>
+        </label>
+        <input class="usa-input" id="description" name="description" type="text"
+               placeholder="My AI Chatbot Eval">
+      </div>
+
+      <!-- 2. Evaluation context (optional, collapsed) -->
+      <details style="margin-top:1.5rem;">
+        <summary class="usa-label" style="cursor:pointer; font-size:0.875rem; color:var(--ev-g500);">Evaluation context (optional)</summary>
+        <div style="margin-top:0.75rem;">
+          <div class="usa-form-group">
+            <label class="usa-label" for="agencyName">Agency name</label>
+            <input class="usa-input" id="agencyName" type="text" placeholder="e.g. Colorado Dept. of Human Services">
+          </div>
+          <div class="usa-form-group">
+            <label class="usa-label" for="evaluatorName">Evaluator name</label>
+            <input class="usa-input" id="evaluatorName" type="text" placeholder="e.g. Jane Smith, Policy Division">
+          </div>
+          <div class="usa-form-group">
+            <label class="usa-label" for="evaluationReason">Reason for evaluation</label>
+            <select class="usa-select" id="evaluationReason">
+              <option value="">-- Optional --</option>
+              <option value="Initial evaluation">Initial evaluation</option>
+              <option value="Post-update re-evaluation">Post-update re-evaluation</option>
+              <option value="Periodic review">Periodic review</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+      </details>
+
+      <!-- 3. Test cases — what am I testing? -->
+      <div class="usa-form-group" style="margin-top:1.5rem;">
         <fieldset class="usa-fieldset">
           <legend class="usa-legend">
             Test cases <span class="usa-required" aria-hidden="true">*</span>
@@ -174,7 +209,7 @@
         </select>
       </div>
 
-      <!-- 2. What does this AI do? (only for sheet-based runs) -->
+      <!-- 4. What does this AI do? (only for sheet-based runs) -->
       <div class="usa-form-group" id="aiDescription-group">
         <label class="usa-label" for="aiDescription">
           What does this AI do? <span class="usa-required" aria-hidden="true">*</span>
@@ -186,7 +221,7 @@
                aria-describedby="aiDescription-error">
       </div>
 
-      <!-- 3. LLM provider (defaulted) -->
+      <!-- 5. LLM provider (defaulted) -->
       <div class="usa-form-group" id="provider-group">
         <label class="usa-label" for="provider">
           LLM provider
@@ -204,41 +239,6 @@
           </optgroup>
         </select>
       </div>
-
-      <!-- 4. Evaluation name (auto-filled) -->
-      <div class="usa-form-group">
-        <label class="usa-label" for="description">
-          Evaluation name
-          <span class="usa-hint">A label for this run — auto-filled, editable</span>
-        </label>
-        <input class="usa-input" id="description" name="description" type="text"
-               placeholder="My AI Chatbot Eval">
-      </div>
-
-      <!-- 5. Evaluation context (optional, collapsed) -->
-      <details style="margin-top:1.5rem;">
-        <summary class="usa-label" style="cursor:pointer; font-size:0.875rem; color:var(--ev-g500);">Evaluation context (optional)</summary>
-        <div style="margin-top:0.75rem;">
-          <div class="usa-form-group">
-            <label class="usa-label" for="agencyName">Agency name</label>
-            <input class="usa-input" id="agencyName" type="text" placeholder="e.g. Colorado Dept. of Human Services">
-          </div>
-          <div class="usa-form-group">
-            <label class="usa-label" for="evaluatorName">Evaluator name</label>
-            <input class="usa-input" id="evaluatorName" type="text" placeholder="e.g. Jane Smith, Policy Division">
-          </div>
-          <div class="usa-form-group">
-            <label class="usa-label" for="evaluationReason">Reason for evaluation</label>
-            <select class="usa-select" id="evaluationReason">
-              <option value="">-- Optional --</option>
-              <option value="Initial evaluation">Initial evaluation</option>
-              <option value="Post-update re-evaluation">Post-update re-evaluation</option>
-              <option value="Periodic review">Periodic review</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-        </div>
-      </details>
 
       <button type="submit" class="usa-button" id="run-btn">Run Evaluation</button>
 
