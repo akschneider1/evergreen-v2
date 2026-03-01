@@ -55,30 +55,23 @@
     }
     #progress-section { display: none; }
     #error-section    { display: none; }
-    /* Hide per-segment labels */
-    .usa-step-indicator__segment-label { display: none; }
-    .usa-step-indicator__segments { margin-bottom: 1rem; }
     #run-btn { margin-top: 1.5rem; }
-    /* Spinner for step 3 */
-    .step-spinner {
-      display: none;
-      margin-top: 1rem;
-      font-size: 0.875rem;
-      color: var(--ev-g500);
-      align-items: center;
-      gap: 0.5rem;
+    /* Loader */
+    .ev-loader {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 3rem 1.5rem; text-align: center; gap: 1.25rem;
     }
-    .step-spinner.active { display: flex; }
-    .step-spinner::before {
-      content: '';
-      width: 16px; height: 16px;
-      border: 2px solid var(--ev-g200);
-      border-top-color: #005ea2;
+    .ev-spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--ev-g200);
+      border-top-color: var(--ev-blue);
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.9s linear infinite;
       flex-shrink: 0;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .ev-loader-heading { font-size: 1.125rem; font-weight: 700; color: var(--ev-g800); margin: 0; }
+    .ev-loader-status  { font-size: 0.9375rem; color: var(--ev-g600); margin: 0; min-height: 1.5em; }
     /* Footer */
     .ev-footer { background: var(--ev-g50); border-top: 1px solid var(--ev-g200); padding: 1.5rem; text-align: center; font-size: 0.8125rem; color: var(--ev-g500); }
     .ev-footer a { color: var(--ev-g600); }
@@ -254,36 +247,11 @@
 
   <!-- Progress Section -->
   <div class="form-card" id="progress-section">
-    <h2 class="usa-prose" style="margin-top:0">Running evaluation&hellip;</h2>
-    <p class="usa-hint margin-top-1">This usually takes 1&ndash;2 minutes. You can leave this page open.</p>
-
-    <div class="usa-step-indicator margin-top-3" aria-label="Evaluation progress">
-      <ol class="usa-step-indicator__segments">
-        <li class="usa-step-indicator__segment" id="step-1" aria-label="Load test cases">
-          <span class="usa-step-indicator__segment-label">Load test cases</span>
-        </li>
-        <li class="usa-step-indicator__segment" id="step-2" aria-label="Generate config">
-          <span class="usa-step-indicator__segment-label">Generate config</span>
-        </li>
-        <li class="usa-step-indicator__segment" id="step-3" aria-label="Run evaluations">
-          <span class="usa-step-indicator__segment-label">Run evaluations</span>
-        </li>
-        <li class="usa-step-indicator__segment" id="step-4" aria-label="Generate report">
-          <span class="usa-step-indicator__segment-label">Generate report</span>
-        </li>
-      </ol>
-      <div class="usa-step-indicator__header">
-        <h4 class="usa-step-indicator__heading">
-          <span class="usa-step-indicator__heading-counter">
-            <span class="usa-sr-only">Step</span>
-            <span class="usa-step-indicator__current-step" id="step-current">1</span>
-            <span class="usa-step-indicator__total-steps"> of 4</span>
-          </span>
-          <span class="usa-step-indicator__heading-text" id="step-heading-text">Fetch test cases</span>
-        </h4>
-      </div>
+    <div class="ev-loader">
+      <div class="ev-spinner" role="status" aria-label="Running evaluation"></div>
+      <p class="ev-loader-heading">Running your evaluation</p>
+      <p class="ev-loader-status" id="loader-status">Getting ready&hellip;</p>
     </div>
-    <div class="step-spinner" id="step-spinner">Running test cases against the LLM &mdash; this is the longest step&hellip;</div>
     <div class="usa-sr-only" aria-live="polite" id="step-announce"></div>
   </div>
 
@@ -470,44 +438,22 @@
       .catch(err => { clearInterval(pollInterval); showError(err.message); });
   }
 
-  const stepNames = ['Load test cases', 'Generate config', 'Run evaluations', 'Generate report'];
+  const stepStatus = {
+    1: 'Getting ready\u2026',
+    2: 'Getting ready\u2026',
+    3: 'This usually takes 1\u20132 minutes \u2014 the longest part.',
+    4: 'Almost done\u2026'
+  };
 
   function updateSteps(currentStep) {
-    for (let i = 1; i <= 4; i++) {
-      const seg = document.getElementById('step-' + i);
-      if (!seg) continue;
-      seg.classList.remove(
-        'usa-step-indicator__segment--complete',
-        'usa-step-indicator__segment--current'
-      );
-      seg.removeAttribute('aria-current');
-      if (i < currentStep) {
-        seg.classList.add('usa-step-indicator__segment--complete');
-      } else if (i === currentStep) {
-        seg.classList.add('usa-step-indicator__segment--current');
-        seg.setAttribute('aria-current', 'true');
-      }
-    }
-    const currentStepEl = document.getElementById('step-current');
-    const headingTextEl = document.getElementById('step-heading-text');
-    const spinnerEl = document.getElementById('step-spinner');
-    if (currentStepEl) currentStepEl.textContent = String(Math.min(currentStep, 4));
-    if (headingTextEl) headingTextEl.textContent = stepNames[Math.min(currentStep, 4) - 1] || '';
-    if (spinnerEl) spinnerEl.classList.toggle('active', currentStep === 3);
+    var s = Math.min(currentStep, 4);
+    var statusEl = document.getElementById('loader-status');
+    if (statusEl) statusEl.textContent = stepStatus[s] || '';
     var announceEl = document.getElementById('step-announce');
-    if (announceEl) announceEl.textContent = 'Step ' + Math.min(currentStep, 4) + ' of 4: ' + (stepNames[Math.min(currentStep, 4) - 1] || '');
+    if (announceEl) announceEl.textContent = statusEl ? statusEl.textContent : '';
   }
 
   function showSuccess(reportUrl) {
-    for (let i = 1; i <= 4; i++) {
-      const seg = document.getElementById('step-' + i);
-      if (!seg) continue;
-      seg.classList.remove('usa-step-indicator__segment--current');
-      seg.removeAttribute('aria-current');
-      seg.classList.add('usa-step-indicator__segment--complete');
-    }
-    const headingTextEl = document.getElementById('step-heading-text');
-    if (headingTextEl) headingTextEl.textContent = 'Complete';
     window.location.href = reportUrl;
   }
 
