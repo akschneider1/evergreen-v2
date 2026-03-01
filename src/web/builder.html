@@ -55,7 +55,6 @@
     .ev-panel { min-height: calc(100vh - var(--topbar-h) - 44px); padding: 2rem 1.5rem; }
 
     /* ── Library ── */
-    .lib-search { max-width: 240px; margin-bottom: 1rem; display: block; font-size: 0.875rem; }
     .lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
     .lib-card {
       background: #fff; border: 1px solid var(--ev-g200); border-radius: 8px;
@@ -265,7 +264,6 @@
     @media (max-width: 640px) {
       .ev-panel { padding: 1rem; }
       .lib-grid { grid-template-columns: 1fr; }
-      .lib-search { max-width: 100%; width: 100%; }
 .run-cta { flex-direction: column; align-items: flex-start; }
     }
   </style>
@@ -310,8 +308,6 @@
 
 <!-- Library panel -->
 <div id="panel-library" class="ev-panel">
-  <input class="usa-input lib-search" type="search" id="lib-search"
-    placeholder="Search test suites&hellip;" oninput="renderLibrary()" aria-label="Search test suites">
   <div id="lib-grid" class="lib-grid">
     <p style="color:var(--ev-g500);">Loading&hellip;</p>
   </div>
@@ -416,19 +412,7 @@ function switchTab(tab) {
 
 // ── Library rendering ──
 function renderLibrary() {
-  var q = (document.getElementById('lib-search').value || '').toLowerCase();
-  var filtered = state.templates.filter(function(t) {
-    return !q ||
-      t.name.toLowerCase().indexOf(q) !== -1 ||
-      (t.description || '').toLowerCase().indexOf(q) !== -1 ||
-      (t.domain || '').toLowerCase().indexOf(q) !== -1;
-  });
-
-  if (filtered.length === 0) {
-    document.getElementById('lib-grid').innerHTML =
-      '<p style="color:var(--ev-g500);grid-column:1/-1;">No test suites match your search.</p>';
-    return;
-  }
+  var filtered = state.templates.slice();
 
   // Blank card always first
   filtered.sort(function(a, b) {
