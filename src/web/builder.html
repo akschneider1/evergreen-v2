@@ -253,6 +253,17 @@
     .builder-no-suite p  { font-size: 0.875rem; color: var(--ev-g500); margin: 0 0 1.5rem; }
     .builder-no-suite .button-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
 
+    /* ── Breadcrumb ── */
+    .ev-breadcrumb { background: var(--ev-g50); border-bottom: 1px solid var(--ev-g100); padding: 0.4rem 1.5rem; }
+    .ev-breadcrumb ol { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0; }
+    .ev-breadcrumb li { display: flex; align-items: center; font-size: 0.8125rem; }
+    .ev-breadcrumb li + li::before { content: '/'; color: var(--ev-g300); margin: 0 0.375rem; }
+    .ev-breadcrumb a { color: var(--ev-blue); text-decoration: none; }
+    .ev-breadcrumb a:hover { text-decoration: underline; }
+    .ev-breadcrumb-btn { background: none; border: none; padding: 0; font-size: 0.8125rem; font-family: inherit; color: var(--ev-blue); cursor: pointer; }
+    .ev-breadcrumb-btn:hover { text-decoration: underline; }
+    .ev-breadcrumb [aria-current="page"] { color: var(--ev-g700); font-weight: 500; }
+
     /* Responsive */
     @media (max-width: 640px) {
       .ev-panel { padding: 1rem; }
@@ -292,6 +303,11 @@
 <nav class="ev-tabs" aria-label="Builder navigation">
   <button class="ev-tab active" id="tab-library" onclick="switchTab('library')">Library</button>
   <button class="ev-tab" id="tab-builder" onclick="switchTab('builder')">Builder<span id="tab-builder-label"></span></button>
+</nav>
+
+<!-- Breadcrumb -->
+<nav class="ev-breadcrumb" aria-label="Breadcrumbs">
+  <ol id="breadcrumb-list"></ol>
 </nav>
 
 <!-- Library panel -->
@@ -357,6 +373,38 @@ function metricInfo(id) { return METRICS.find(function(m) { return m.id === id; 
 function sevInfo(id)    { return SEVERITIES.find(function(s) { return s.id === id; }) || null; }
 function caseComplete(c) { return c.metric && c.severity && c.question && (c.should.length > 0 || c.shouldNot.length > 0); }
 
+// ── Breadcrumb ──
+function updateBreadcrumb() {
+  var items = [{ label: 'Home', href: '/' }];
+  if (state.currentTab === 'library') {
+    items.push({ label: 'Builder', href: '/builder' });
+    items.push({ label: 'Library', current: true });
+  } else {
+    items.push({ label: 'Builder', href: '/builder' });
+    if (state.template) {
+      if (state.selectedTemplateId === 'blank') {
+        items.push({ label: 'New Test Suite', current: true });
+      } else {
+        items.push({ label: 'Library', action: 'library' });
+        items.push({ label: state.template.name || 'Untitled', current: true });
+      }
+    }
+  }
+  var html = '';
+  items.forEach(function(item) {
+    html += '<li>';
+    if (item.current) {
+      html += '<span aria-current="page">' + esc(item.label) + '</span>';
+    } else if (item.action === 'library') {
+      html += '<button class="ev-breadcrumb-btn" onclick="switchTab(\'library\')">' + esc(item.label) + '</button>';
+    } else {
+      html += '<a href="' + esc(item.href) + '">' + esc(item.label) + '</a>';
+    }
+    html += '</li>';
+  });
+  document.getElementById('breadcrumb-list').innerHTML = html;
+}
+
 // ── Tab switching ──
 function switchTab(tab) {
   state.currentTab = tab;
@@ -364,6 +412,7 @@ function switchTab(tab) {
   document.getElementById('panel-builder').hidden = tab !== 'builder';
   document.getElementById('tab-library').classList.toggle('active', tab === 'library');
   document.getElementById('tab-builder').classList.toggle('active', tab === 'builder');
+  updateBreadcrumb();
   if (tab === 'builder' && state.template) renderBuilder();
 }
 
@@ -619,6 +668,7 @@ function loadTemplate(id) {
       });
       state.expandedCaseId = null;
       switchTab('builder');
+      updateBreadcrumb();
     })
     .catch(function() {
       alert('Failed to load test suite. Please try again.');
@@ -744,6 +794,7 @@ function runEval() {
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', function() {
+  updateBreadcrumb();
   fetch('/api/templates')
     .then(function(r) { return r.json(); })
     .then(function(templates) {
