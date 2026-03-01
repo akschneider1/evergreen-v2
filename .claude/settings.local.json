@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git push origin main)"
+      "Bash(git push origin main)",
+      "Bash(npm run dev)",
+      "Bash(npm run dev -- app)",
+      "Bash(pkill -f \"node dist/index.js\" 2>/dev/null; pkill -f \"ts-node src/index.ts\" 2>/dev/null; true)",
+      "Bash(npm run build && node dist/index.js app -p 5000)",
+      "Bash(lsof -i :5000 2>/dev/null || ss -tlnp | grep 5000)",
+      "Bash(npx tsc --noEmit 2>&1 | head -30)",
+      "Bash(npm run test)",
+      "Bash(npm run build 2>&1 | tail -5)",
+      "Bash(node dist/index.js app -p 5000)",
+      "Bash(npm run test && npm run build)",
+      "Bash(find /home/runner/workspace -name \"uswds*.css\" -o -name \"uswds*.min.css\" 2>/dev/null | head -5)"
     ]
   }
 }
