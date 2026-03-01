@@ -195,6 +195,21 @@ function testReportGeneration(): void {
   assert(html.includes('tab-summary'), 'Should have summary tab');
   assert(html.includes('tab-analysis'), 'Should have analysis tab');
   assert(html.includes('tab-details'), 'Should have details tab');
+  assert(html.includes('tab-recommendations'), 'Should have recommendations tab');
+
+  // Recommendations content
+  assert(html.includes('Review your safety guardrails'), 'Should have safety recommendation');
+  assert(html.includes('Improve the information your AI draws from'), 'Should have knowledge recommendation');
+  assert(html.includes('Strengthen the instructions'), 'Should have instructions recommendation');
+  assert(html.includes('Adjust the tone and style'), 'Should have tone recommendation');
+  assert(html.includes('Talk to the people who use this service'), 'Should have user research recommendation');
+  assert(html.includes('Run this evaluation again'), 'Should have run-again recommendation');
+  assert(html.includes('For your technical team'), 'Should have expandable technical sections');
+
+  // Priority order: safety before run-again
+  const safetyIdx = html.indexOf('Review your safety guardrails');
+  const runAgainIdx = html.indexOf('Run this evaluation again');
+  assert(safetyIdx < runAgainIdx, 'Safety recommendation should appear before run-again');
 
   // Write report to disk for manual inspection
   const outPath = path.join(__dirname, '..', 'examples', 'sample-report', 'report.html');
@@ -202,7 +217,7 @@ function testReportGeneration(): void {
   fs.writeFileSync(outPath, html, 'utf-8');
   console.log(`  Report written to: ${outPath}`);
 
-  console.log('  PASSED (HTML valid, 3 tabs, readiness badge, critical failures shown)\n');
+  console.log('  PASSED (HTML valid, 4 tabs, readiness badge, critical failures, recommendations)\n');
 }
 
 function assert(condition: boolean, msg: string): void {

@@ -45,6 +45,7 @@ interface ReportData {
   evaluatorName: string;
   evaluationReason: string;
   presetId: string;
+  recommendations: Recommendation[];
 }
 
 interface ProviderSummary {
@@ -98,6 +99,18 @@ interface TestCaseView {
     enhancedGradingReason: string;
   }[];
   colspan: number;
+}
+
+interface Recommendation {
+  id: string;
+  headline: string;
+  explanation: string;
+  steps: string[];
+  metrics: EvalMetric[];
+  metricRates: { label: string; rate: number }[];
+  priority: number;
+  technicalHeadline: string;
+  technicalSteps: string[];
 }
 
 // ---------- Helpers ----------
@@ -332,7 +345,7 @@ function deriveReportData(input: EvalResults): ReportData {
     };
   });
 
-  return {
+  const rd: ReportData = {
     title: input.title,
     date: input.date,
     testCaseCount: input.testCases.length,
@@ -360,7 +373,186 @@ function deriveReportData(input: EvalResults): ReportData {
     evaluatorName: input.evaluatorName || '',
     evaluationReason: input.evaluationReason || '',
     presetId: input.presetId || '',
+    recommendations: [],
   };
+  rd.recommendations = deriveRecommendations(rd);
+  return rd;
+}
+
+// ---------- Recommendations ----------
+
+function dimRate(dimensions: DimensionResult[], name: string): number | null {
+  const d = dimensions.find(dim => dim.name === name);
+  return d != null ? d.passRate : null;
+}
+
+function deriveRecommendations(data: ReportData): Recommendation[] {
+  const safetyRate = dimRate(data.dimensions, 'Safety');
+  const accuracyRate = dimRate(data.dimensions, 'Accuracy');
+  const effectivenessRate = dimRate(data.dimensions, 'Effectiveness');
+  const easeRate = dimRate(data.dimensions, 'Ease of Use');
+  const emotionRate = dimRate(data.dimensions, 'Emotion');
+
+  function metricTag(metric: EvalMetric): { label: string; rate: number } {
+    const rate = dimRate(data.dimensions, METRIC_LABELS[metric]);
+    return { label: METRIC_LABELS[metric], rate: rate != null ? rate : -1 };
+  }
+
+  const recs: Recommendation[] = [
+    {
+      id: 'safety-guardrails',
+      headline: 'Review your safety guardrails',
+      explanation: 'Safety failures mean the AI gave responses that could mislead or harm the people using it. Even one safety failure is worth investigating.',
+      steps: [
+        'Review each safety failure in the Details tab',
+        'Identify the types of unsafe content the AI produced',
+        'Work with your technical team to add protections for those specific issues',
+        'Re-run the evaluation to confirm the fixes work',
+      ],
+      metrics: ['safety'],
+      metricRates: [metricTag('safety')].filter(m => m.rate >= 0),
+      priority: 1,
+      technicalHeadline: 'For your technical team',
+      technicalSteps: [
+        'Harden the system prompt with explicit safety boundaries for the identified failure modes',
+        'Add output filtering or classifier-based guardrails (e.g. moderation API, custom classifiers)',
+        'Consider a content-safety layer that screens responses before they reach the user',
+        'Log and alert on safety failures in production for ongoing monitoring',
+      ],
+    },
+    {
+      id: 'improve-knowledge',
+      headline: 'Improve the information your AI draws from',
+      explanation: 'When the AI gets facts wrong, it usually means the information it has access to is incomplete, outdated, or poorly organized.',
+      steps: [
+        'Check whether the source documents your AI uses are current and complete',
+        'Identify which facts the AI got wrong (see Details tab) and verify them against your records',
+        'Work with your technical team to improve how information is stored and retrieved',
+        'Add missing facts to the knowledge base or correct outdated ones',
+      ],
+      metrics: ['accuracy'],
+      metricRates: [metricTag('accuracy')].filter(m => m.rate >= 0),
+      priority: 2,
+      technicalHeadline: 'For your technical team',
+      technicalSteps: [
+        'Review document chunking strategy \u2014 smaller, overlapping chunks often improve retrieval accuracy',
+        'Evaluate your embedding model and consider re-indexing with a higher-quality model',
+        'Tune retrieval parameters (top-k results, similarity threshold) to improve relevance',
+        'Add structured metadata (dates, categories, source authority) to improve retrieval filtering',
+        'Consider a hybrid search approach combining semantic and keyword-based retrieval',
+      ],
+    },
+    {
+      id: 'strengthen-instructions',
+      headline: 'Strengthen the instructions your AI follows',
+      explanation: 'When the AI understands the question but doesn\u2019t respond in the most helpful way, the instructions it follows (system prompt) likely need improvement.',
+      steps: [
+        'Review the responses that weren\u2019t effective or easy to understand (see Details tab)',
+        'Look for patterns \u2014 are responses too long, too vague, or missing key steps?',
+        'Update the instructions to address the gaps you\u2019ve identified',
+        'Add examples of good responses so the AI knows what to aim for',
+      ],
+      metrics: ['effectiveness', 'ease-of-use'],
+      metricRates: [metricTag('effectiveness'), metricTag('ease-of-use')].filter(m => m.rate >= 0),
+      priority: 3,
+      technicalHeadline: 'For your technical team',
+      technicalSteps: [
+        'Revise the system prompt with explicit formatting guidance and response structure',
+        'Add few-shot examples that demonstrate ideal responses for common question types',
+        'Include plain-language directives: "avoid jargon", "explain acronyms", "give the next step"',
+        'Consider breaking complex prompts into a chain of smaller, focused prompts',
+        'Test system prompt changes in isolation before deploying to see measurable improvement',
+      ],
+    },
+    {
+      id: 'adjust-tone',
+      headline: 'Adjust the tone and style',
+      explanation: 'People using government services are often in stressful situations. If the AI\u2019s tone feels cold, robotic, or dismissive, it can make things worse even when the information is correct.',
+      steps: [
+        'Read through the emotion-related failures in the Details tab',
+        'Note where the AI could have acknowledged the person\u2019s situation before answering',
+        'Update the instructions to include guidance about tone and empathy',
+        'Consider adding specific phrases the AI should use in sensitive situations',
+      ],
+      metrics: ['emotion'],
+      metricRates: [metricTag('emotion')].filter(m => m.rate >= 0),
+      priority: 4,
+      technicalHeadline: 'For your technical team',
+      technicalSteps: [
+        'Add tone guidance to the system prompt: "acknowledge the user\u2019s situation before providing information"',
+        'Include examples of empathetic phrasing for common sensitive topics',
+        'Consider using a separate tone-check step that evaluates response empathy before delivery',
+        'Avoid overly formal or bureaucratic language patterns in prompt templates',
+      ],
+    },
+    {
+      id: 'consider-model',
+      headline: 'Consider a different AI model',
+      explanation: 'Different AI models have different strengths. If you tested more than one, comparing their results can reveal whether switching models would make a meaningful difference.',
+      steps: [
+        'Compare pass rates across models in the Analysis tab',
+        'Check if one model is consistently better across all categories, or only in specific areas',
+        'Factor in cost and speed \u2014 a more expensive model is only worth it if the improvement matters',
+        'Discuss trade-offs with your technical team before switching',
+      ],
+      metrics: [],
+      metricRates: data.providers.map(p => ({ label: p.name, rate: p.passRate })),
+      priority: 5,
+      technicalHeadline: 'For your technical team',
+      technicalSteps: [
+        'Compare model performance on each metric dimension, not just overall pass rate',
+        'Evaluate cost per evaluation \u2014 larger models may not justify their cost for your use case',
+        'Consider latency requirements, especially for real-time user-facing applications',
+        'Fine-tuning is rarely necessary for public-sector chatbots \u2014 prompt engineering and retrieval improvements usually deliver better ROI',
+        'Test candidate models with the same evaluation suite to get an apples-to-apples comparison',
+      ],
+    },
+    {
+      id: 'talk-to-users',
+      headline: 'Talk to the people who use this service',
+      explanation: 'The best way to improve your AI is to understand what real people actually need from it. Test cases based on real user questions catch problems that hypothetical scenarios miss.',
+      steps: [
+        'Interview 5\u201310 people who use (or would use) this service',
+        'Ask what questions they\u2019d ask, what words they\u2019d use, and what would actually help them',
+        'Add their real questions to your test suite as new test cases',
+        'Pay special attention to edge cases and situations that are hard to handle',
+      ],
+      metrics: ['effectiveness'],
+      metricRates: [metricTag('effectiveness')].filter(m => m.rate >= 0),
+      priority: 6,
+      technicalHeadline: 'For your technical team',
+      technicalSteps: [
+        'Analyze production logs to identify the most common user questions and failure modes',
+        'Build test cases from real user interactions, not just policy documents',
+        'Expand test coverage to include multilingual queries and accessibility scenarios',
+        'Set up a feedback loop so user-reported issues automatically become new test cases',
+        'Consider A/B testing different response strategies with real users',
+      ],
+    },
+    {
+      id: 'run-again',
+      headline: 'Run this evaluation again after making changes',
+      explanation: 'Evaluation isn\u2019t a one-time activity. Every time you update the AI\u2019s instructions, data, or model, run the same tests again to make sure things got better, not worse.',
+      steps: [
+        'Make one or two focused changes based on the recommendations above',
+        'Re-run this same evaluation to measure the impact',
+        'Compare your new pass rates against this baseline',
+        'Repeat until you\u2019re confident the AI is ready for real users',
+      ],
+      metrics: [],
+      metricRates: [],
+      priority: 7,
+      technicalHeadline: 'For your technical team',
+      technicalSteps: [
+        'Integrate evaluation into your CI/CD pipeline so it runs automatically on every deployment',
+        'Track pass rates across runs to establish improvement trends',
+        'Set up automated alerts when pass rates drop below acceptable thresholds',
+        'Version your test suites alongside your code to maintain reproducibility',
+      ],
+    },
+  ];
+
+  return recs;
 }
 
 // ---------- HTML Rendering ----------
@@ -562,6 +754,38 @@ function renderHtml(data: ReportData): string {
       ${esc(METRIC_LABELS[m])} <span class="filter-count">${count}</span>
     </button>`;
     }).join('\n    ');
+
+  // ── Recommendations tab ─────────────────────────────────────────────
+
+  const recommendationCardsHtml = data.recommendations.map((rec, i) => {
+    const stepsHtml = rec.steps.map(s => `<li>${esc(s)}</li>`).join('');
+    const techStepsHtml = rec.technicalSteps.map(s => `<li>${esc(s)}</li>`).join('');
+    const tagsHtml = rec.metricRates.map(m =>
+      `<span class="rec-evidence-tag">${esc(m.label)}: ${m.rate}%</span>`
+    ).join('');
+    return `
+    <div class="rec-card">
+      <div class="rec-number">${i + 1}</div>
+      <div class="rec-body">
+        <h3 class="rec-headline">${esc(rec.headline)}</h3>
+        <p class="rec-explanation">${esc(rec.explanation)}</p>
+        <div class="rec-steps">
+          <div class="rec-steps-label">Steps to take</div>
+          <ol class="rec-step-list">${stepsHtml}</ol>
+        </div>
+        ${tagsHtml ? `<div class="rec-evidence">
+          <span class="rec-evidence-label">Your results:</span>
+          ${tagsHtml}
+        </div>` : ''}
+        <details class="rec-technical">
+          <summary class="rec-tech-toggle">${esc(rec.technicalHeadline)}</summary>
+          <div class="rec-tech-content">
+            <ol class="rec-tech-list">${techStepsHtml}</ol>
+          </div>
+        </details>
+      </div>
+    </div>`;
+  }).join('');
 
   // ── Full HTML ──────────────────────────────────────────────────────────
 
@@ -1192,6 +1416,45 @@ table.data-table, table.detail-table {
   .card { padding: 1.25rem; }
 }
 
+/* ── Recommendations tab ── */
+.rec-intro { font-size: 14px; color: var(--text-2); line-height: 1.6; margin: 0; }
+.rec-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 24px 28px; margin-bottom: 16px; display: flex; gap: 20px; align-items: flex-start;
+}
+.rec-number {
+  flex-shrink: 0; width: 32px; height: 32px; background: var(--brand); color: #fff;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px;
+}
+.rec-body { flex: 1; min-width: 0; }
+.rec-headline { font-size: 16px; font-weight: 700; color: var(--text); margin: 0 0 8px; }
+.rec-explanation { font-size: 14px; color: var(--text-2); line-height: 1.6; margin: 0 0 16px; }
+.rec-steps-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--text-3); margin-bottom: 8px;
+}
+.rec-step-list { margin: 0 0 16px; padding-left: 20px; }
+.rec-step-list li { font-size: 14px; color: var(--text); line-height: 1.6; margin-bottom: 4px; }
+.rec-evidence { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 16px; }
+.rec-evidence-label { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.rec-evidence-tag {
+  font-size: 11px; font-weight: 600; padding: 2px 8px; background: var(--border-sub);
+  border-radius: 4px; color: var(--text-2);
+}
+.rec-technical { border-top: 1px solid var(--border-sub); padding-top: 12px; }
+.rec-tech-toggle {
+  font-size: 13px; font-weight: 600; color: var(--brand); cursor: pointer; list-style: none;
+}
+.rec-tech-toggle::-webkit-details-marker { display: none; }
+.rec-tech-toggle::marker { content: ''; }
+.rec-tech-content { margin-top: 10px; padding: 14px 16px; background: #f0f4f8; border-radius: 6px; }
+.rec-tech-list { margin: 0; padding-left: 20px; }
+.rec-tech-list li { font-size: 13px; color: #334155; line-height: 1.6; margin-bottom: 4px; }
+@media (max-width: 680px) {
+  .rec-card { flex-direction: column; gap: 12px; padding: 16px; }
+}
+
 /* ── Print ── */
 @media print {
   .tab-nav { position: static; box-shadow: none; }
@@ -1202,6 +1465,8 @@ table.data-table, table.detail-table {
   .chevron { display: none; }
   .sev-link { display: none; }
   .report-nav { display: none; }
+  .rec-technical[open] .rec-tech-content { display: block; }
+  .rec-tech-toggle { color: var(--text); }
 }
 </style>
 </head>
@@ -1268,6 +1533,10 @@ table.data-table, table.detail-table {
     <button class="tab-btn" data-tab="details">
       <span class="tab-label">Details</span>
       <span class="tab-sub">Technical</span>
+    </button>
+    <button class="tab-btn" data-tab="recommendations">
+      <span class="tab-label">Recommendations</span>
+      <span class="tab-sub">What to do next</span>
     </button>
   </div>
 </nav>
@@ -1360,6 +1629,20 @@ table.data-table, table.detail-table {
       ${detailRowsHtml}
     </table>
   </div>
+
+</div>
+</section>
+
+<!-- ── Recommendations tab ── -->
+<section class="tab-content" id="tab-recommendations">
+<div class="grid-container">
+
+  <div class="card">
+    <h2 class="card-title">Recommendations</h2>
+    <p class="rec-intro">Based on the patterns in your evaluation results, here are specific steps to improve your AI system. Each recommendation includes guidance for your technical team.</p>
+  </div>
+
+  ${recommendationCardsHtml}
 
 </div>
 </section>
