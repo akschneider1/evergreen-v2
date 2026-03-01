@@ -22,15 +22,16 @@ You can also open `report.html` directly as a file in Chrome, Firefox, Safari, o
 
 ---
 
-## The Three Tabs
+## The Four Tabs
 
-The report has three tabs, each designed for a different audience:
+The report has four tabs, each designed for a different audience:
 
 | Tab | For | What It Shows |
 |-----|-----|--------------|
 | **Summary** | Leadership, decision-makers | Pass rates, critical failures, go/no-go recommendation |
 | **Analysis** | Operations, program managers | Breakdown by severity and evaluation dimension |
 | **Details** | Technical staff | Every test case with full AI responses and grading reasons |
+| **Recommendations** | Anyone | Prioritized actions to improve the AI system |
 
 ---
 
@@ -147,6 +148,20 @@ Click **anywhere on a row** to expand it and see:
 ### Grading Reasons
 
 For **Accuracy** tests, the grading reason explains which expected item was found or missing. For all other metrics (Safety, Effectiveness, Ease of Use, Emotion), the grading reason shows the LLM judge's full reasoning — including what criteria it evaluated and why the response passed or failed.
+
+---
+
+## Recommendations Tab
+
+This tab is for anyone who wants to know what to do next. It presents up to 7 prioritized recommendations derived from the patterns in your evaluation results.
+
+Each card shows:
+- A numbered headline describing the action (e.g., "Review your safety guardrails")
+- Plain-language steps for policy and program staff
+- Evidence tags showing your actual pass rates for the relevant metric(s)
+- An expandable **For your technical team** section with specific engineering guidance (prompt tuning, retrieval improvements, CI/CD integration, etc.)
+
+Cards are collapsed by default — click any card to expand it.
 
 ---
 

@@ -101,7 +101,7 @@ npx evergreen run
 npx evergreen serve
 ```
 
-The report shows pass/fail for every test case, highlights critical failures, and gives a deployment recommendation across three tabs — Summary (leadership), Analysis (operations), and Details (technical).
+The report shows pass/fail for every test case, highlights critical failures, and gives a deployment recommendation across four tabs — Summary (leadership), Analysis (operations), Details (technical), and Recommendations (what to do next).
 
 ---
 
@@ -141,16 +141,20 @@ Google Sheet  →  Evergreen          →  Promptfoo        →  LLM Under Test 
 ```
 src/
 ├── index.ts          # CLI: evergreen run / serve / app
+├── builder.ts        # BuilderTestCase ↔ SheetRow conversion, CSV export
 ├── sheets.ts         # Fetch Google Sheet → parse rows
 ├── config.ts         # Generate Promptfoo YAML from sheet data
 ├── runner.ts         # Invoke Promptfoo, capture JSON (sync + async)
 ├── mapper.ts         # Promptfoo JSON → report input
 ├── types.ts          # Shared types + Promptfoo output normalizer
+├── presets/          # Built-in test suites (6 presets + blank)
 ├── report/
-│   └── generator.ts  # Render HTML report (3 tabs: Summary, Analysis, Details)
+│   └── generator.ts  # Render HTML report (4 tabs: Summary, Analysis, Details, Recommendations)
 └── web/
-    ├── server.ts     # Express app: form → pipeline → report
-    └── input.html    # USWDS input form
+    ├── server.ts     # Express app: landing, builder, form → pipeline → report
+    ├── landing.html  # Landing page — hero, how it works, template cards
+    ├── builder.html  # Test Suite Builder — browse templates, create/edit/export
+    └── input.html    # Eval runner form
 ```
 
 ---
