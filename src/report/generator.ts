@@ -764,10 +764,13 @@ function renderHtml(data: ReportData): string {
       `<span class="rec-evidence-tag">${esc(m.label)}: ${m.rate}%</span>`
     ).join('');
     return `
-    <div class="rec-card">
-      <div class="rec-number">${i + 1}</div>
-      <div class="rec-body">
+    <details class="rec-card">
+      <summary class="rec-summary">
+        <div class="rec-number">${i + 1}</div>
         <h3 class="rec-headline">${esc(rec.headline)}</h3>
+        <span class="rec-chevron">&#9662;</span>
+      </summary>
+      <div class="rec-body">
         <p class="rec-explanation">${esc(rec.explanation)}</p>
         <div class="rec-steps">
           <div class="rec-steps-label">Steps to take</div>
@@ -784,7 +787,7 @@ function renderHtml(data: ReportData): string {
           </div>
         </details>
       </div>
-    </div>`;
+    </details>`;
   }).join('');
 
   // ── Full HTML ──────────────────────────────────────────────────────────
@@ -1420,15 +1423,27 @@ table.data-table, table.detail-table {
 .rec-intro { font-size: 14px; color: var(--text-2); line-height: 1.6; margin: 0; }
 .rec-card {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 24px 28px; margin-bottom: 16px; display: flex; gap: 20px; align-items: flex-start;
+  margin-bottom: 8px; list-style: none;
 }
+.rec-card[open] { border-color: var(--brand); }
+.rec-card::-webkit-details-marker { display: none; }
+.rec-summary {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px; cursor: pointer; list-style: none; user-select: none;
+}
+.rec-summary::-webkit-details-marker { display: none; }
+.rec-summary::marker { content: ''; }
+.rec-summary:hover { background: #f8fafc; border-radius: var(--radius); }
+.rec-card[open] .rec-summary { border-bottom: 1px solid var(--border); }
 .rec-number {
-  flex-shrink: 0; width: 32px; height: 32px; background: var(--brand); color: #fff;
+  flex-shrink: 0; width: 28px; height: 28px; background: var(--brand); color: #fff;
   border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 14px;
+  font-weight: 800; font-size: 13px;
 }
-.rec-body { flex: 1; min-width: 0; }
-.rec-headline { font-size: 16px; font-weight: 700; color: var(--text); margin: 0 0 8px; }
+.rec-headline { font-size: 15px; font-weight: 600; color: var(--text); margin: 0; flex: 1; }
+.rec-chevron { color: var(--text-3); font-size: 12px; flex-shrink: 0; transition: transform 0.15s; }
+.rec-card[open] .rec-chevron { transform: rotate(180deg); }
+.rec-body { padding: 20px 20px 20px 62px; }
 .rec-explanation { font-size: 14px; color: var(--text-2); line-height: 1.6; margin: 0 0 16px; }
 .rec-steps-label {
   font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
@@ -1452,7 +1467,8 @@ table.data-table, table.detail-table {
 .rec-tech-list { margin: 0; padding-left: 20px; }
 .rec-tech-list li { font-size: 13px; color: #334155; line-height: 1.6; margin-bottom: 4px; }
 @media (max-width: 680px) {
-  .rec-card { flex-direction: column; gap: 12px; padding: 16px; }
+  .rec-body { padding: 16px; }
+  .rec-summary { padding: 14px 16px; }
 }
 
 /* ── Print ── */

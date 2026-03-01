@@ -55,9 +55,7 @@
     .ev-panel { min-height: calc(100vh - var(--topbar-h) - 44px); padding: 2rem 1.5rem; }
 
     /* ── Library ── */
-    .lib-toolbar { margin-bottom: 1.5rem; }
-    .lib-heading { font-size: 1.125rem; font-weight: 700; color: var(--ev-g800); margin: 0 0 0.75rem; }
-    .lib-search { max-width: 480px; display: block; }
+    .lib-search { max-width: 240px; margin-bottom: 1rem; display: block; font-size: 0.875rem; }
     .lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
     .lib-card {
       background: #fff; border: 1px solid var(--ev-g200); border-radius: 8px;
@@ -267,7 +265,7 @@
     @media (max-width: 640px) {
       .ev-panel { padding: 1rem; }
       .lib-grid { grid-template-columns: 1fr; }
-      .lib-search { max-width: 100%; }
+      .lib-search { max-width: 100%; width: 100%; }
 .run-cta { flex-direction: column; align-items: flex-start; }
     }
   </style>
@@ -312,11 +310,8 @@
 
 <!-- Library panel -->
 <div id="panel-library" class="ev-panel">
-  <div class="lib-toolbar">
-    <h2 class="lib-heading">Choose a test suite</h2>
-    <input class="usa-input lib-search" type="search" id="lib-search"
-      placeholder="Search&hellip;" oninput="renderLibrary()" aria-label="Search test suites">
-  </div>
+  <input class="usa-input lib-search" type="search" id="lib-search"
+    placeholder="Search test suites&hellip;" oninput="renderLibrary()" aria-label="Search test suites">
   <div id="lib-grid" class="lib-grid">
     <p style="color:var(--ev-g500);">Loading&hellip;</p>
   </div>
