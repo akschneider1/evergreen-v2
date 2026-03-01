@@ -199,6 +199,7 @@ Minimum viable surface area. No unnecessary abstractions, feature flags, or conf
 | [Understanding Results](./docs/04-understanding-results.md) | Policy SME | How to read the report and make decisions |
 | [Evaluation Design](./docs/05-evaluation-design.md) | Policy SME | The five lead metrics framework |
 | [Technical Reference](./docs/06-technical-reference.md) | Technical implementer | Config options, CLI flags, extending |
+| [Roadmap: Human Evaluation](./docs/08-roadmap-human-evaluation.md) | Everyone | Adding human review, moderated testing, and public participation |
 
 ---
 
