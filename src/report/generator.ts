@@ -1568,12 +1568,12 @@ table.data-table, table.detail-table {
     <ul class="rh-steps">${nextStepsHtml}</ul>
   </div>
 
-  ${criticalFailuresHtml}
-
   <div class="stats-grid">
     ${providerStatCardsHtml}
     ${criticalCardHtml}
   </div>
+
+  ${criticalFailuresHtml}
 
 </div>
 </section>
