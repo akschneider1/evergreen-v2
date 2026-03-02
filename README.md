@@ -27,7 +27,7 @@ The key insight: **what a "correct" answer looks like should be defined by the p
 
 | Persona | What they do | What they need |
 |---------|-------------|----------------|
-| **Policy SME** (primary) | Writes test cases in Google Sheets, reviews results | No coding required; clear pass/fail with severity context |
+| **Policy SME** (primary) | Builds test suites in the Builder or Google Sheets; reviews results | No coding required; clear pass/fail with severity context |
 | **Program Manager / Procurement Officer** | Reads the summary report, shares with leadership | Evidence that a vendor's AI meets standards before sign-off |
 | **Technical Implementer** (secondary) | Runs evals in CI/CD, tunes system prompts | CLI integration, detailed failure debugging |
 
@@ -35,9 +35,8 @@ The key insight: **what a "correct" answer looks like should be defined by the p
 
 | Step | Who | Time |
 |------|-----|------|
-| **Copy** the Google Sheet template | Policy SME | 2 min |
-| **Write** 5–10 test cases — informed by community input on what people actually ask | Policy SME | 30 min |
-| **Run** `npx evergreen app` or `npx evergreen run` | Technical colleague | 5 min |
+| **Select or build** a test suite — pick a pre-built template from the Library, customize it in the Builder, or bring your own Google Sheet | Policy SME | 5–30 min |
+| **Run** `npx evergreen app` and click Run Evaluation | Technical colleague | 5 min |
 | **Read** the HTML report | Policy SME | 10 min |
 | **Decide** whether the system is ready to deploy | Decision-maker | — |
 
@@ -52,30 +51,20 @@ The report is a concrete artifact that can be shared with leadership, procuremen
 - Node.js 20+
 - An API key for the LLM you're testing (e.g., `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`)
 
-### 1. Create a Google Sheet with test cases
-
-Set up a Google Sheet with these 5 columns. **Row 1 = header, row 2 = example/instructions (leave as-is), data starts row 3:**
-
-| Question | What to Check | Context | Metric | Severity |
-|----------|---------------|---------|--------|----------|
-| What is the CO state income tax rate? | 4.4% | | Accuracy | critical |
-| How do I file my CO tax return? | Revenue Online, paper form, tax software | | Accuracy | medium |
-| Can I deduct federal taxes on my CO return? | response claims federal taxes are deductible | CO SALT rules | Safety | critical |
-
-You choose a **Metric** (Safety, Accuracy, Ease of Use, Effectiveness, or Emotion) — Evergreen infers the grading logic automatically.
-
-Share the sheet as **"Anyone with the link can view."**
-
-> **Don't have test cases yet?** The web app includes five built-in test suites (25 tests each) that you can run immediately — no Google Sheet required. See Option A below.
-
-### Option A: Web App (no config file needed)
+### Option A: Web App (recommended for non-technical users)
 
 ```bash
 export OPENAI_API_KEY=sk-your-key-here
 npx evergreen app
 ```
 
-Open **http://localhost:4000**. Fill in the form (Sheet URL, provider, system prompt) and click **Run Evaluation**. A step-by-step progress indicator tracks the pipeline. When complete, click the link to open the report.
+Open **http://localhost:4000**. From the landing page you can:
+
+- **Pick a pre-built template** — six built-in test suites (25 tests each) covering common public-sector AI use cases. Click "Run now" to evaluate immediately, or "Open in Builder" to review and customize test cases first.
+- **Build your own** — use the Test Suite Builder at `/builder` to create test cases from scratch without touching a spreadsheet.
+- **Bring a Google Sheet** — if you've already written test cases in a Google Sheet (5 columns: `Question`, `What to Check`, `Context`, `Metric`, `Severity`), paste the URL on the run form.
+
+Click **Run Evaluation**. A step-by-step progress indicator tracks the pipeline. When complete, click the link to open the report.
 
 ### Option B: CLI (for scripting and CI/CD)
 
@@ -109,7 +98,7 @@ The report shows pass/fail for every test case, highlights critical failures, an
 
 ```
 Google Sheet  →  Evergreen          →  Promptfoo        →  LLM Under Test  →  Evergreen Report
-(test cases)     CLI or Web App        (eval engine)       (OpenAI, etc.)     (3-tab HTML)
+(test cases)     CLI or Web App        (eval engine)       (OpenAI, etc.)     (4-tab HTML)
 ```
 
 ### Promptfoo as the Eval Engine
@@ -132,7 +121,7 @@ Google Sheet  →  Evergreen          →  Promptfoo        →  LLM Under Test 
 |---|---|
 | No Google Sheets input | Sheets connector fetches, parses, and generates YAML — SMEs never touch config files |
 | Generic HTML viewer | Custom HTML report with severity, readiness badge, and critical failure highlighting |
-| No persona-based views | Three tabs: Summary (Policy/Leadership), Analysis (Operations), Details (Technical) |
+| No persona-based views | Four tabs: Summary (Policy/Leadership), Analysis (Operations), Details (Technical), Recommendations (next steps) |
 | No methodology guidance | Documentation and methodology guides written for non-technical users |
 | No domain examples | Colorado Tax Policy walkthrough with 10 sample test cases |
 
