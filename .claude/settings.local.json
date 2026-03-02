@@ -12,7 +12,9 @@
       "Bash(npm run build 2>&1 | tail -5)",
       "Bash(node dist/index.js app -p 5000)",
       "Bash(npm run test && npm run build)",
-      "Bash(find /home/runner/workspace -name \"uswds*.css\" -o -name \"uswds*.min.css\" 2>/dev/null | head -5)"
+      "Bash(find /home/runner/workspace -name \"uswds*.css\" -o -name \"uswds*.min.css\" 2>/dev/null | head -5)",
+      "WebSearch",
+      "Bash(git push)"
     ]
   }
 }
