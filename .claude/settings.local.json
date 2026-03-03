@@ -28,7 +28,9 @@
       "Bash(git add src/web/landing.html src/web/input.html src/web/builder.html src/web/assets/css/evergreen.css dist/web/landing.html dist/web/input.html dist/web/builder.html dist/assets/css/evergreen.css package.json && git status)",
       "Bash(git add src/web/landing.html src/web/input.html src/web/builder.html src/web/assets/css/evergreen.css package.json && git status)",
       "Bash(git commit -m \"$\\(cat <<'EOF'\nMigrate all three web pages to native USWDS v3\n\nReplace per-page embedded <style> blocks \\(32–118 selectors each\\) with a\nshared evergreen.css that contains only what USWDS cannot provide natively:\nmetric color tokens, hero/header/footer overrides, the split card, loader\nspinner, metric group headers, severity badges, coverage bar, pill-selector\nbuttons, criteria layout, and accordion button inner styling.\n\n- landing.html: usa-hero, usa-section, usa-process-list, usa-footer--slim\n- input.html: usa-header--basic, usa-form/usa-form--large, usa-footer--slim;\n  loader and spinner classes moved to evergreen.css\n- builder.html: usa-header--basic, usa-button-group--segmented tabs,\n  usa-breadcrumb, usa-card-group library grid, usa-accordion case rows,\n  usa-textarea/usa-input form fields; JS updated for switchTab class toggle,\n  breadcrumb list-item classes, card and accordion HTML structure\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(ls -la /home/runner/workspace/tsconfig*.json)"
+      "Bash(ls -la /home/runner/workspace/tsconfig*.json)",
+      "Bash(git add test/test-ui.ts package.json && git status)",
+      "Bash(git commit -m \"$\\(cat <<'EOF'\nAdd design system migration test suite\n\n6 static-analysis tests verify the USWDS migration is complete:\n- landing.html, input.html, builder.html — USWDS classes present, old custom classes absent\n- evergreen.css — all 17 sections and required selectors defined\n- generator.ts — USWDS breadcrumb/footer chrome in report output\n- No stale CSS variable references across any source file\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
