@@ -34,6 +34,20 @@
   height: auto;
 }
 .usa-header--basic .usa-nav__primary { margin-bottom: 0; }
+/* Nav links: force dark ink so contrast holds when nav is always inline */
+.usa-header--basic .usa-nav__primary-item > a:not(.usa-button) {
+  color: #1b1b1b;
+}
+.usa-header--basic .usa-nav__primary-item > a:not(.usa-button):hover {
+  color: #1b1b1b;
+}
+/* usa-button inside the nav: preserve filled-button appearance */
+.usa-header--basic .usa-nav .usa-button {
+  color: #fff;
+  background-color: #005ea2;
+  text-decoration: none;
+}
+.usa-header--basic .usa-nav .usa-button:hover { background-color: #1a4480; }
 
 /* ── C: Hero overrides ────────────────────────────────────── */
 /* Replace USWDS hero image with Evergreen navy gradient       */
@@ -260,6 +274,14 @@
 }
 .lib-card-start .usa-card__heading { color: var(--ev-accuracy); }
 
+/* ── N-bis: Builder — breadcrumb horizontal padding ─────── */
+/* Align breadcrumb flush with the tab bar (padding-x-3 = 1.5rem) */
+.usa-breadcrumb {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  margin-bottom: 0;
+}
+
 /* ── O: Builder — breadcrumb button ─────────────────────── */
 /* Style a <button> to look like a usa-breadcrumb__link       */
 .ev-breadcrumb-btn {
@@ -271,6 +293,14 @@
 /* ── P: Criteria textarea inside flex row ────────────────── */
 /* Allow usa-textarea to fill available width in criteria-row */
 .criteria-row .usa-textarea { flex: 1; min-width: 0; margin-top: 0; }
+
+/* ── R: Landing — process list centering ────────────────── */
+/* Constrain and center the 1-2-3 steps within the grid container */
+.usa-process-list {
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 /* ── Q: Accordion button inner layout ────────────────────── */
 /* The USWDS accordion button text area holds our row header  */
