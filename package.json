@@ -11,7 +11,7 @@
     "build": "tsc && cp src/web/*.html dist/web/ && mkdir -p dist/assets && cp -r node_modules/@uswds/uswds/dist/css node_modules/@uswds/uswds/dist/js node_modules/@uswds/uswds/dist/img node_modules/@uswds/uswds/dist/fonts dist/assets/ && cp src/web/assets/css/evergreen.css dist/assets/css/",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
-    "test": "ts-node --project tsconfig.test.json test/test-pipeline.ts"
+    "test": "ts-node --project tsconfig.test.json test/test-pipeline.ts && ts-node --project tsconfig.test.json test/test-ui.ts"
   },
   "dependencies": {
     "@uswds/uswds": "^3.0.0",
