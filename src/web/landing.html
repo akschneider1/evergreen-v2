@@ -5,81 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Evergreen — Test your AI before real people use it</title>
   <link rel="stylesheet" href="/assets/css/uswds.min.css">
-  <style>
-    :root {
-      --ev-navy: #1b3a5c;
-      --ev-blue: #2672de;
-      --ev-blue-light: #e8f0fe;
-      --ev-green: #0d7a3e;
-      --ev-green-bg: #e6f4ea;
-      --ev-orange: #c75300;
-      --ev-orange-bg: #fff3e0;
-      --ev-red: #b71c1c;
-      --ev-red-bg: #fce8e8;
-      --ev-purple: #6a3d9a;
-      --ev-purple-bg: #f3e8ff;
-      --ev-g50: #f8f9fa;
-      --ev-g100: #f1f3f5;
-      --ev-g200: #dee2e6;
-      --ev-g300: #ced4da;
-      --ev-g400: #adb5bd;
-      --ev-g500: #868e96;
-      --ev-g600: #495057;
-      --ev-g700: #343a40;
-      --ev-g800: #212529;
-    }
-    body { margin: 0; }
-    /* Unified header */
-    .ev-header { background: #fff; border-bottom: 1px solid var(--ev-g200); position: sticky; top: 0; z-index: 100; }
-    .ev-header-inner { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
-    .ev-header-logo { font-size: 1.125rem; font-weight: 700; color: var(--ev-navy); text-decoration: none; }
-    .ev-header-logo:hover { color: var(--ev-navy); }
-    .ev-header-nav { display: flex; align-items: center; gap: 1rem; }
-    .ev-header-nav a { color: var(--ev-g600); text-decoration: none; font-size: 0.875rem; }
-    .ev-header-nav a:hover { color: var(--ev-navy); }
-    /* Hero */
-    .ev-hero {
-      background: linear-gradient(135deg, var(--ev-navy) 0%, #205493 100%);
-      color: #fff; padding: 4rem 1.5rem; text-align: center;
-    }
-    .ev-hero h1 { font-size: 2.25rem; margin: 0 0 1rem; line-height: 1.2; color: #fff; }
-    .ev-hero p { font-size: 1.0625rem; color: #dce4ef; margin: 0 auto 2rem; max-width: 580px; line-height: 1.6; }
-    /* Sections */
-    .ev-section { max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem; }
-    .ev-section h2 { font-size: 1.5rem; color: var(--ev-g800); margin-top: 0; margin-bottom: 1rem; }
-    /* Process list */
-    .ev-process .usa-process-list__heading { font-size: 1.0625rem; }
-    /* Impact section */
-    .ev-impact { background: var(--ev-g50); border-top: 1px solid var(--ev-g200); }
-    .ev-impact-items { list-style: none; padding: 0; margin: 0; }
-    .ev-impact-items li { padding: 0.75rem 0; color: var(--ev-g700); font-size: 0.9375rem; line-height: 1.5; border-bottom: 1px solid var(--ev-g200); }
-    .ev-impact-items li:last-child { border-bottom: none; }
-    .ev-impact-items strong { color: var(--ev-g800); }
-    /* Split card */
-    .ev-split-item { padding: 0.75rem 0; }
-    .ev-split-card { border: 1px solid var(--ev-g200); border-radius: 6px; overflow: hidden; background: #fff; }
-    .ev-split-halves { display: flex; }
-    .ev-split-half { flex: 1; padding: 1rem 1.25rem; }
-    .ev-split-half + .ev-split-half { border-left: 1px solid var(--ev-g200); }
-    .ev-split-research { border-top: 3px solid var(--ev-blue); }
-    .ev-split-policy   { border-top: 3px solid var(--ev-green); }
-    .ev-split-half strong { display: block; font-size: 0.9375rem; color: var(--ev-g800); margin-bottom: 0.375rem; }
-    .ev-split-half p { font-size: 0.875rem; color: var(--ev-g600); margin: 0; line-height: 1.5; }
-    .ev-split-footer { border-top: 1px solid var(--ev-g200); padding: 0.875rem 1.25rem; text-align: center; font-size: 1rem; font-weight: 700; color: var(--ev-navy); background: var(--ev-g50); }
-    @media (max-width: 560px) {
-      .ev-split-halves { flex-direction: column; }
-      .ev-split-half + .ev-split-half { border-left: none; border-top: 1px solid var(--ev-g200); }
-    }
-    /* Footer */
-    .ev-footer { background: var(--ev-g50); border-top: 1px solid var(--ev-g200); padding: 1.5rem; text-align: center; font-size: 0.8125rem; color: var(--ev-g500); }
-    .ev-footer a { color: var(--ev-g600); }
-  </style>
+  <link rel="stylesheet" href="/assets/css/evergreen.css">
 </head>
 <body>
 
 <!-- Public Infrastructure Banner -->
 <section class="usa-banner" aria-label="Evergreen — digital public infrastructure">
-  <div class="usa-banner__header" style="padding-top:0.5rem;padding-bottom:0.5rem;">
+  <div class="usa-banner__header">
     <div class="usa-banner__inner">
       <div class="grid-col-auto">
         <img class="usa-banner__header-flag" src="/assets/img/us_flag_small.png" alt="U.S. flag">
@@ -92,30 +24,49 @@
 </section>
 
 <!-- Header -->
-<header class="ev-header">
-  <div class="ev-header-inner">
-    <a href="/" class="ev-header-logo">Evergreen</a>
-    <nav class="ev-header-nav" aria-label="Primary navigation">
-      <a href="https://github.com/akschneider1/Evergreen-v2" target="_blank" rel="noopener">GitHub</a>
-      <a href="/builder" class="usa-button" style="font-size:0.8125rem; padding:0.4rem 0.85rem;">Get started &rarr;</a>
+<div class="usa-overlay"></div>
+<header class="usa-header usa-header--basic">
+  <div class="usa-nav-container">
+    <div class="usa-navbar">
+      <div class="usa-logo">
+        <em class="usa-logo__text"><a href="/" title="Evergreen">Evergreen</a></em>
+      </div>
+    </div>
+    <nav aria-label="Primary navigation" class="usa-nav">
+      <ul class="usa-nav__primary usa-accordion">
+        <li class="usa-nav__primary-item">
+          <a href="https://github.com/akschneider1/Evergreen-v2"
+             target="_blank" rel="noopener"
+             class="usa-nav__link">GitHub</a>
+        </li>
+        <li class="usa-nav__primary-item">
+          <a href="/builder" class="usa-button">Get started &rarr;</a>
+        </li>
+      </ul>
     </nav>
   </div>
 </header>
 
 <!-- Hero -->
-<section class="ev-hero">
-  <h1>Test your AI before real people use it</h1>
-  <p>That&rsquo;s why Evergreen gives the people closest to the problem &mdash; community members, program managers, and policy experts &mdash; the tools to hold AI accountable to the outcomes we need.</p>
-  <a href="/builder" class="usa-button usa-button--big usa-button--inverse">Get started &rarr;</a>
+<section class="usa-hero" aria-label="Introduction">
+  <div class="grid-container">
+    <div class="usa-hero__callout">
+      <h1 class="usa-hero__heading">Test your AI before real people use it</h1>
+      <p>That&rsquo;s why Evergreen gives the people closest to the problem &mdash; community members, program managers, and policy experts &mdash; the tools to hold AI accountable to the outcomes we need.</p>
+      <a href="/builder" class="usa-button usa-button--big usa-button--outline usa-button--inverse">Get started &rarr;</a>
+    </div>
+  </div>
 </section>
 
 <!-- Impact / What you get -->
-<section class="ev-impact">
-  <div class="ev-section" style="padding-top:2.5rem; padding-bottom:2.5rem;">
-    <h2>Why it works</h2>
-    <ul class="ev-impact-items">
-      <li><strong>Technical AI Governance</strong> &mdash; In software development, we use automated testing frameworks to assure the quality and reliability of our systems. AI is software, and we should apply the same principles to make it easier to adopt it responsibly. <strong>Evergreen turns policy commitments into executable tests you can run before every deployment.</strong> Think of these evaluations as the user acceptance testing (UAT) of AI products.</li>
-      <li class="ev-split-item">
+<section class="usa-section usa-section--light">
+  <div class="grid-container">
+    <h2 class="font-heading-lg margin-top-0">Why it works</h2>
+    <ul class="usa-list usa-list--unstyled">
+      <li class="border-bottom border-base-light padding-y-2 font-body-sm line-height-body-5">
+        <strong>Technical AI Governance</strong> &mdash; In software development, we use automated testing frameworks to assure the quality and reliability of our systems. AI is software, and we should apply the same principles to make it easier to adopt it responsibly. <strong>Evergreen turns policy commitments into executable tests you can run before every deployment.</strong> Think of these evaluations as the user acceptance testing (UAT) of AI products.
+      </li>
+      <li class="padding-y-2">
         <div class="ev-split-card">
           <div class="ev-split-halves">
             <div class="ev-split-half ev-split-research">
@@ -130,33 +81,45 @@
           <div class="ev-split-footer">The standard that assures responsible AI in all our services.</div>
         </div>
       </li>
-      <li>Catch problems before the public does and reduce the administrative burden of AI adoption &mdash; every test run builds a ready-made record of due diligence you can share with leadership, procurement, or oversight bodies without starting from scratch every time.</li>
+      <li class="font-body-sm line-height-body-5 padding-y-2">
+        Catch problems before the public does and reduce the administrative burden of AI adoption &mdash; every test run builds a ready-made record of due diligence you can share with leadership, procurement, or oversight bodies without starting from scratch every time.
+      </li>
     </ul>
   </div>
 </section>
 
 <!-- How It Works -->
-<section class="ev-section ev-process">
-  <h2>How it works</h2>
-  <ol class="usa-process-list">
-    <li class="usa-process-list__item">
-      <h3 class="usa-process-list__heading">Combine user research with policy expertise</h3>
-      <p>Start with pre-approved use cases in the Library or build your own with the Builder. Add real questions from your users, define what good looks like with experts, and set the criteria for how your AI product will be tested to assure it meets the needs of the people it serves.</p>
-    </li>
-    <li class="usa-process-list__item">
-      <h3 class="usa-process-list__heading">Run the evaluation</h3>
-      <p>Evergreen sends every test question to your AI and grades each response against your criteria automatically &mdash; across safety, accuracy, ease of use, effectiveness, and emotion.</p>
-    </li>
-    <li class="usa-process-list__item">
-      <h3 class="usa-process-list__heading">Get evidence you can act on</h3>
-      <p>A plain-language report shows what passed and what failed, with a deployment recommendation. Use it as a concrete record of due diligence for leadership or procurement, and a baseline to measure improvement with every iteration.</p>
-    </li>
-  </ol>
+<section class="usa-section">
+  <div class="grid-container">
+    <h2 class="font-heading-lg margin-top-0">How it works</h2>
+    <ol class="usa-process-list">
+      <li class="usa-process-list__item">
+        <h3 class="usa-process-list__heading">Combine user research with policy expertise</h3>
+        <p>Start with pre-approved use cases in the Library or build your own with the Builder. Add real questions from your users, define what good looks like with experts, and set the criteria for how your AI product will be tested to assure it meets the needs of the people it serves.</p>
+      </li>
+      <li class="usa-process-list__item">
+        <h3 class="usa-process-list__heading">Run the evaluation</h3>
+        <p>Evergreen sends every test question to your AI and grades each response against your criteria automatically &mdash; across safety, accuracy, ease of use, effectiveness, and emotion.</p>
+      </li>
+      <li class="usa-process-list__item">
+        <h3 class="usa-process-list__heading">Get evidence you can act on</h3>
+        <p>A plain-language report shows what passed and what failed, with a deployment recommendation. Use it as a concrete record of due diligence for leadership or procurement, and a baseline to measure improvement with every iteration.</p>
+      </li>
+    </ol>
+  </div>
 </section>
 
 <!-- Footer -->
-<footer class="ev-footer">
-  <p>Evergreen &mdash; Pre-Deployment AI Evaluation. <a href="https://github.com/akschneider1/Evergreen-v2" target="_blank" rel="noopener">Open source</a> &middot; Powered by <a href="https://www.promptfoo.dev/" target="_blank" rel="noopener">Promptfoo</a>.</p>
+<footer class="usa-footer usa-footer--slim">
+  <div class="usa-footer__primary-section"></div>
+  <div class="usa-footer__secondary-section">
+    <div class="grid-container">
+      <p>Evergreen &mdash; Pre-Deployment AI Evaluation.
+        <a href="https://github.com/akschneider1/Evergreen-v2" target="_blank" rel="noopener" class="usa-link">Open source</a>
+        &middot; Powered by <a href="https://www.promptfoo.dev/" target="_blank" rel="noopener" class="usa-link">Promptfoo</a>.
+      </p>
+    </div>
+  </div>
 </footer>
 
 <script src="/assets/js/uswds.min.js"></script>

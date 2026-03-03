@@ -5,83 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Evergreen — Run an Evaluation</title>
   <link rel="stylesheet" href="/assets/css/uswds.min.css">
-  <style>
-    :root {
-      --ev-navy: #1b3a5c;
-      --ev-blue: #2672de;
-      --ev-blue-light: #e8f0fe;
-      --ev-green: #0d7a3e;
-      --ev-green-bg: #e6f4ea;
-      --ev-orange: #c75300;
-      --ev-orange-bg: #fff3e0;
-      --ev-red: #b71c1c;
-      --ev-red-bg: #fce8e8;
-      --ev-purple: #6a3d9a;
-      --ev-purple-bg: #f3e8ff;
-      --ev-g50: #f8f9fa;
-      --ev-g100: #f1f3f5;
-      --ev-g200: #dee2e6;
-      --ev-g300: #ced4da;
-      --ev-g400: #adb5bd;
-      --ev-g500: #868e96;
-      --ev-g600: #495057;
-      --ev-g700: #343a40;
-      --ev-g800: #212529;
-    }
-    body { margin: 0; }
-    /* Unified header */
-    .ev-header { background: #fff; border-bottom: 1px solid var(--ev-g200); position: sticky; top: 0; z-index: 100; }
-    .ev-header-inner { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
-    .ev-header-logo { font-size: 1.125rem; font-weight: 700; color: var(--ev-navy); text-decoration: none; }
-    .ev-header-logo:hover { color: var(--ev-navy); }
-    .ev-header-nav { display: flex; align-items: center; gap: 1rem; }
-    .ev-header-nav a { color: var(--ev-g600); text-decoration: none; font-size: 0.875rem; }
-    .ev-header-nav a:hover { color: var(--ev-navy); }
-    /* Page content */
-    .ev-page { max-width: 640px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
-    .ev-page h1 { font-size: 1.5rem; color: var(--ev-g800); margin: 0 0 0.25rem; }
-    .ev-page .ev-subtitle { color: var(--ev-g600); font-size: 0.9375rem; margin: 0 0 1.5rem; }
-    .form-card {
-      background: #fff;
-      border: 1px solid var(--ev-g200);
-      border-radius: 6px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    .step-description {
-      font-size: 0.875rem;
-      color: var(--ev-g500);
-      margin-top: 0.25rem;
-    }
-    #progress-section { display: none; }
-    #error-section    { display: none; }
-    #run-btn { margin-top: 1.5rem; }
-    /* Loader */
-    .ev-loader {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: 3rem 1.5rem; text-align: center; gap: 1.25rem;
-    }
-    .ev-spinner {
-      width: 40px; height: 40px;
-      border: 3px solid var(--ev-g200);
-      border-top-color: var(--ev-blue);
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
-      flex-shrink: 0;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .ev-loader-heading { font-size: 1.125rem; font-weight: 700; color: var(--ev-g800); margin: 0; }
-    .ev-loader-status  { font-size: 0.9375rem; color: var(--ev-g600); margin: 0; min-height: 1.5em; }
-    /* Footer */
-    .ev-footer { background: var(--ev-g50); border-top: 1px solid var(--ev-g200); padding: 1.5rem; text-align: center; font-size: 0.8125rem; color: var(--ev-g500); }
-    .ev-footer a { color: var(--ev-g600); }
-  </style>
+  <link rel="stylesheet" href="/assets/css/evergreen.css">
 </head>
 <body>
 
 <!-- Public Infrastructure Banner -->
 <section class="usa-banner" aria-label="Evergreen — digital public infrastructure">
-  <div class="usa-banner__header" style="padding-top:0.5rem;padding-bottom:0.5rem;">
+  <div class="usa-banner__header">
     <div class="usa-banner__inner">
       <div class="grid-col-auto">
         <img class="usa-banner__header-flag" src="/assets/img/us_flag_small.png" alt="U.S. flag">
@@ -94,24 +24,33 @@
 </section>
 
 <!-- Header -->
-<header class="ev-header">
-  <div class="ev-header-inner">
-    <a href="/" class="ev-header-logo">Evergreen</a>
-    <nav class="ev-header-nav" aria-label="Primary navigation">
-      <a href="/builder">&larr; Back to Builder</a>
+<div class="usa-overlay"></div>
+<header class="usa-header usa-header--basic">
+  <div class="usa-nav-container">
+    <div class="usa-navbar">
+      <div class="usa-logo">
+        <em class="usa-logo__text"><a href="/" title="Evergreen">Evergreen</a></em>
+      </div>
+    </div>
+    <nav aria-label="Primary navigation" class="usa-nav">
+      <ul class="usa-nav__primary usa-accordion">
+        <li class="usa-nav__primary-item">
+          <a href="/builder" class="usa-nav__link">&larr; Back to Builder</a>
+        </li>
+      </ul>
     </nav>
   </div>
 </header>
 
 <!-- Main Content -->
-<main class="ev-page">
-  <h1>Run an Evaluation</h1>
-  <p class="ev-subtitle">Choose your test cases and AI provider, then click Run.</p>
+<main class="grid-container-mobile-lg padding-y-5">
+  <h1 class="font-heading-xl margin-top-0">Run an Evaluation</h1>
+  <p class="text-base font-body-md margin-bottom-3">Choose your test cases and AI provider, then click Run.</p>
 
   <!-- Input Form -->
-  <div class="form-card" id="form-section">
+  <div class="border border-base-light radius-md padding-3 bg-white margin-bottom-3" id="form-section">
 
-    <form id="eval-form" novalidate>
+    <form id="eval-form" class="usa-form usa-form--large" novalidate>
 
       <!-- 1. Evaluation name (auto-filled) -->
       <div class="usa-form-group">
@@ -124,9 +63,9 @@
       </div>
 
       <!-- 2. Evaluation context (optional, collapsed) -->
-      <details style="margin-top:1.5rem;">
-        <summary class="usa-label" style="cursor:pointer; font-size:0.875rem; color:var(--ev-g500);">Evaluation context (optional)</summary>
-        <div style="margin-top:0.75rem;">
+      <details class="margin-top-3">
+        <summary class="usa-label text-base font-body-sm" style="cursor:pointer;">Evaluation context (optional)</summary>
+        <div class="margin-top-2">
           <div class="usa-form-group">
             <label class="usa-label" for="agencyName">Agency name</label>
             <input class="usa-input" id="agencyName" type="text" placeholder="e.g. Colorado Dept. of Human Services">
@@ -149,7 +88,7 @@
       </details>
 
       <!-- 3. Test cases — what am I testing? -->
-      <div class="usa-form-group" style="margin-top:1.5rem;">
+      <div class="usa-form-group margin-top-3">
         <fieldset class="usa-fieldset">
           <legend class="usa-legend">
             Test cases <span class="usa-required" aria-hidden="true">*</span>
@@ -181,7 +120,7 @@
                required
                aria-describedby="sheetUrl-error"
                onblur="validateSheetUrlField()">
-        <span class="usa-hint" style="margin-top:0.4rem; display:block;">
+        <span class="usa-hint display-block margin-top-05">
           Don't have a sheet yet? <a class="usa-link" href="https://docs.google.com/spreadsheets/d/1ysiHznH64SB9CjedjVnZOg5YkMrPyYofSAXXHXa0w0I/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Use this template</a>
         </span>
       </div>
@@ -240,13 +179,13 @@
         </select>
       </div>
 
-      <button type="submit" class="usa-button" id="run-btn">Run Evaluation</button>
+      <button type="submit" class="usa-button margin-top-3" id="run-btn">Run Evaluation</button>
 
     </form>
   </div>
 
   <!-- Progress Section -->
-  <div class="form-card" id="progress-section">
+  <div class="border border-base-light radius-md padding-3 bg-white margin-bottom-3" id="progress-section" style="display:none">
     <div class="ev-loader">
       <div class="ev-spinner" role="status" aria-label="Running evaluation"></div>
       <p class="ev-loader-heading">Running your evaluation</p>
@@ -256,7 +195,7 @@
   </div>
 
   <!-- Error Section -->
-  <div id="error-section">
+  <div id="error-section" style="display:none">
     <div class="usa-alert usa-alert--error" role="alert">
       <div class="usa-alert__body">
         <h4 class="usa-alert__heading">Evaluation failed</h4>
@@ -269,8 +208,16 @@
 </main>
 
 <!-- Footer -->
-<footer class="ev-footer">
-  <p>Evergreen &mdash; Pre-Deployment AI Evaluation. <a href="https://github.com/akschneider1/Evergreen-v2" target="_blank" rel="noopener">Open source</a> &middot; Powered by <a href="https://www.promptfoo.dev/" target="_blank" rel="noopener">Promptfoo</a>.</p>
+<footer class="usa-footer usa-footer--slim">
+  <div class="usa-footer__primary-section"></div>
+  <div class="usa-footer__secondary-section">
+    <div class="grid-container">
+      <p>Evergreen &mdash; Pre-Deployment AI Evaluation.
+        <a href="https://github.com/akschneider1/Evergreen-v2" target="_blank" rel="noopener" class="usa-link">Open source</a>
+        &middot; Powered by <a href="https://www.promptfoo.dev/" target="_blank" rel="noopener" class="usa-link">Promptfoo</a>.
+      </p>
+    </div>
+  </div>
 </footer>
 
 <script src="/assets/js/uswds.min.js"></script>

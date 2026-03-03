@@ -1,0 +1,295 @@
+/* ============================================================
+   Evergreen — custom styles to complement USWDS v3
+   Only things USWDS cannot do natively belong here.
+   ============================================================ */
+
+/* ── A: Metric semantic color tokens ─────────────────────── */
+:root {
+  --ev-navy:            #1b3a5c;
+
+  --ev-safety:          #b71c1c;  --ev-safety-bg:         #fce8e8;
+  --ev-accuracy:        #2672de;  --ev-accuracy-bg:       #e8f0fe;
+  --ev-ease-of-use:     #0d7a3e;  --ev-ease-of-use-bg:    #e6f4ea;
+  --ev-effectiveness:   #c75300;  --ev-effectiveness-bg:  #fff3e0;
+  --ev-emotion:         #6a3d9a;  --ev-emotion-bg:        #f3e8ff;
+}
+
+/* ── B: Header overrides ──────────────────────────────────── */
+/* Evergreen has no sub-nav drawer — suppress the mobile menu  */
+.usa-logo a,
+.usa-logo__text            { color: var(--ev-navy); text-decoration: none; }
+.usa-logo a:hover          { color: var(--ev-navy); }
+.usa-menu-btn              { display: none; }
+.usa-overlay               { display: none !important; }
+
+/* Keep nav inline at all breakpoints (no hamburger drawer) */
+.usa-header--basic .usa-nav {
+  display: flex !important;
+  position: static !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0;
+  background: transparent;
+  height: auto;
+}
+.usa-header--basic .usa-nav__primary { margin-bottom: 0; }
+
+/* ── C: Hero overrides ────────────────────────────────────── */
+/* Replace USWDS hero image with Evergreen navy gradient       */
+.usa-hero {
+  background-image: none;
+  background: linear-gradient(135deg, #1b3a5c 0%, #205493 100%);
+  text-align: center;
+}
+.usa-hero__callout {
+  background-color: transparent;
+  max-width: 100%;
+  padding: 4rem 1.5rem;
+}
+.usa-hero__heading--alt { display: none; } /* hide USWDS accent heading pattern */
+.usa-hero__heading {
+  color: #fff;
+  font-size: 2.25rem;
+  line-height: 1.2;
+}
+.usa-hero p {
+  color: #dce4ef;
+  max-width: 580px;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
+}
+
+/* ── D: Footer overrides ──────────────────────────────────── */
+/* Collapse usa-footer--slim to a single centered line        */
+.usa-footer--slim .usa-footer__primary-section { display: none; }
+.usa-footer--slim .usa-footer__secondary-section {
+  background: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+.usa-footer--slim .usa-footer__secondary-section > .grid-container {
+  text-align: center;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+  font-size: 0.8125rem;
+  color: #71767a;
+}
+
+/* ── E: Landing — split card ─────────────────────────────── */
+/* Two-column card with coloured top accents — no USWDS match */
+.ev-split-card {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+.ev-split-halves { display: flex; }
+.ev-split-half   { flex: 1; padding: 1rem 1.25rem; }
+.ev-split-half + .ev-split-half { border-left: 1px solid #dee2e6; }
+.ev-split-research { border-top: 3px solid #2672de; }
+.ev-split-policy   { border-top: 3px solid #0d7a3e; }
+.ev-split-half strong { display: block; font-size: 0.9375rem; color: #212529; margin-bottom: 0.375rem; }
+.ev-split-half p      { font-size: 0.875rem; color: #495057; margin: 0; line-height: 1.5; }
+.ev-split-footer {
+  border-top: 1px solid #dee2e6;
+  padding: 0.875rem 1.25rem;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ev-navy);
+  background: #f8f9fa;
+}
+@media (max-width: 560px) {
+  .ev-split-halves { flex-direction: column; }
+  .ev-split-half + .ev-split-half { border-left: none; border-top: 1px solid #dee2e6; }
+}
+
+/* ── F: Loader / spinner (no USWDS equivalent) ────────────── */
+.ev-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  gap: 1.25rem;
+}
+.ev-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #dee2e6;
+  border-top-color: var(--ev-accuracy);
+  border-radius: 50%;
+  animation: ev-spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes ev-spin { to { transform: rotate(360deg); } }
+.ev-loader-heading { font-size: 1.125rem; font-weight: 700; color: #212529; margin: 0; }
+.ev-loader-status  { font-size: 0.9375rem; color: #495057; margin: 0; min-height: 1.5em; }
+
+/* ── G: Builder — metric group headers ───────────────────── */
+.metric-group         { margin-bottom: 1.5rem; }
+.metric-group-header  {
+  display: flex; align-items: center; gap: 0.625rem;
+  padding-bottom: 0.5rem; margin-bottom: 0.5rem;
+  border-bottom: 2px solid #dee2e6;
+}
+.metric-group-swatch  { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+.metric-group-name    { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; }
+.metric-group-count   { font-size: 0.8125rem; color: #71767a; }
+.metric-group-empty   { font-size: 0.8125rem; color: #adb5bd; padding: 0.5rem 0.25rem; font-style: italic; }
+
+.mg-safety        .metric-group-swatch { background: var(--ev-safety); }
+.mg-safety        .metric-group-name   { color: var(--ev-safety); }
+.mg-accuracy      .metric-group-swatch { background: var(--ev-accuracy); }
+.mg-accuracy      .metric-group-name   { color: var(--ev-accuracy); }
+.mg-ease-of-use   .metric-group-swatch { background: var(--ev-ease-of-use); }
+.mg-ease-of-use   .metric-group-name   { color: var(--ev-ease-of-use); }
+.mg-effectiveness .metric-group-swatch { background: var(--ev-effectiveness); }
+.mg-effectiveness .metric-group-name   { color: var(--ev-effectiveness); }
+.mg-emotion       .metric-group-swatch { background: var(--ev-emotion); }
+.mg-emotion       .metric-group-name   { color: var(--ev-emotion); }
+.mg-unassigned    .metric-group-swatch { background: #adb5bd; }
+.mg-unassigned    .metric-group-name   { color: #71767a; }
+
+/* ── H: Builder — severity badges ────────────────────────── */
+.sev-badge {
+  font-size: 0.6875rem; font-weight: 700; padding: 0.15rem 0.45rem;
+  border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em;
+  white-space: nowrap; flex-shrink: 0;
+}
+.sev-critical { background: var(--ev-safety-bg);        color: var(--ev-safety); }
+.sev-high     { background: var(--ev-effectiveness-bg); color: var(--ev-effectiveness); }
+.sev-medium   { background: var(--ev-accuracy-bg);      color: var(--ev-accuracy); }
+.sev-low      { background: #f1f3f5;                    color: #495057; }
+.sev-empty    { background: #f1f3f5; color: #adb5bd; font-weight: 500; text-transform: none; letter-spacing: 0; }
+
+/* ── I: Builder — coverage bar ───────────────────────────── */
+.cov-bar {
+  display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;
+  padding: 0.75rem 1rem; background: #fff;
+  border: 1px solid #dee2e6; border-radius: 6px; margin-bottom: 1.5rem;
+}
+.cov-bar-label { font-size: 0.8125rem; font-weight: 600; color: #495057; }
+.cov-bar-item  { display: flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; }
+.cov-bar-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.cov-bar-count  { font-weight: 700; }
+.cov-bar-item.zero { opacity: 0.35; }
+.cov-bar-total  { margin-left: auto; font-size: 0.8125rem; color: #71767a; }
+
+/* ── J: Builder — case row internals ─────────────────────── */
+/* These live inside the USWDS accordion button/content       */
+.case-row-num {
+  font-family: monospace; font-size: 0.75rem; color: #adb5bd;
+  min-width: 1.375rem; text-align: right; flex-shrink: 0;
+}
+.case-row-question {
+  flex: 1; font-size: 0.8125rem; color: #343a40;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.case-row-question.empty { color: #adb5bd; font-style: italic; }
+.criteria-chip {
+  font-size: 0.6875rem; background: #f1f3f5; color: #71767a;
+  padding: 0.15rem 0.4rem; border-radius: 3px; white-space: nowrap; flex-shrink: 0;
+}
+
+/* ── K: Builder — criteria editor ────────────────────────── */
+.criteria-section  { margin-top: 0.25rem; }
+.criteria-row      { display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.375rem; }
+.criteria-icon     { flex-shrink: 0; margin-top: 0.4rem; font-size: 0.875rem; }
+.criteria-icon.should    { color: var(--ev-ease-of-use); }
+.criteria-icon.shouldnot { color: var(--ev-safety); }
+.criteria-remove {
+  background: none; border: none; color: #adb5bd; cursor: pointer;
+  font-size: 1rem; padding: 0.25rem; flex-shrink: 0;
+}
+.criteria-remove:hover { color: var(--ev-safety); }
+.capability-badge {
+  display: inline-block; background: var(--ev-accuracy-bg); color: var(--ev-accuracy);
+  font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 3px; margin-bottom: 0.5rem;
+}
+
+/* ── L: Builder — pill selector buttons ──────────────────── */
+/* Mutually exclusive metric/severity selection — no USWDS match */
+.pill-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.pill-btn {
+  border: 2px solid #dee2e6; background: #fff; border-radius: 6px;
+  padding: 0.3rem 0.7rem; font-size: 0.8125rem; cursor: pointer;
+  color: #495057; font-weight: 500; transition: all 0.1s; font-family: inherit;
+}
+.pill-btn:hover { border-color: #adb5bd; }
+.pill-btn.selected { font-weight: 700; }
+.pill-btn.selected[data-value="critical"]      { border-color: var(--ev-safety);       background: var(--ev-safety-bg);        color: var(--ev-safety); }
+.pill-btn.selected[data-value="high"]          { border-color: var(--ev-effectiveness); background: var(--ev-effectiveness-bg); color: var(--ev-effectiveness); }
+.pill-btn.selected[data-value="medium"]        { border-color: var(--ev-accuracy);      background: var(--ev-accuracy-bg);      color: var(--ev-accuracy); }
+.pill-btn.selected[data-value="low"]           { border-color: #adb5bd; background: #f1f3f5; color: #495057; }
+.pill-btn.selected[data-value="safety"]        { border-color: var(--ev-safety);        background: var(--ev-safety-bg);        color: var(--ev-safety); }
+.pill-btn.selected[data-value="accuracy"]      { border-color: var(--ev-accuracy);      background: var(--ev-accuracy-bg);      color: var(--ev-accuracy); }
+.pill-btn.selected[data-value="ease-of-use"]   { border-color: var(--ev-ease-of-use);   background: var(--ev-ease-of-use-bg);   color: var(--ev-ease-of-use); }
+.pill-btn.selected[data-value="effectiveness"] { border-color: var(--ev-effectiveness); background: var(--ev-effectiveness-bg); color: var(--ev-effectiveness); }
+.pill-btn.selected[data-value="emotion"]       { border-color: var(--ev-emotion);       background: var(--ev-emotion-bg);       color: var(--ev-emotion); }
+
+/* ── M: Builder — run CTA, empty state, system prompt ───── */
+.run-cta {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #dee2e6;
+}
+.run-cta p { font-size: 0.875rem; color: #495057; margin: 0; }
+@media (max-width: 640px) { .run-cta { flex-direction: column; align-items: flex-start; } }
+
+.builder-no-suite { text-align: center; padding: 4rem 1rem; }
+.builder-no-suite .button-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+
+.case-row-footer {
+  display: flex; justify-content: flex-end;
+  margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #f1f3f5;
+}
+
+.sys-prompt summary { cursor: pointer; font-size: 0.8125rem; color: #71767a; user-select: none; }
+.sys-prompt pre {
+  background: #f1f3f5; padding: 0.75rem; border-radius: 4px;
+  font-size: 0.8125rem; white-space: pre-wrap; word-break: break-word; margin: 0.5rem 0 0;
+}
+
+/* ── N: Builder — library card variants ─────────────────── */
+/* Dashed blue border on the "start from scratch" blank card  */
+.lib-card-start {
+  border-style: dashed;
+  border-color: var(--ev-accuracy);
+  background: var(--ev-accuracy-bg);
+}
+.lib-card-start .usa-card__heading { color: var(--ev-accuracy); }
+
+/* ── O: Builder — breadcrumb button ─────────────────────── */
+/* Style a <button> to look like a usa-breadcrumb__link       */
+.ev-breadcrumb-btn {
+  background: none; border: none; padding: 0;
+  font-family: inherit; font-size: inherit; cursor: pointer;
+  color: #005ea2; text-decoration: underline;
+}
+
+/* ── P: Criteria textarea inside flex row ────────────────── */
+/* Allow usa-textarea to fill available width in criteria-row */
+.criteria-row .usa-textarea { flex: 1; min-width: 0; margin-top: 0; }
+
+/* ── Q: Accordion button inner layout ────────────────────── */
+/* The USWDS accordion button text area holds our row header  */
+.usa-accordion__button > span {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  overflow: hidden;
+}
+/* Override USWDS accordion button's default background/padding to match case row style */
+.usa-accordion__button {
+  background-color: #fff;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: #212529;
+}
+.usa-accordion__button:hover { background-color: #f8f9fa; }
+.usa-accordion__button[aria-expanded="true"] { background-color: #f8f9fa; }
+/* Keep the USWDS chevron icon but align it to the right */
+.usa-accordion__button::after { flex-shrink: 0; margin-left: auto; }

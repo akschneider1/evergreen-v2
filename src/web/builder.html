@@ -5,274 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Evergreen — Test Suite Builder</title>
   <link rel="stylesheet" href="/assets/css/uswds.min.css">
-  <style>
-    :root {
-      --ev-navy: #1b3a5c;
-      --ev-blue: #2672de;
-      --ev-blue-light: #e8f0fe;
-      --ev-green: #0d7a3e;
-      --ev-green-bg: #e6f4ea;
-      --ev-orange: #c75300;
-      --ev-orange-bg: #fff3e0;
-      --ev-red: #b71c1c;
-      --ev-red-bg: #fce8e8;
-      --ev-purple: #6a3d9a;
-      --ev-purple-bg: #f3e8ff;
-      --ev-g50: #f8f9fa;
-      --ev-g100: #f1f3f5;
-      --ev-g200: #dee2e6;
-      --ev-g300: #ced4da;
-      --ev-g400: #adb5bd;
-      --ev-g500: #868e96;
-      --ev-g600: #495057;
-      --ev-g700: #343a40;
-      --ev-g800: #212529;
-      --topbar-h: 56px;
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: var(--ev-g50); }
-
-    /* ── Header ── */
-    .ev-header { background: #fff; border-bottom: 1px solid var(--ev-g200); position: sticky; top: 0; z-index: 100; }
-    .ev-header-inner { padding: 0 1.5rem; height: var(--topbar-h); display: flex; align-items: center; justify-content: space-between; }
-    .ev-header-logo { font-size: 1.125rem; font-weight: 700; color: var(--ev-navy); text-decoration: none; }
-    .ev-header-logo:hover { color: var(--ev-navy); }
-    .ev-header-nav { display: flex; align-items: center; gap: 0.5rem; }
-    .ev-header-nav .usa-button { font-size: 0.8125rem; padding: 0.35rem 0.75rem; }
-
-    /* ── Tabs ── */
-    .ev-tabs { background: #fff; border-bottom: 1px solid var(--ev-g200); padding: 0 1.5rem; display: flex; }
-    .ev-tab {
-      background: none; border: none; border-bottom: 3px solid transparent;
-      padding: 0.75rem 1.25rem; font-size: 0.875rem; font-weight: 500; color: var(--ev-g500);
-      cursor: pointer; margin-bottom: -1px; white-space: nowrap; transition: color 0.1s;
-      font-family: inherit;
-    }
-    .ev-tab:hover { color: var(--ev-g700); }
-    .ev-tab.active { color: var(--ev-blue); border-bottom-color: var(--ev-blue); font-weight: 600; }
-
-    /* ── Panels ── */
-    .ev-panel { min-height: calc(100vh - var(--topbar-h) - 44px); padding: 2rem 1.5rem; }
-
-    /* ── Library ── */
-    .lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
-    .lib-card {
-      background: #fff; border: 1px solid var(--ev-g200); border-radius: 8px;
-      padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;
-      transition: box-shadow 0.15s, border-color 0.15s;
-    }
-    .lib-card:hover { border-color: var(--ev-g300); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .lib-card.is-active { border-color: var(--ev-blue); }
-    .lib-card-start {
-      border-style: dashed; border-color: var(--ev-blue); background: var(--ev-blue-light);
-    }
-    .lib-card-start:hover { box-shadow: 0 2px 8px rgba(38,114,222,0.12); }
-    .lib-card-start .lib-card-name { color: var(--ev-blue); }
-    .lib-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
-    .lib-card-name { font-size: 1rem; font-weight: 700; color: var(--ev-g800); margin: 0; line-height: 1.3; }
-    .lib-card-domain {
-      font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
-      padding: 0.2rem 0.5rem; border-radius: 3px; background: var(--ev-g100); color: var(--ev-g600);
-      white-space: nowrap; flex-shrink: 0;
-    }
-    .lib-card-desc { font-size: 0.875rem; color: var(--ev-g600); line-height: 1.5; margin: 0; flex: 1; }
-    .lib-card-footer { display: flex; align-items: center; gap: 0.5rem; }
-    .lib-card-meta { font-size: 0.8125rem; color: var(--ev-g500); }
-
-    /* ── Builder outer ── */
-    .builder-inner { max-width: 820px; margin: 0 auto; }
-    .builder-header { margin-bottom: 1.5rem; }
-    .builder-title { font-size: 1.375rem; font-weight: 700; color: var(--ev-g800); margin: 0 0 0.25rem; }
-    .builder-desc { font-size: 0.875rem; color: var(--ev-g600); margin: 0 0 0.375rem; }
-    .builder-source { font-size: 0.8125rem; color: var(--ev-g500); margin: 0; }
-    .builder-source a { color: var(--ev-blue); }
-
-    /* Coverage bar */
-    .cov-bar {
-      display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;
-      padding: 0.75rem 1rem; background: #fff; border: 1px solid var(--ev-g200);
-      border-radius: 6px; margin-bottom: 1.5rem;
-    }
-    .cov-bar-label { font-size: 0.8125rem; font-weight: 600; color: var(--ev-g600); }
-    .cov-bar-item { display: flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; }
-    .cov-bar-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-    .cov-bar-count { font-weight: 700; }
-    .cov-bar-item.zero { opacity: 0.35; }
-    .cov-bar-total { margin-left: auto; font-size: 0.8125rem; color: var(--ev-g500); }
-
-    /* System prompt */
-    .sys-prompt { margin-bottom: 1.25rem; }
-    .sys-prompt summary { cursor: pointer; font-size: 0.8125rem; color: var(--ev-g500); user-select: none; }
-    .sys-prompt pre { background: var(--ev-g100); padding: 0.75rem; border-radius: 4px; font-size: 0.8125rem; white-space: pre-wrap; word-break: break-word; margin: 0.5rem 0 0; }
-
-    /* ── Metric groups ── */
-    .metric-group { margin-bottom: 1.5rem; }
-    .metric-group-header {
-      display: flex; align-items: center; gap: 0.625rem;
-      padding-bottom: 0.5rem; margin-bottom: 0.5rem;
-      border-bottom: 2px solid var(--ev-g200);
-    }
-    .metric-group-swatch { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
-    .metric-group-name { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; }
-    .metric-group-count { font-size: 0.8125rem; color: var(--ev-g500); }
-    .metric-group-add {
-      margin-left: auto; background: none; border: none;
-      font-size: 0.8125rem; color: var(--ev-blue); cursor: pointer; padding: 0;
-      font-weight: 500; font-family: inherit;
-    }
-    .metric-group-add:hover { text-decoration: underline; }
-    .metric-group-empty { font-size: 0.8125rem; color: var(--ev-g400); padding: 0.5rem 0.25rem; font-style: italic; }
-
-    /* Colors per metric */
-    .mg-safety       .metric-group-swatch { background: var(--ev-red); }
-    .mg-safety       .metric-group-name   { color: var(--ev-red); }
-    .mg-accuracy     .metric-group-swatch { background: var(--ev-blue); }
-    .mg-accuracy     .metric-group-name   { color: var(--ev-blue); }
-    .mg-ease-of-use  .metric-group-swatch { background: var(--ev-green); }
-    .mg-ease-of-use  .metric-group-name   { color: var(--ev-green); }
-    .mg-effectiveness .metric-group-swatch{ background: var(--ev-orange); }
-    .mg-effectiveness .metric-group-name  { color: var(--ev-orange); }
-    .mg-emotion      .metric-group-swatch { background: var(--ev-purple); }
-    .mg-emotion      .metric-group-name   { color: var(--ev-purple); }
-    .mg-unassigned   .metric-group-swatch { background: var(--ev-g400); }
-    .mg-unassigned   .metric-group-name   { color: var(--ev-g500); }
-
-    /* ── Case rows ── */
-    .case-list { border: 1px solid var(--ev-g200); border-radius: 6px; overflow: hidden; }
-    .case-row { border-bottom: 1px solid var(--ev-g100); }
-    .case-row:last-child { border-bottom: none; }
-
-    .case-row-header {
-      display: flex; align-items: center; gap: 0.625rem;
-      padding: 0.5rem 0.875rem; cursor: pointer; background: #fff;
-      user-select: none; transition: background 0.1s;
-    }
-    .case-row-header:hover { background: var(--ev-g50); }
-    .case-row.expanded .case-row-header { background: var(--ev-g50); border-bottom: 1px solid var(--ev-g100); }
-
-    .case-row-num { font-family: monospace; font-size: 0.75rem; color: var(--ev-g400); min-width: 1.375rem; text-align: right; flex-shrink: 0; }
-
-    .sev-badge {
-      font-size: 0.6875rem; font-weight: 700; padding: 0.15rem 0.45rem;
-      border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em;
-      white-space: nowrap; flex-shrink: 0;
-    }
-    .sev-critical    { background: var(--ev-red-bg);    color: var(--ev-red);    }
-    .sev-high        { background: var(--ev-orange-bg); color: var(--ev-orange); }
-    .sev-medium      { background: var(--ev-blue-light);color: var(--ev-blue);   }
-    .sev-low         { background: var(--ev-g100);      color: var(--ev-g600);   }
-    .sev-empty       { background: var(--ev-g100); color: var(--ev-g400); font-weight: 500; text-transform: none; letter-spacing: 0; }
-
-    .case-row-question       { flex: 1; font-size: 0.8125rem; color: var(--ev-g700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-    .case-row-question.empty { color: var(--ev-g400); font-style: italic; }
-
-    .criteria-chip { font-size: 0.6875rem; background: var(--ev-g100); color: var(--ev-g500); padding: 0.15rem 0.4rem; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
-    .case-row-chevron { color: var(--ev-g400); font-size: 0.875rem; flex-shrink: 0; transition: transform 0.15s; }
-    .case-row.expanded .case-row-chevron { transform: rotate(180deg); }
-
-    /* Expanded body */
-    .case-row-body { display: none; padding: 1rem 1rem 1rem 2.875rem; background: #fff; }
-    .case-row.expanded .case-row-body { display: block; }
-
-    .step-label { font-size: 0.875rem; font-weight: 600; color: var(--ev-g700); margin: 1rem 0 0.5rem; }
-    .step-label:first-child { margin-top: 0; }
-    .step-hint { font-size: 0.8125rem; color: var(--ev-g500); margin: 0.25rem 0 0.5rem; }
-
-    /* Pill selectors */
-    .pill-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .pill-btn {
-      border: 2px solid var(--ev-g200); background: #fff; border-radius: 6px;
-      padding: 0.3rem 0.7rem; font-size: 0.8125rem; cursor: pointer;
-      color: var(--ev-g600); font-weight: 500; transition: all 0.1s; font-family: inherit;
-    }
-    .pill-btn:hover { border-color: var(--ev-g400); }
-    .pill-btn.selected { font-weight: 700; }
-    .pill-btn.selected[data-value="critical"]      { border-color: var(--ev-red);    background: var(--ev-red-bg);    color: var(--ev-red);    }
-    .pill-btn.selected[data-value="high"]          { border-color: var(--ev-orange); background: var(--ev-orange-bg); color: var(--ev-orange); }
-    .pill-btn.selected[data-value="medium"]        { border-color: var(--ev-blue);   background: var(--ev-blue-light);color: var(--ev-blue);   }
-    .pill-btn.selected[data-value="low"]           { border-color: var(--ev-g400);   background: var(--ev-g100);      color: var(--ev-g600);   }
-    .pill-btn.selected[data-value="safety"]        { border-color: var(--ev-red);    background: var(--ev-red-bg);    color: var(--ev-red);    }
-    .pill-btn.selected[data-value="accuracy"]      { border-color: var(--ev-blue);   background: var(--ev-blue-light);color: var(--ev-blue);   }
-    .pill-btn.selected[data-value="ease-of-use"]   { border-color: var(--ev-green);  background: var(--ev-green-bg);  color: var(--ev-green);  }
-    .pill-btn.selected[data-value="effectiveness"] { border-color: var(--ev-orange); background: var(--ev-orange-bg); color: var(--ev-orange); }
-    .pill-btn.selected[data-value="emotion"]       { border-color: var(--ev-purple); background: var(--ev-purple-bg); color: var(--ev-purple); }
-
-    /* Text inputs */
-    .question-textarea {
-      width: 100%; border: 1px solid var(--ev-g200); border-radius: 4px;
-      padding: 0.5rem; font-size: 0.875rem; font-family: inherit; resize: vertical; min-height: 3rem;
-    }
-    .question-textarea:focus { border-color: var(--ev-blue); outline: none; box-shadow: 0 0 0 2px var(--ev-blue-light); }
-    .context-input {
-      width: 100%; border: 1px solid var(--ev-g200); border-radius: 4px;
-      padding: 0.35rem 0.5rem; font-size: 0.8125rem; font-family: inherit; margin-top: 0.5rem;
-    }
-    .context-input:focus { border-color: var(--ev-blue); outline: none; box-shadow: 0 0 0 2px var(--ev-blue-light); }
-
-    /* Criteria */
-    .criteria-section { margin-top: 0.25rem; }
-    .criteria-row { display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.375rem; }
-    .criteria-icon { flex-shrink: 0; margin-top: 0.4rem; font-size: 0.875rem; }
-    .criteria-icon.should    { color: var(--ev-green); }
-    .criteria-icon.shouldnot { color: var(--ev-red);   }
-    .criteria-input {
-      flex: 1; border: 1px solid var(--ev-g200); border-radius: 4px;
-      padding: 0.35rem 0.5rem; font-size: 0.8125rem; font-family: inherit; resize: vertical; min-height: 2rem;
-    }
-    .criteria-input:focus { border-color: var(--ev-blue); outline: none; box-shadow: 0 0 0 2px var(--ev-blue-light); }
-    .criteria-remove { background: none; border: none; color: var(--ev-g400); cursor: pointer; font-size: 1rem; padding: 0.25rem; flex-shrink: 0; }
-    .criteria-remove:hover { color: var(--ev-red); }
-    .add-criteria-btn {
-      background: none; border: 1px dashed var(--ev-g300); color: var(--ev-g500);
-      padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8125rem; cursor: pointer;
-      margin-top: 0.25rem; font-family: inherit;
-    }
-    .add-criteria-btn:hover { border-color: var(--ev-blue); color: var(--ev-blue); }
-
-    .capability-badge { display: inline-block; background: var(--ev-blue-light); color: var(--ev-blue); font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 3px; margin-bottom: 0.5rem; }
-
-    /* Row footer */
-    .case-row-footer { display: flex; justify-content: flex-end; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--ev-g100); }
-    .remove-case-btn { background: none; border: none; color: var(--ev-g400); font-size: 0.8125rem; cursor: pointer; padding: 0.25rem 0.5rem; font-family: inherit; }
-    .remove-case-btn:hover { color: var(--ev-red); }
-
-    /* Run CTA */
-    .run-cta {
-      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-      margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--ev-g200);
-    }
-    .run-cta p { font-size: 0.875rem; color: var(--ev-g600); margin: 0; }
-
-    /* No-suite state */
-    .builder-no-suite { text-align: center; padding: 4rem 1rem; }
-    .builder-no-suite h2 { color: var(--ev-g700); margin: 0 0 0.5rem; font-size: 1.125rem; }
-    .builder-no-suite p  { font-size: 0.875rem; color: var(--ev-g500); margin: 0 0 1.5rem; }
-    .builder-no-suite .button-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
-
-    /* ── Breadcrumb ── */
-    .ev-breadcrumb { background: var(--ev-g50); border-bottom: 1px solid var(--ev-g100); padding: 0.4rem 1.5rem; }
-    .ev-breadcrumb ol { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0; }
-    .ev-breadcrumb li { display: flex; align-items: center; font-size: 0.8125rem; }
-    .ev-breadcrumb li + li::before { content: '/'; color: var(--ev-g300); margin: 0 0.375rem; }
-    .ev-breadcrumb a { color: var(--ev-blue); text-decoration: none; }
-    .ev-breadcrumb a:hover { text-decoration: underline; }
-    .ev-breadcrumb-btn { background: none; border: none; padding: 0; font-size: 0.8125rem; font-family: inherit; color: var(--ev-blue); cursor: pointer; }
-    .ev-breadcrumb-btn:hover { text-decoration: underline; }
-    .ev-breadcrumb [aria-current="page"] { color: var(--ev-g700); font-weight: 500; }
-
-    /* Responsive */
-    @media (max-width: 640px) {
-      .ev-panel { padding: 1rem; }
-      .lib-grid { grid-template-columns: 1fr; }
-.run-cta { flex-direction: column; align-items: flex-start; }
-    }
-  </style>
+  <link rel="stylesheet" href="/assets/css/evergreen.css">
 </head>
-<body>
+<body class="bg-base-lightest">
 
 <!-- Public Infrastructure Banner -->
 <section class="usa-banner" aria-label="Evergreen — digital public infrastructure">
-  <div class="usa-banner__header" style="padding-top:0.5rem;padding-bottom:0.5rem;">
+  <div class="usa-banner__header">
     <div class="usa-banner__inner">
       <div class="grid-col-auto">
         <img class="usa-banner__header-flag" src="/assets/img/us_flag_small.png" alt="U.S. flag">
@@ -285,37 +24,58 @@
 </section>
 
 <!-- Header -->
-<header class="ev-header">
-  <div class="ev-header-inner">
-    <a href="/" class="ev-header-logo">Evergreen</a>
-    <nav class="ev-header-nav" aria-label="Primary navigation">
-      <button id="export-btn" class="usa-button usa-button--outline" onclick="exportCsv()" disabled>Export Sheet</button>
-      <button id="run-btn" class="usa-button" onclick="runEval()">Run Evaluation &rarr;</button>
+<div class="usa-overlay"></div>
+<header class="usa-header usa-header--basic">
+  <div class="usa-nav-container">
+    <div class="usa-navbar">
+      <div class="usa-logo">
+        <em class="usa-logo__text"><a href="/" title="Evergreen">Evergreen</a></em>
+      </div>
+    </div>
+    <nav aria-label="Primary navigation" class="usa-nav">
+      <ul class="usa-nav__primary usa-accordion">
+        <li class="usa-nav__primary-item">
+          <button id="export-btn" class="usa-button usa-button--outline" onclick="exportCsv()" disabled>Export Sheet</button>
+        </li>
+        <li class="usa-nav__primary-item">
+          <button id="run-btn" class="usa-button" onclick="runEval()">Run Evaluation &rarr;</button>
+        </li>
+      </ul>
     </nav>
   </div>
 </header>
 
 <!-- Tab bar -->
-<nav class="ev-tabs" aria-label="Builder navigation">
-  <button class="ev-tab active" id="tab-library" onclick="switchTab('library')">Library</button>
-  <button class="ev-tab" id="tab-builder" onclick="switchTab('builder')">Builder<span id="tab-builder-label"></span></button>
-</nav>
-
-<!-- Breadcrumb -->
-<nav class="ev-breadcrumb" aria-label="Breadcrumbs">
-  <ol id="breadcrumb-list"></ol>
-</nav>
-
-<!-- Library panel -->
-<div id="panel-library" class="ev-panel">
-  <div id="lib-grid" class="lib-grid">
-    <p style="color:var(--ev-g500);">Loading&hellip;</p>
+<div class="bg-white border-bottom border-base-light padding-x-3 padding-y-1">
+  <div class="usa-button-group usa-button-group--segmented">
+    <div class="usa-button-group__item">
+      <button id="tab-library" class="usa-button" type="button" onclick="switchTab('library')">Library</button>
+    </div>
+    <div class="usa-button-group__item">
+      <button id="tab-builder" class="usa-button usa-button--outline" type="button" onclick="switchTab('builder')">Builder<span id="tab-builder-label"></span></button>
+    </div>
   </div>
 </div>
 
+<!-- Breadcrumb -->
+<nav class="usa-breadcrumb" aria-label="Breadcrumbs">
+  <ol id="breadcrumb-list" class="usa-breadcrumb__list"></ol>
+</nav>
+
+<!-- Library panel -->
+<div id="panel-library" class="padding-4">
+  <ul id="lib-grid" class="usa-card-group">
+    <li class="usa-card tablet:grid-col-4">
+      <div class="usa-card__container">
+        <div class="usa-card__body"><p class="text-base">Loading&hellip;</p></div>
+      </div>
+    </li>
+  </ul>
+</div>
+
 <!-- Builder panel -->
-<div id="panel-builder" class="ev-panel" hidden>
-  <div class="builder-inner" id="builder-inner">
+<div id="panel-builder" class="padding-4" hidden>
+  <div class="grid-container-desktop" id="builder-inner">
     <div class="builder-no-suite">
       <h2>No test suite loaded</h2>
       <p>Browse the Library to choose a preset, or start from scratch.</p>
@@ -386,13 +146,13 @@ function updateBreadcrumb() {
   }
   var html = '';
   items.forEach(function(item) {
-    html += '<li>';
+    html += '<li class="usa-breadcrumb__list-item' + (item.current ? ' usa-current' : '') + '">';
     if (item.current) {
       html += '<span aria-current="page">' + esc(item.label) + '</span>';
     } else if (item.action === 'library') {
       html += '<button class="ev-breadcrumb-btn" onclick="switchTab(\'library\')">' + esc(item.label) + '</button>';
     } else {
-      html += '<a href="' + esc(item.href) + '">' + esc(item.label) + '</a>';
+      html += '<a class="usa-breadcrumb__link" href="' + esc(item.href) + '">' + esc(item.label) + '</a>';
     }
     html += '</li>';
   });
@@ -404,8 +164,8 @@ function switchTab(tab) {
   state.currentTab = tab;
   document.getElementById('panel-library').hidden = tab !== 'library';
   document.getElementById('panel-builder').hidden = tab !== 'builder';
-  document.getElementById('tab-library').classList.toggle('active', tab === 'library');
-  document.getElementById('tab-builder').classList.toggle('active', tab === 'builder');
+  document.getElementById('tab-library').className = 'usa-button' + (tab === 'library' ? '' : ' usa-button--outline');
+  document.getElementById('tab-builder').className = 'usa-button' + (tab === 'builder' ? '' : ' usa-button--outline');
   updateBreadcrumb();
   if (tab === 'builder' && state.template) renderBuilder();
 }
@@ -427,30 +187,36 @@ function renderLibrary() {
     if (t.id === 'blank') {
       var btnLabel = isActive ? 'Currently editing' : 'Start building \u2192';
       html +=
-        '<div class="lib-card lib-card-start' + (isActive ? ' is-active' : '') + '">' +
-          '<div class="lib-card-top">' +
-            '<span class="lib-card-name">Start your own</span>' +
+        '<li class="usa-card tablet:grid-col-4">' +
+        '<div class="usa-card__container lib-card-start' + (isActive ? ' border-primary' : '') + '">' +
+          '<div class="usa-card__header">' +
+            '<h2 class="usa-card__heading">Start your own</h2>' +
           '</div>' +
-          '<p class="lib-card-desc">Build a test suite from scratch, tailored to your specific AI tool.</p>' +
-          '<div class="lib-card-footer"></div>' +
-          '<button class="usa-button' + (isActive ? '' : '') + '" style="width:100%;" ' +
-            'data-action="load-template" data-id="blank">' + btnLabel + '</button>' +
-        '</div>';
+          '<div class="usa-card__body">' +
+            '<p>Build a test suite from scratch, tailored to your specific AI tool.</p>' +
+          '</div>' +
+          '<div class="usa-card__footer">' +
+            '<button class="usa-button" style="width:100%;" data-action="load-template" data-id="blank">' + btnLabel + '</button>' +
+          '</div>' +
+        '</div></li>';
     } else {
       var btnLabel2 = isActive ? 'Currently editing' : 'Customize \u2192';
       html +=
-        '<div class="lib-card' + (isActive ? ' is-active' : '') + '">' +
-          '<div class="lib-card-top">' +
-            '<span class="lib-card-name">' + esc(t.name) + '</span>' +
-            (t.domain ? '<span class="lib-card-domain">' + esc(t.domain) + '</span>' : '') +
+        '<li class="usa-card tablet:grid-col-4">' +
+        '<div class="usa-card__container' + (isActive ? ' border-primary' : '') + '">' +
+          '<div class="usa-card__header">' +
+            '<h2 class="usa-card__heading">' + esc(t.name) + '</h2>' +
+            (t.domain ? '<p class="margin-0"><span class="usa-tag">' + esc(t.domain) + '</span></p>' : '') +
           '</div>' +
-          '<p class="lib-card-desc">' + esc(t.description || '') + '</p>' +
-          '<div class="lib-card-footer">' +
-            '<span class="lib-card-meta">' + (t.caseCount ? t.caseCount + ' cases' : '') + '</span>' +
+          '<div class="usa-card__body">' +
+            '<p>' + esc(t.description || '') + '</p>' +
           '</div>' +
-          '<button class="usa-button' + (isActive ? '' : ' usa-button--outline') + '" style="width:100%;" ' +
-            'data-action="load-template" data-id="' + esc(t.id) + '">' + btnLabel2 + '</button>' +
-        '</div>';
+          '<div class="usa-card__footer">' +
+            (t.caseCount ? '<p class="font-body-sm text-base margin-bottom-1">' + t.caseCount + ' cases</p>' : '') +
+            '<button class="usa-button' + (isActive ? '' : ' usa-button--outline') + '" style="width:100%;" ' +
+              'data-action="load-template" data-id="' + esc(t.id) + '">' + btnLabel2 + '</button>' +
+          '</div>' +
+        '</div></li>';
     }
   });
   document.getElementById('lib-grid').innerHTML = html;
@@ -476,10 +242,10 @@ function renderCoverageBar() {
 
 function metricColor(id) {
   var map = {
-    'safety': 'var(--ev-red)', 'accuracy': 'var(--ev-blue)', 'ease-of-use': 'var(--ev-green)',
-    'effectiveness': 'var(--ev-orange)', 'emotion': 'var(--ev-purple)'
+    'safety': 'var(--ev-safety)', 'accuracy': 'var(--ev-accuracy)', 'ease-of-use': 'var(--ev-ease-of-use)',
+    'effectiveness': 'var(--ev-effectiveness)', 'emotion': 'var(--ev-emotion)'
   };
-  return map[id] || 'var(--ev-g400)';
+  return map[id] || '#adb5bd';
 }
 
 function renderRow(c, overallIdx) {
@@ -499,31 +265,24 @@ function renderRow(c, overallIdx) {
     ? '<span class="criteria-chip">' + numCriteria + '\u00a0' + (numCriteria === 1 ? 'criterion' : 'criteria') + '</span>'
     : '';
 
-  var html = '<div class="case-row' + (isExpanded ? ' expanded' : '') + '" data-case-id="' + c._id + '">';
+  var html = '<div class="usa-accordion margin-bottom-1" data-case-id="' + c._id + '">';
 
-  // Row header
-  html += '<div class="case-row-header" data-action="toggle" data-id="' + c._id + '">' +
-    '<span class="case-row-num">' + (overallIdx + 1) + '</span>' +
-    sevHtml + qHtml +
-    '<span>' + chipHtml + '</span>' +
-    '<span class="case-row-chevron">&#9662;</span>' +
-  '</div>';
+  html += '<h4 class="usa-accordion__heading">' +
+    '<button type="button" class="usa-accordion__button" ' +
+    'aria-expanded="' + (isExpanded ? 'true' : 'false') + '" ' +
+    'aria-controls="case-content-' + c._id + '" ' +
+    'data-action="toggle" data-id="' + c._id + '">' +
+    '<span>' +
+      '<span class="case-row-num">' + (overallIdx + 1) + '</span>' +
+      sevHtml + qHtml + chipHtml +
+    '</span>' +
+    '</button></h4>';
 
-  // Expanded body
-  html += '<div class="case-row-body">';
+  html += '<div id="case-content-' + c._id + '" class="usa-accordion__content"' +
+    (isExpanded ? '' : ' hidden') + '>';
 
-  // Severity
-  html += '<div class="step-label">How serious is it if the AI gets this wrong?</div>';
-  html += '<div class="pill-row">';
-  SEVERITIES.forEach(function(sv) {
-    var sel = c.severity === sv.id ? ' selected' : '';
-    html += '<button class="pill-btn' + sel + '" data-action="set-severity" data-id="' + c._id + '" data-value="' + sv.id + '">' + sv.label + '</button>';
-  });
-  html += '</div>';
-  if (sev) html += '<p class="step-hint">' + esc(sev.hint) + '</p>';
-
-  // Category (metric reassignment)
-  html += '<div class="step-label">Category</div>';
+  // Category (metric)
+  html += '<p class="usa-label margin-top-0">Category</p>';
   html += '<div class="pill-row">';
   METRICS.forEach(function(m) {
     var sel = c.metric === m.id ? ' selected' : '';
@@ -531,45 +290,55 @@ function renderRow(c, overallIdx) {
   });
   html += '</div>';
 
+  // Severity
+  html += '<p class="usa-label margin-top-3">How serious is it if the AI gets this wrong?</p>';
+  html += '<div class="pill-row">';
+  SEVERITIES.forEach(function(sv) {
+    var sel = c.severity === sv.id ? ' selected' : '';
+    html += '<button class="pill-btn' + sel + '" data-action="set-severity" data-id="' + c._id + '" data-value="' + sv.id + '">' + sv.label + '</button>';
+  });
+  html += '</div>';
+  if (sev) html += '<span class="usa-hint display-block margin-top-1">' + esc(sev.hint) + '</span>';
+
   // Question
-  html += '<div class="step-label">What would a real person ask?</div>';
+  html += '<p class="usa-label margin-top-3">What would a real person ask?</p>';
   if (c.capability) html += '<span class="capability-badge">' + esc(c.capability) + '</span>';
-  html += '<textarea class="question-textarea" data-action="set-question" data-id="' + c._id + '" placeholder="Type the question here\u2026">' + esc(c.question) + '</textarea>';
-  html += '<input class="context-input" data-action="set-context" data-id="' + c._id + '" placeholder="Context \u2014 optional: who is asking?" value="' + esc(c.context) + '">';
+  html += '<textarea class="usa-textarea" data-action="set-question" data-id="' + c._id + '" placeholder="Type the question here\u2026">' + esc(c.question) + '</textarea>';
+  html += '<input class="usa-input margin-top-2" data-action="set-context" data-id="' + c._id + '" placeholder="Context \u2014 optional: who is asking?" value="' + esc(c.context) + '">';
 
   // Criteria (once question is filled)
   if (c.question) {
-    html += '<div class="step-label">The response SHOULD\u2026</div>';
+    html += '<p class="usa-label margin-top-3">The response SHOULD\u2026</p>';
     html += '<div class="criteria-section">';
     c.should.forEach(function(val, i) {
       html += '<div class="criteria-row">' +
         '<span class="criteria-icon should">\u2713</span>' +
-        '<textarea class="criteria-input" data-action="edit-should" data-id="' + c._id + '" data-index="' + i + '">' + esc(val) + '</textarea>' +
+        '<textarea class="usa-textarea criteria-input" rows="2" data-action="edit-should" data-id="' + c._id + '" data-index="' + i + '">' + esc(val) + '</textarea>' +
         '<button class="criteria-remove" data-action="remove-should" data-id="' + c._id + '" data-index="' + i + '">&times;</button>' +
       '</div>';
     });
-    html += '<button class="add-criteria-btn" data-action="add-should" data-id="' + c._id + '">+ Add criterion</button>';
+    html += '<button class="usa-button usa-button--unstyled text-primary margin-top-1" data-action="add-should" data-id="' + c._id + '">+ Add criterion</button>';
     html += '</div>';
 
-    html += '<div class="step-label" style="margin-top:0.75rem;">The response should NOT\u2026</div>';
+    html += '<p class="usa-label margin-top-3">The response should NOT\u2026</p>';
     html += '<div class="criteria-section">';
     c.shouldNot.forEach(function(val, i) {
       html += '<div class="criteria-row">' +
         '<span class="criteria-icon shouldnot">\u2717</span>' +
-        '<textarea class="criteria-input" data-action="edit-shouldnot" data-id="' + c._id + '" data-index="' + i + '">' + esc(val) + '</textarea>' +
+        '<textarea class="usa-textarea criteria-input" rows="2" data-action="edit-shouldnot" data-id="' + c._id + '" data-index="' + i + '">' + esc(val) + '</textarea>' +
         '<button class="criteria-remove" data-action="remove-shouldnot" data-id="' + c._id + '" data-index="' + i + '">&times;</button>' +
       '</div>';
     });
-    html += '<button class="add-criteria-btn" data-action="add-shouldnot" data-id="' + c._id + '">+ Add criterion</button>';
+    html += '<button class="usa-button usa-button--unstyled text-primary margin-top-1" data-action="add-shouldnot" data-id="' + c._id + '">+ Add criterion</button>';
     html += '</div>';
   }
 
   html += '<div class="case-row-footer">' +
-    '<button class="remove-case-btn" data-action="remove-case" data-id="' + c._id + '">Remove test case</button>' +
+    '<button class="usa-button usa-button--unstyled text-error" data-action="remove-case" data-id="' + c._id + '">Remove test case</button>' +
   '</div>';
 
-  html += '</div>'; // case-row-body
-  html += '</div>'; // case-row
+  html += '</div>'; // usa-accordion__content
+  html += '</div>'; // usa-accordion
   return html;
 }
 
@@ -579,13 +348,13 @@ function renderBuilder() {
   var html = '';
 
   // Header
-  html += '<div class="builder-header">' +
-    '<h1 class="builder-title">' + esc(t.name || 'Test Suite') + '</h1>';
-  if (t.description) html += '<p class="builder-desc">' + esc(t.description) + '</p>';
+  html += '<div class="margin-bottom-3">' +
+    '<h1 class="font-heading-xl margin-top-0 margin-bottom-05">' + esc(t.name || 'Test Suite') + '</h1>';
+  if (t.description) html += '<p class="font-body-sm text-base margin-0 margin-bottom-05">' + esc(t.description) + '</p>';
   if (t.source) {
-    html += '<p class="builder-source">Source: ';
+    html += '<p class="font-body-xs text-base-dark margin-0">Source: ';
     html += t.sourceUrl
-      ? '<a href="' + esc(t.sourceUrl) + '" target="_blank" rel="noopener">' + esc(t.source) + '</a>'
+      ? '<a class="usa-link" href="' + esc(t.sourceUrl) + '" target="_blank" rel="noopener">' + esc(t.source) + '</a>'
       : esc(t.source);
     html += '</p>';
   }
@@ -596,7 +365,7 @@ function renderBuilder() {
 
   // System prompt
   if (t.systemPrompt) {
-    html += '<details class="sys-prompt"><summary>System prompt</summary><pre>' + esc(t.systemPrompt) + '</pre></details>';
+    html += '<details class="sys-prompt margin-bottom-3"><summary>System prompt</summary><pre>' + esc(t.systemPrompt) + '</pre></details>';
   }
 
   // Metric groups
@@ -608,10 +377,10 @@ function renderBuilder() {
       '<span class="metric-group-swatch"></span>' +
       '<span class="metric-group-name">' + esc(m.label) + '</span>' +
       '<span class="metric-group-count">' + groupCases.length + '\u00a0' + (groupCases.length === 1 ? 'case' : 'cases') + '</span>' +
-      '<button class="metric-group-add" data-action="add-case-metric" data-value="' + m.id + '">+ Add</button>' +
+      '<button class="usa-button usa-button--unstyled text-primary font-body-sm margin-left-auto" data-action="add-case-metric" data-value="' + m.id + '">+ Add</button>' +
     '</div>';
     if (groupCases.length > 0) {
-      html += '<div class="case-list">';
+      html += '<div>';
       groupCases.forEach(function(c) { html += renderRow(c, globalIdx++); });
       html += '</div>';
     } else {
@@ -629,7 +398,7 @@ function renderBuilder() {
       '<span class="metric-group-name">Unassigned</span>' +
       '<span class="metric-group-count">' + unassigned.length + '\u00a0' + (unassigned.length === 1 ? 'case' : 'cases') + '</span>' +
     '</div>';
-    html += '<div class="case-list">';
+    html += '<div>';
     unassigned.forEach(function(c) { html += renderRow(c, globalIdx++); });
     html += '</div>';
     html += '</div>';
@@ -799,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(function() {
       document.getElementById('lib-grid').innerHTML =
-        '<p style="color:var(--ev-red);">Failed to load test suites.</p>';
+        '<li><p class="text-error padding-2">Failed to load test suites.</p></li>';
     });
 });
 </script>
