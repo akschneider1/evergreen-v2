@@ -14,7 +14,21 @@
       "Bash(npm run test && npm run build)",
       "Bash(find /home/runner/workspace -name \"uswds*.css\" -o -name \"uswds*.min.css\" 2>/dev/null | head -5)",
       "WebSearch",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(grep -o 'class=\"[^\"]*usa-[^\"]*' /home/runner/workspace/src/web/*.html | cut -d'\"' -f2 | sort -u)",
+      "Bash(grep -o 'usa-[a-z0-9_-]*' /home/runner/workspace/src/web/*.html | sort -u)",
+      "Bash(grep -o 'grid-col[^\"]*' /home/runner/workspace/src/web/*.html | sort -u)",
+      "Bash(find /home/runner/workspace/node_modules/@uswds/uswds/packages/usa-header/src -name \"*.twig\" | xargs ls -la 2>/dev/null; cat /home/runner/workspace/node_modules/@uswds/uswds/packages/usa-header/src/_includes/usa-navbar.twig)",
+      "Bash(grep -n \"usa-section\\\\b\\\\|bg-primary\\\\|bg-base-lighter\\\\|bg-white\" /home/runner/workspace/node_modules/@uswds/uswds/packages/usa-section/src/styles/*.scss 2>/dev/null | head -20; find /home/runner/workspace/node_modules/@uswds/uswds/packages -name \"usa-section*\" | head -5)",
+      "Bash(python3 -c \"\nimport json\nwith open\\('/home/runner/.claude/projects/-home-runner-workspace/972d7cf9-dc14-40f8-9c39-ae1d2cd2a615/tool-results/toolu_01RP9YChasjtGWd241GFm4XK.json'\\) as f:\n    data = json.load\\(f\\)\ntext = data[0]['text']\nprint\\(text[:8000]\\)\n\")",
+      "Bash(python3 -c \"\nimport json\nwith open\\('/home/runner/.claude/projects/-home-runner-workspace/972d7cf9-dc14-40f8-9c39-ae1d2cd2a615/tool-results/toolu_01RP9YChasjtGWd241GFm4XK.json'\\) as f:\n    data = json.load\\(f\\)\ntext = data[0]['text']\nprint\\(text[8000:20000]\\)\n\")",
+      "Bash(python3 -c \"\nimport json\nwith open\\('/home/runner/.claude/projects/-home-runner-workspace/972d7cf9-dc14-40f8-9c39-ae1d2cd2a615/tool-results/toolu_01RP9YChasjtGWd241GFm4XK.json'\\) as f:\n    data = json.load\\(f\\)\ntext = data[0]['text']\nprint\\(text[20000:36000]\\)\n\")",
+      "Bash(python3 -c \"\nimport json\nwith open\\('/home/runner/.claude/projects/-home-runner-workspace/972d7cf9-dc14-40f8-9c39-ae1d2cd2a615/tool-results/toolu_01RP9YChasjtGWd241GFm4XK.json'\\) as f:\n    data = json.load\\(f\\)\ntext = data[0]['text']\nprint\\(text[36000:]\\)\n\")",
+      "Bash(cat /home/runner/workspace/package.json | python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
+      "Bash(git add src/web/landing.html src/web/input.html src/web/builder.html src/web/assets/css/evergreen.css dist/web/landing.html dist/web/input.html dist/web/builder.html dist/assets/css/evergreen.css package.json && git status)",
+      "Bash(git add src/web/landing.html src/web/input.html src/web/builder.html src/web/assets/css/evergreen.css package.json && git status)",
+      "Bash(git commit -m \"$\\(cat <<'EOF'\nMigrate all three web pages to native USWDS v3\n\nReplace per-page embedded <style> blocks \\(32–118 selectors each\\) with a\nshared evergreen.css that contains only what USWDS cannot provide natively:\nmetric color tokens, hero/header/footer overrides, the split card, loader\nspinner, metric group headers, severity badges, coverage bar, pill-selector\nbuttons, criteria layout, and accordion button inner styling.\n\n- landing.html: usa-hero, usa-section, usa-process-list, usa-footer--slim\n- input.html: usa-header--basic, usa-form/usa-form--large, usa-footer--slim;\n  loader and spinner classes moved to evergreen.css\n- builder.html: usa-header--basic, usa-button-group--segmented tabs,\n  usa-breadcrumb, usa-card-group library grid, usa-accordion case rows,\n  usa-textarea/usa-input form fields; JS updated for switchTab class toggle,\n  breadcrumb list-item classes, card and accordion HTML structure\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(ls -la /home/runner/workspace/tsconfig*.json)"
     ]
   }
 }
