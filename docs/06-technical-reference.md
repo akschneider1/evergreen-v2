@@ -181,7 +181,7 @@ Evergreen supports any provider that Promptfoo supports. Common ones:
 | OpenAI GPT-4o | `openai:gpt-4o` |
 | OpenAI GPT-4o-mini | `openai:gpt-4o-mini` |
 | OpenAI GPT-4-turbo | `openai:gpt-4-turbo` |
-| Anthropic Claude 4 Opus | `anthropic:messages:claude-opus-4-20250514` |
+| Anthropic Claude Opus 4.5 | `anthropic:messages:claude-opus-4-5` |
 | Anthropic Claude 4 Sonnet | `anthropic:messages:claude-sonnet-4-20250514` |
 | Anthropic Claude Haiku | `anthropic:messages:claude-haiku-4-5-20251001` |
 

@@ -7,7 +7,7 @@ There are two ways to run Evergreen:
 | | **Web App** | **CLI** |
 |--|------------|---------|
 | Config file needed? | No — use the browser form | Yes — `evergreen.yaml` |
-| Sheet input | Paste the full URL | Copy the Sheet ID |
+| Test cases | Library template, Builder, or Google Sheet | Google Sheet (required) |
 | Best for | Non-technical users; one-off runs | Scripting, automation, CI/CD |
 | Command | `npx evergreen app` | `npx evergreen run` |
 
@@ -17,48 +17,17 @@ There are two ways to run Evergreen:
 
 | Item | Who Provides It |
 |------|----------------|
-| A Google account (to copy the Sheet template) | You |
 | Node.js 20 or later installed | Your technical colleague |
 | An API key for the LLM you're testing (e.g., OpenAI) | Your technical colleague |
+| A Google account (only if bringing your own Google Sheet) | You |
 
 ---
 
-## Step 1: Copy the Google Sheet Template
-
-1. Open the [Evergreen Test Case Template](https://docs.google.com/spreadsheets/d/1ysiHznH64SB9CjedjVnZOg5YkMrPyYofSAXXHXa0w0I/copy)
-2. Click **"Make a copy"**
-3. Rename it for your project (e.g., "CO Tax Chatbot — Eval Test Cases")
-
-The template has five columns:
-
-| Column | What Goes Here |
-|--------|---------------|
-| **Question** | A question someone would ask the AI |
-| **What to Check** | What the response should include (or avoid) — depends on your Metric |
-| **Context** | Any situation that affects the correct answer (optional) |
-| **Metric** | What kind of quality this test measures (`Safety`, `Accuracy`, `Ease of Use`, `Effectiveness`, or `Emotion`) |
-| **Severity** | How bad is it if the AI gets this wrong? (`critical`, `high`, `medium`, `low`) |
-
-> **Note:** Row 1 is the header. Row 2 is a pre-filled example row that explains each column — leave it in place, it won't be included in the evaluation. Your test cases start at **row 3**.
-
-See [Writing Test Cases](./03-writing-test-cases.md) for detailed guidance.
-
----
-
-## Step 2: Share the Sheet
-
-1. Click the **Share** button in your Google Sheet
-2. Under "General access", change to **"Anyone with the link"**
-3. Set permission to **"Viewer"**
-4. Copy the full URL from your browser's address bar (you'll need it in the next step)
-
----
-
-## Option A: Web App
+## Option A: Web App (recommended)
 
 No config file needed. Everything is entered through the browser.
 
-### Step 3A: Set Your API Key
+### Step 1A: Set Your API Key
 
 ```bash
 # For OpenAI
@@ -68,7 +37,7 @@ export OPENAI_API_KEY=sk-your-key-here
 export ANTHROPIC_API_KEY=sk-ant-your-key-here
 ```
 
-### Step 4A: Launch the Web App
+### Step 2A: Launch the Web App
 
 ```bash
 npx evergreen app
@@ -76,36 +45,38 @@ npx evergreen app
 
 Open **http://localhost:4000** in your browser.
 
-### Step 5A: Use the Web App
+### Step 3A: Get Test Cases
 
-When you open http://localhost:4000 you'll see the **landing page** with an overview of how Evergreen works and a library of template test suites.
+Choose one of three paths:
 
-**Two ways to get started:**
+**Path 1 — Library template (fastest)**
 
-1. **Browse templates** — Click "Open in Builder" on any template card to view and customize test cases in the built-in **Test Suite Builder** at `/builder`. When you're ready, click "Run Evaluation" to jump to the run form.
+Pick a pre-built test suite (25 tests each) from the landing page. Click **"Run now"** on any template card to jump straight to the run form with that suite pre-selected.
 
-2. **Run now** — Click "Run now" on a template card (or go directly to `/run`) to start an evaluation immediately.
+**Path 2 — Build your own in the Builder**
 
-**On the run form** (`/run`), choose how to load test cases:
+Click **"Get started →"** or **"Open in Builder"** on any template card to open the Test Suite Builder at `/builder`. In the **Library** tab, pick a starting point — or click "Start building →" to start from scratch. In the **Builder** tab, review and edit test cases, or add new ones. Each case gets a question, a metric (Safety, Accuracy, Ease of Use, Effectiveness, or Emotion), criteria for what the AI should or shouldn't say, and a severity level. When you're ready, click **"Run Evaluation →"** to move to the run form.
 
-**Option 1 — My Google Sheet:**
+**Path 3 — Bring a Google Sheet**
+
+If you've already written test cases in a Google Sheet:
+
+1. Set up the sheet with 5 columns: `Question` | `What to Check` | `Context` | `Metric` | `Severity`
+   - Row 1 = header, row 2 = a pre-filled example row (auto-skipped), test cases start at row 3
+   - See [Writing Test Cases](./03-writing-test-cases.md) for column-by-column guidance
+2. Click **Share** → set "General access" to **"Anyone with the link"** → **Viewer** → copy the full URL
+3. On the run form, select **"My Google Sheet"** and paste the URL
+
+### Step 4A: Run the Evaluation
+
+On the run form (`/run`), fill in the remaining fields:
 
 | Field | What to Enter |
 |-------|--------------|
 | **Evaluation name** | A label for this run, e.g. "CO Tax Chatbot — March 2026" |
-| **Google Sheet URL** | Paste the full link from your browser |
-| **AI use case** | Select the category that best matches your AI |
-| **LLM provider** | Select from the dropdown (Claude Sonnet is recommended) |
+| **LLM provider** | Select from the dropdown (Claude Sonnet 4 is recommended) |
 
-**Option 2 — Built-in test suite** (no Sheet required):
-
-| Field | What to Enter |
-|-------|--------------|
-| **Evaluation name** | A label for this run |
-| **Select test suite** | Choose from six pre-built suites (Where's My Refund, Benefits Eligibility, SNAP / Food Assistance, Agent Assist, Call Center Summaries, Permitting Assistant) |
-| **LLM provider** | Select from the dropdown |
-
-**Optional — Evaluation context** (click "Add evaluation context" to expand):
+**Optional — Evaluation context** (click to expand):
 
 | Field | What to Enter |
 |-------|--------------|
@@ -113,9 +84,8 @@ When you open http://localhost:4000 you'll see the **landing page** with an over
 | **Evaluator name** | Your name (appears in the report header) |
 | **Reason for evaluation** | Initial evaluation, post-update re-evaluation, or periodic review |
 
-> Built-in suites are a fast way to run a realistic demo without setting up a Google Sheet first. If you just want to see how the tool works, start here.
-
 Click **Run Evaluation**. A step-by-step progress indicator tracks the pipeline:
+
 1. Load test cases
 2. Generate evaluation config
 3. Run AI evaluations
@@ -127,9 +97,19 @@ When complete, a success banner appears with a **View the report →** link.
 
 ## Option B: CLI
 
-Use this path if you want a config file you can version-control or run in CI/CD.
+Use this path if you want a config file you can version-control or run in CI/CD. The CLI always reads test cases from a Google Sheet.
 
-### Step 3B: Create the Config File
+### Step 1B: Set Up Your Google Sheet
+
+1. Open the [Evergreen Test Case Template](https://docs.google.com/spreadsheets/d/1ysiHznH64SB9CjedjVnZOg5YkMrPyYofSAXXHXa0w0I/copy)
+2. Click **"Make a copy"** and rename it for your project (e.g. "CO Tax Chatbot — Eval Test Cases")
+3. Add your test cases — 5 columns: `Question` | `What to Check` | `Context` | `Metric` | `Severity`
+   - Row 1 = header, row 2 = example (auto-skipped), test cases start at row 3
+4. Click **Share** → "Anyone with the link" → **Viewer** → copy the URL
+
+See [Writing Test Cases](./03-writing-test-cases.md) for detailed guidance.
+
+### Step 2B: Create the Config File
 
 Create a file called `evergreen.yaml` in your project folder:
 
@@ -151,14 +131,16 @@ Replace:
 - The system prompt with whatever your AI system uses
 
 **Common providers:**
+
 | Provider | ID |
 |----------|-----|
 | OpenAI GPT-4o | `openai:gpt-4o` |
 | OpenAI GPT-4o-mini | `openai:gpt-4o-mini` |
-| Anthropic Claude Sonnet | `anthropic:messages:claude-sonnet-4-20250514` |
-| Anthropic Claude Haiku | `anthropic:messages:claude-haiku-4-5-20251001` |
+| Anthropic Claude Sonnet 4 | `anthropic:messages:claude-sonnet-4-20250514` |
+| Anthropic Claude Haiku 4.5 | `anthropic:messages:claude-haiku-4-5-20251001` |
+| Anthropic Claude Opus 4.5 | `anthropic:messages:claude-opus-4-5` |
 
-### Step 4B: Set Your API Key
+### Step 3B: Set Your API Key
 
 ```bash
 # For OpenAI
@@ -168,7 +150,7 @@ export OPENAI_API_KEY=sk-your-key-here
 export ANTHROPIC_API_KEY=sk-ant-your-key-here
 ```
 
-### Step 5B: Run the Evaluation
+### Step 4B: Run the Evaluation
 
 ```bash
 npx evergreen run
@@ -203,7 +185,7 @@ Step 4/4 — Generating report...
 └─────────────────────────────────────────┘
 ```
 
-### Step 6B: View the Report
+### Step 5B: View the Report
 
 ```bash
 npx evergreen serve
