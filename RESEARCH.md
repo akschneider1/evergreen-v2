@@ -112,28 +112,84 @@ This document catalogs the research, prior art, and real-world examples that inf
 
 ---
 
-## 4. Colorado Department of Labor and Employment (CDLE) — Benefits Chatbot Evals
+## 4. Propel — SNAP LLM Evaluation Framework
 
-**Source**: Propel / Dave Guarino — SNAP LLM Evals work applied to Colorado context
-- Referenced in Propel's public documentation on state-level benefits AI evaluation
+**Source**: Dave Guarino / Propel — three-part blog series on building a public SNAP eval
+- [Part 1: Domain expert testing and methodology](https://www.propel.app/insights/building-a-snap-llm-eval-part-1/)
+- [Part 2: Testing and automation](https://www.propel.app/insights/building-a-snap-llm-eval-part-2-testing-and-automation/)
+- [Part 3: Testing nuanced capabilities](https://www.propel.app/insights/building-a-snap-llm-eval-part-3-testing-nuanced-capabilities/)
+- [Open-source 25-question eval dataset](https://github.com/nicepropel/snap-eval) (Google Sheets + GitHub)
 
-**What they did**: Applied expert-first evaluation methodology to a state benefits chatbot serving Colorado residents. Policy experts defined jurisdiction-specific test cases (Colorado SNAP rules, state-specific income thresholds, local application processes) and used eval tooling to assess chatbot accuracy before deployment.
+**What they built**: A public, open-source LLM evaluation for SNAP (food stamps) — the first domain-specific eval designed to test whether frontier models can reliably answer benefits questions. Propel builds the leading mobile app for EBT balance checking (used by millions of SNAP recipients), so they have direct access to the questions real users actually ask.
 
-**Key approach**:
-- Test cases reflected Colorado-specific policy (not generic federal rules).
-- Severity grading tied to real-world harm (incorrect eligibility determination = critical).
-- Results used as a procurement/deployment gate.
-- Four-dimension framework: factual accuracy, contextual understanding, practical navigation, communication quality.
+**Methodology**:
+- **Phase 1 — Domain expert testing**: A SNAP specialist extensively used multiple AI models and documented observations. Rather than jumping to automated tests, they prioritized capturing nuanced insights about where models fail. They built "Hydra," a Slack bot for rapid side-by-side model comparison.
+- **Phase 2 — Automated testing with Promptfoo**: Selected Promptfoo specifically because it makes evals "more accessible to experts in topics that aren't software engineers." Test cases are managed in Google Sheets and run directly from there. Grading uses both keyword matching (for factual questions like "maximum benefit is $292") and LLM-as-judge (for nuanced criteria like "plain, accessible language at a 5th grade reading level").
+- **Phase 3 — Nuanced capability testing**: Moved beyond factual knowledge to test four capability dimensions: factual knowledge, contextual understanding (state variation), practical navigation (applying, renewing, handling denials), and communication style (accessibility, actionable guidance).
+
+**Key distinction — benchmarking vs. product development tests**:
+- **Benchmarking tests** (consensus-based): Tolerant of model refusals when incorrect answers cause harm. Used to compare models.
+- **Product development tests** (goal-specific): Penalize refusals more heavily in client-facing contexts. Used to evaluate deployment readiness.
+
+**Results** (25-question eval, selected models):
+
+| Model | Score |
+|---|---|
+| Gemini 2.5 Pro | 80% |
+| Gemini 2.0 Flash | 80% |
+| OpenAI o1 | 76% |
+| Claude Sonnet 3.7 | 68% |
+| GPT-4o Mini | 48% |
+
+**Key findings**:
+- Many models provide outdated SNAP income limits due to knowledge cutoffs — a strong argument for RAG in production.
+- State-specific edge cases (asset limits vary by state; drug felony eligibility varies by state) challenged multiple models. The asset limit question is illustrative: the "correct" answer is $2,750 or $4,250, but the *useful* answer emphasizes that most applicants face no asset limit because only 13 states still enforce them.
+- Models that excelled at factual knowledge sometimes struggled with navigation assistance — suggesting potential for routing questions to specialized models.
 
 **What we learned for Evergreen**:
-- State-level variation is the norm, not the exception — evals must encode jurisdictional context.
-- Expert-first, but the "experts" include people who administer programs and serve the public daily.
-- Eval reports as procurement artifacts — leadership needs a clear pass/fail signal with severity context.
-- The four-dimension framework is a practical methodology for non-technical teams.
+- **Promptfoo + Google Sheets is a proven eval stack for non-engineers** — Propel validated the exact pipeline Evergreen uses.
+- **The four-dimension framework** (factual knowledge, contextual understanding, practical navigation, communication style) is a practical methodology for non-technical teams. This directly informs our five lead metrics.
+- **State-level variation is the norm**, not the exception — evals must encode jurisdictional context.
+- **Benchmarking vs. product tests is a useful distinction** — the same test case can serve different purposes depending on grading tolerance.
+- **Open-sourcing evals invites domain expert feedback** — Propel released their 25-question dataset specifically to get corrections and extensions from SNAP experts.
 
 ---
 
-## 5. UbuntuGuard — Culturally-Grounded Policy Benchmarks for African Languages
+## 5. Colorado CDLE / Stanford-Yale — Evaluating GenAI in Benefits Adjudication
+
+**Source**: Magesh, Martin, Surani, Perez, Rodolfa, Ho (Stanford RegLab / Yale Tobin Center, January 2026)
+- [Full paper (PDF)](https://tobin.yale.edu/sites/default/files/2026-01/CDLE_AI_Jan13_2026.pdf)
+- Title: "Evaluating Generative AI in Benefits Administration: A Demonstration Project"
+
+**What they did**: A collaboration between the US Department of Labor, the Colorado Department of Labor and Employment (CDLE), and Stanford/Yale researchers to co-design and rigorously evaluate a GenAI system for Unemployment Insurance (UI) adjudication. This is not a chatbot eval — it's an AI-assisted decision-making tool evaluated via a randomized controlled trial (RCT).
+
+**The system**: A fine-tuned LLM (LLaMA-3 8B) trained on historical claims data to assist UI adjudicators with "fact finding" — the back-and-forth process of asking claimants and employers follow-up questions to determine benefit eligibility. Two components:
+1. A **topic suggestion model** that identifies relevant follow-up areas from initial claim materials
+2. A **question drafting model** that generates potential follow-up questions based on selected topics
+
+**Evaluation methodology**:
+- First comprehensive **sandbox environment** for AI evaluation in benefits administration — access to 3.3 million job separation issues with 486 million individual fact finding elements
+- **Co-designed quality benchmarks** with adjudicators — expert-elicited scoring criteria, not generic metrics
+- **Randomized controlled trial** comparing three conditions: AI-generated fact finding alone, adjudicator + AI, and adjudicator alone
+- Quality assessed by CDLE's existing QA team using their established standards
+
+**Key findings — a critical divergence**:
+1. **Subjective satisfaction was high**: All 8 adjudicators rated the tool very or somewhat useful; 63% rated question quality as very good or excellent; 75% said they would use it regularly
+2. **But no measurable improvement in quality or efficiency**: AI-assisted adjudicators showed statistically insignificant time savings (4 seconds, p=0.8) and no improvement in average quality scores vs. working alone
+3. **AI alone outperformed historical baselines**: The model's unassisted output significantly exceeded the quality of historical questionnaires
+4. **Potential to reduce variance**: The system may help less experienced adjudicators improve quality, reducing inter-adjudicator variability — addressing a core due process concern ("benefits roulette")
+5. **Editing offset time savings**: Adjudicators spent considerable time editing AI-generated questions, neutralizing anticipated efficiency gains
+
+**What we learned for Evergreen**:
+- **Rigorous, context-situated evaluation is essential** — conventional benchmarks and vendor demos (which focused "almost exclusively on processing speed") fail to predict real-world effectiveness. This is the strongest academic evidence for why tools like Evergreen exist.
+- **Subjective satisfaction ≠ objective improvement** — adjudicators loved the tool but it didn't measurably help them. This challenges the assumption that user satisfaction is a reliable proxy for system quality, and underscores the need for structured, outcome-based evaluation.
+- **Co-designed quality criteria matter** — the researchers couldn't use generic metrics; they had to elicit expert judgment from adjudicators about what "good" looks like. This validates Evergreen's approach of having domain experts define test criteria.
+- **Pre-deployment sandboxes are necessary but not sufficient** — the Hawthorne effect (participants performed better just by being observed) means sandbox results may not transfer to production. Complements our pre-deployment focus with an argument for ongoing evaluation.
+- **Incorrect denials impose severe costs on vulnerable populations** — the paper explicitly frames harm in terms of real-world consequences, validating our severity-based grading approach.
+
+---
+
+## 6. UbuntuGuard — Culturally-Grounded Policy Benchmarks for African Languages
 
 **Source**: Abdullahi, Mgonzo, Oduwole, Okewunmi, Owodunni, Singh, Eickhoff (2025)
 - [arXiv paper: "UbuntuGuard: A Culturally-Grounded Policy Benchmark for Equitable AI Safety in African Languages"](https://arxiv.org/abs/2601.12696)
@@ -161,7 +217,7 @@ This document catalogs the research, prior art, and real-world examples that inf
 
 ---
 
-## 6. Cross-Cutting Themes
+## 7. Cross-Cutting Themes
 
 ### Where similar organizations have been successful
 
@@ -170,19 +226,22 @@ This document catalogs the research, prior art, and real-world examples that inf
 | GovTech AI Guardian | Singapore | Policy-Playbook-Product model; model-agnostic SaaS | ~1/3 of government agencies |
 | Samiksha / Karya | India | Community-driven benchmark creation; paid workers | Expanding to Brazil, Uganda, Sri Lanka |
 | UK AISI Inspect | UK | Open-source, composable framework; lab adoption | 50+ contributors; used by Anthropic, DeepMind |
+| Propel | USA | Promptfoo + Google Sheets eval for SNAP; open-source dataset | 25 test cases; 7 models benchmarked |
+| CDLE / Stanford-Yale | USA (CO) | Co-designed GenAI for UI adjudication; RCT evaluation | 3.3M claims; 8 adjudicators; sandbox + trial |
 | UbuntuGuard | Africa (multi) | Culturally-grounded safety benchmarks; expert-authored adversarial queries | 155 domain experts, 13 models, 3 test variants |
-| CDLE / Propel | USA (CO) | Expert-first, jurisdiction-specific evals | State-level deployment gate |
 
 ### Converging insights across all research
 
 1. **The technical capacity gap is the core problem.** Every organization identified the same challenge: governance frameworks exist, but operationalizing them requires tooling that bridges policy intent and technical execution.
 
-2. **Who defines "correct" matters.** Moving from expert-only → expert + community produces better, more grounded evaluations. Singapore co-designs with officers. Samiksha co-designs with CSOs and community members. Propel co-designs with policy SMEs. Evergreen should include all three: policy experts, program managers, and members of the public.
+2. **Who defines "correct" matters.** Moving from expert-only → expert + community produces better, more grounded evaluations. Singapore co-designs with officers. Samiksha co-designs with CSOs and community members. Propel co-designs with SNAP policy specialists. The CDLE study co-designed quality benchmarks with adjudicators. Evergreen should include all of these: policy experts, program managers, front-line workers, and members of the public.
 
 3. **Model-agnostic is non-negotiable.** Singapore, UK AISI, and Propel all converged on this — agencies use different models, and the eval layer must sit above the model layer.
 
-4. **Testing is not a one-time gate.** Singapore's Sentinel (runtime guardrails) and Inspect's continuous eval approach both point toward ongoing monitoring, not just pre-deployment checks.
+4. **Subjective satisfaction ≠ objective quality.** The CDLE RCT found that adjudicators loved the AI tool but it didn't measurably improve their work. Vendor demos focused "almost exclusively on processing speed." This is the strongest argument for structured, outcome-based evaluation — which is what Evergreen provides.
 
-5. **Composition and shareability drive adoption.** Inspect's package-based solvers/scorers and Singapore's multi-tenant SaaS both succeed because components can be reused across agencies and contexts.
+5. **Testing is not a one-time gate.** Singapore's Sentinel (runtime guardrails), Inspect's continuous eval approach, and the CDLE finding that sandbox results may not transfer to production all point toward ongoing monitoring, not just pre-deployment checks.
 
-6. **Local context is a first-class dimension.** Samiksha (India), CDLE (Colorado), and Singapore (agency-specific risk profiles) all validate that evaluations must be grounded in specific jurisdictions, cultures, and user populations.
+6. **Composition and shareability drive adoption.** Inspect's package-based solvers/scorers, Singapore's multi-tenant SaaS, and Propel's open-source eval dataset all succeed because components can be reused across agencies and contexts.
+
+7. **Local context is a first-class dimension.** Samiksha (India), Propel (state-specific SNAP rules), CDLE (Colorado UI adjudication), and UbuntuGuard (African languages) all validate that evaluations must be grounded in specific jurisdictions, cultures, and user populations.
