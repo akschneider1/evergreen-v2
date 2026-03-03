@@ -1,75 +1,40 @@
 # Evergreen
 
-**Pre-deployment AI evaluation for the public sector — built for the people closest to the problem.**
+**Pre-deployment AI evaluation for government — by the people closest to the problem.**
 
 ---
 
-## The Problem
+You're deploying an AI tool — a chatbot, a benefits navigator, a case assistant — and you need to know it gives the right answers before real people use it. Evergreen lets you check. You define what a good response looks like; Evergreen tests whether your AI delivers it. The result is a plain-language report with a deployment recommendation you can share with leadership or procurement as evidence of due diligence.
 
-Public sector agencies are deploying AI systems — chatbots, case assistants, benefits navigators — that directly affect people's lives. But a **technical capacity gap** exists between AI governance policy and operational practice.
+No coding required.
 
-Agencies have frameworks and principles. What they lack is practical, accessible tooling to translate those into day-to-day testing and assurance. The result:
+---
 
-- **No uniform standard for AI testing** — vendors offer conflicting recommendations, and there's no clear "bar" to cross
-- **Eval tooling requires engineering expertise** that policy teams don't have, bottlenecking governance on scarce technical staff
-- **Generic benchmarks miss domain context** — a model can score well on general tests but fail on jurisdiction-specific rules (a Colorado tax chatbot needs Colorado-specific evals, not generic ones)
-- **No shared methodology** for policy experts, program managers, *and members of the public* to participate in defining what "correct" looks like and what constitutes real-world harm
+## How it works
 
-This gap — what Benjamin Goh (GovTech Singapore) calls the divide between policy intent and product execution — means that governance exists on paper but can't be operationalized in practice.
-
-## The Solution
-
-Evergreen is a lean, open-source evaluation pipeline that lets **non-technical domain experts** create, run, and interpret AI evaluations — without writing code.
-
-The key insight: **what a "correct" answer looks like should be defined by the people closest to the problem** — policy experts who know the rules, program managers who know the operational context, and members of the public who know how questions are actually asked and what answers actually help.
-
-### Who It's For
-
-| Persona | What they do | What they need |
-|---------|-------------|----------------|
-| **Policy SME** (primary) | Builds test suites in the Builder or Google Sheets; reviews results | No coding required; clear pass/fail with severity context |
-| **Program Manager / Procurement Officer** | Reads the summary report, shares with leadership | Evidence that a vendor's AI meets standards before sign-off |
-| **Technical Implementer** (secondary) | Runs evals in CI/CD, tunes system prompts | CLI integration, detailed failure debugging |
-
-### The 45-Minute Workflow
-
-| Step | Who | Time |
-|------|-----|------|
-| **Select or build** a test suite — pick a pre-built template from the Library, customize it in the Builder, or bring your own Google Sheet | Policy SME | 5–30 min |
-| **Run** `npx evergreen app` and click Run Evaluation | Technical colleague | 5 min |
-| **Read** the HTML report | Policy SME | 10 min |
-| **Decide** whether the system is ready to deploy | Decision-maker | — |
-
-The report is a concrete artifact that can be shared with leadership, procurement, or oversight bodies as evidence of due diligence.
+1. **Choose or build a test suite** — pick a pre-built template, customize it in the Builder, or bring your own Google Sheet
+2. **Run the evaluation** — Evergreen sends every test question to your AI and grades each response automatically, across safety, accuracy, ease of use, effectiveness, and tone
+3. **Read the report** — a deployment recommendation with plain-language results showing what passed and what failed
 
 ---
 
 ## Quick Start
 
-### Prerequisites
+**Prerequisites:** Node.js 20+ and an API key for the AI you're testing (e.g. `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`)
 
-- Node.js 20+
-- An API key for the LLM you're testing (e.g., `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`)
-
-### Option A: Web App (recommended for non-technical users)
+### Option A: Web app (recommended)
 
 ```bash
-export OPENAI_API_KEY=sk-your-key-here
+export ANTHROPIC_API_KEY=your-key-here
 npx evergreen app
 ```
 
-Open **http://localhost:4000**. From the landing page you can:
+Open **http://localhost:4000**. From there you can browse the template library, build or customize test cases, and run an evaluation — all in the browser.
 
-- **Pick a pre-built template** — six built-in test suites (25 tests each) covering common public-sector AI use cases. Click "Run now" to evaluate immediately, or "Open in Builder" to review and customize test cases first.
-- **Build your own** — use the Test Suite Builder at `/builder` to create test cases from scratch without touching a spreadsheet.
-- **Bring a Google Sheet** — if you've already written test cases in a Google Sheet (5 columns: `Question`, `What to Check`, `Context`, `Metric`, `Severity`), paste the URL on the run form.
-
-Click **Run Evaluation**. A step-by-step progress indicator tracks the pipeline. When complete, click the link to open the report.
-
-### Option B: CLI (for scripting and CI/CD)
+### Option B: CLI
 
 ```bash
-export OPENAI_API_KEY=sk-your-key-here
+export ANTHROPIC_API_KEY=your-key-here
 ```
 
 Create `evergreen.yaml`:
@@ -78,19 +43,30 @@ Create `evergreen.yaml`:
 description: "My AI Chatbot Eval"
 sheetId: "YOUR_GOOGLE_SHEET_ID"
 providers:
-  - id: openai:gpt-4o
+  - id: anthropic:messages:claude-sonnet-4-20250514
     systemPrompt: |
       You are a helpful assistant.
 ```
 
-Run the evaluation and view the report:
+Run and view:
 
 ```bash
 npx evergreen run
 npx evergreen serve
 ```
 
-The report shows pass/fail for every test case, highlights critical failures, and gives a deployment recommendation across four tabs — Summary (leadership), Analysis (operations), Details (technical), and Recommendations (what to do next).
+---
+
+## Built-in test suites
+
+Six ready-to-use suites, 25 test cases each:
+
+- SNAP / Food Assistance
+- Where's My Refund
+- Benefits Eligibility Checker
+- Agent Assist
+- Call Center Summaries
+- Permitting Assistant
 
 ---
 
@@ -101,116 +77,50 @@ Google Sheet  →  Evergreen          →  Promptfoo        →  LLM Under Test 
 (test cases)     CLI or Web App        (eval engine)       (OpenAI, etc.)     (4-tab HTML)
 ```
 
-### Promptfoo as the Eval Engine
+Evergreen wraps **[Promptfoo](https://github.com/promptfoo/promptfoo)** — an open-source eval runner — with a Google Sheets connector (no config files required for non-technical users), a web-based test suite builder, and a public-sector-specific HTML report with severity grading, a readiness badge, and four audience tabs: Summary, Analysis, Details, and Recommendations.
 
-**[Promptfoo](https://github.com/promptfoo/promptfoo)** is a direct dependency — we use it, not rebuild it. Promptfoo is an open-source eval runner with a mature assertion engine, YAML config format, and multi-provider support. Evergreen wraps it with three layers:
-
-**What Promptfoo provides (we don't rebuild):**
-
-| Capability | How Evergreen Uses It |
-|---|---|
-| Eval runner core | `npx promptfoo eval` executes test cases against providers |
-| Assertion engine | Text matching, pattern matching, and LLM-as-judge grading — mapped automatically from the 5 lead metrics |
-| YAML config format | Evergreen generates the YAML from Google Sheets data |
-| Provider integrations | OpenAI, Anthropic, and others — configured in YAML |
-| JSON output | Structured results that feed Evergreen's report generator |
-
-**What Promptfoo does NOT provide (Evergreen adds):**
-
-| Gap | Evergreen Solution |
-|---|---|
-| No Google Sheets input | Sheets connector fetches, parses, and generates YAML — SMEs never touch config files |
-| Generic HTML viewer | Custom HTML report with severity, readiness badge, and critical failure highlighting |
-| No persona-based views | Four tabs: Summary (Policy/Leadership), Analysis (Operations), Details (Technical), Recommendations (next steps) |
-| No methodology guidance | Documentation and methodology guides written for non-technical users |
-| No domain examples | Colorado Tax Policy walkthrough with 10 sample test cases |
-
-### What's in the Box
+**Source layout:**
 
 ```
 src/
-├── index.ts          # CLI: evergreen run / serve / app
-├── builder.ts        # BuilderTestCase ↔ SheetRow conversion, CSV export
-├── sheets.ts         # Fetch Google Sheet → parse rows
-├── config.ts         # Generate Promptfoo YAML from sheet data
-├── runner.ts         # Invoke Promptfoo, capture JSON (sync + async)
-├── mapper.ts         # Promptfoo JSON → report input
-├── types.ts          # Shared types + Promptfoo output normalizer
-├── presets/          # Built-in test suites (6 presets + blank)
+├── index.ts          # CLI entry point (evergreen run / serve / app)
+├── sheets.ts         # Fetch and parse Google Sheet
+├── config.ts         # Generate Promptfoo config from sheet data
+├── runner.ts         # Invoke Promptfoo, capture results
+├── mapper.ts         # Map results to report format
+├── builder.ts        # Builder ↔ SheetRow conversion, CSV export
+├── types.ts          # Shared types
+├── presets/          # 6 presets + blank + 2 demo suites
 ├── report/
-│   └── generator.ts  # Render HTML report (4 tabs: Summary, Analysis, Details, Recommendations)
+│   └── generator.ts  # HTML report (4 tabs)
 └── web/
-    ├── server.ts     # Express app: landing, builder, form → pipeline → report
-    ├── landing.html  # Landing page — hero, how it works, template cards
-    ├── builder.html  # Test Suite Builder — browse templates, create/edit/export
-    └── input.html    # Eval runner form
+    ├── server.ts     # Express web app
+    ├── landing.html  # Home page
+    ├── builder.html  # Test Suite Builder
+    └── input.html    # Run form
 ```
 
 ---
 
-## Design Principles
+## Principles
 
-These principles are drawn from prior art by GovTech Singapore, Samiksha/Karya, Propel, UK AISI, and UbuntuGuard. See [RESEARCH.md](./RESEARCH.md) for detailed citations.
-
-### Community-Informed, Expert-Defined
-
-What a "correct" answer looks like is informed by the people closest to the problem: **policy experts** who know the rules, **program managers** who know the operational context, and **members of the public** who know how questions are actually asked and what answers actually help. The tool encodes their collective judgment; it does not replace it.
-
-### Co-Design Over Hand-Off
-
-Policy SMEs and community members are co-designers, not end-consumers of engineering output. The tool's primary interface is Google Sheets — a surface they already know — not a config file or CLI.
-
-### Context Is a First-Class Dimension
-
-The same question can have different correct answers depending on jurisdiction, role, or scenario. Test cases encode this context explicitly. Generic benchmarks are actively misleading — they don't just miss context, they give false confidence.
-
-### Harm-Aware Prioritization
-
-Not all errors are equal. The system helps users categorize failures by real-world impact (e.g., incorrectly denying an eligible applicant is worse than being slightly verbose). Severity reflects consequences, not just frequency.
-
-### Application- and Model-Agnostic
-
-The pipeline works across different AI systems, LLM providers, and agency tech stacks. No vendor lock-in, no assumptions about infrastructure.
-
-### Lean and Open
-
-Minimum viable surface area. No unnecessary abstractions, feature flags, or configurability. Apache 2.0 licensed. Everything needed to run ships in this repo.
+- **Domain-specific** — test cases are written by people who know the rules and the users; generic benchmarks don't capture jurisdictional context and give false confidence
+- **Harm-aware** — failures are graded by real-world severity; an incorrect denial of benefits is not the same as a verbose answer
+- **Accessible by design** — the primary interface is the web builder, not a config file; no coding required to create, run, or read an evaluation
 
 ---
 
 ## Documentation
 
-| Guide | For | |
-|-------|-----|-|
-| [What Is This?](./docs/01-what-is-this.md) | Everyone | What Evergreen does and why it exists |
-| [Quickstart](./docs/02-quickstart.md) | Policy SME + Tech | Step-by-step setup |
-| [Writing Test Cases](./docs/03-writing-test-cases.md) | Policy SME | How to write effective evaluations |
-| [Understanding Results](./docs/04-understanding-results.md) | Policy SME | How to read the report and make decisions |
-| [Evaluation Design](./docs/05-evaluation-design.md) | Policy SME | The five lead metrics framework |
-| [Technical Reference](./docs/06-technical-reference.md) | Technical implementer | Config options, CLI flags, extending |
-| [Roadmap: Human Evaluation](./docs/08-roadmap-human-evaluation.md) | Everyone | Adding human review, moderated testing, and public participation |
-
----
-
-## Examples
-
-- [Colorado Tax Policy Chatbot](./examples/co-tax-policy/) — evaluating a state tax chatbot with 10 test cases across all five lead metrics
-
----
-
-## Research & Prior Art
-
-Evergreen's design is informed by real-world implementations across five countries. Each shaped specific decisions in the tool.
-
-| Organization | What They Built | What We Learned |
-|---|---|---|
-| [GovTech Singapore](https://medium.com/aiguardian-govtech/how-we-built-the-ai-guardian-team-at-govtech-singapore-3758cf21004d) | Litmus (testing) + Sentinel (guardrails) | The "technical capacity gap" is the core problem; co-design with non-technical officers works at scale (~1/3 of agencies adopted) |
-| [Samiksha / Karya](https://evals.karya.in/samiksha/) | Community-driven eval pipeline | End users must co-define "correct"; community-informed evals catch failures that expert-only approaches miss |
-| [UK AISI Inspect](https://inspect.aisi.org.uk/) | Open-source eval framework | Dataset → Task → Solver → Scorer composability; model-agnostic is non-negotiable; adopted by major labs |
-| [UbuntuGuard](https://arxiv.org/abs/2601.12696) | African-language safety benchmarks | Generic benchmarks overestimate safety; cultural and jurisdictional context is not optional |
-| [CDLE / Propel](./RESEARCH.md#4-colorado-department-of-labor-and-employment-cdle--benefits-chatbot-evals) | State-level benefits chatbot evals | Jurisdiction-specific test cases; four-dimension eval framework; eval reports as procurement gates |
-
-See [RESEARCH.md](./RESEARCH.md) for detailed citations, methodology notes, and where each reference informs our approach.
+| Guide | |
+|-------|-|
+| [What Is This?](./docs/01-what-is-this.md) | What Evergreen does and why it exists |
+| [Quickstart](./docs/02-quickstart.md) | Step-by-step setup |
+| [Writing Test Cases](./docs/03-writing-test-cases.md) | How to write effective evaluations |
+| [Understanding Results](./docs/04-understanding-results.md) | How to read the report and make decisions |
+| [Evaluation Design](./docs/05-evaluation-design.md) | The five metrics framework |
+| [Technical Reference](./docs/06-technical-reference.md) | CLI, config options, and extending |
+| [Roadmap: Human Evaluation](./docs/08-roadmap-human-evaluation.md) | Adding human review and public participation |
 
 ---
 
