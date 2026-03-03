@@ -799,6 +799,7 @@ function renderHtml(data: ReportData): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(data.title)} — Evergreen Eval Report</title>
 <link rel="stylesheet" href="/assets/css/uswds.min.css">
+<link rel="stylesheet" href="/assets/css/evergreen.css">
 <style>
 /* ── Tokens ── */
 :root {
@@ -1380,17 +1381,7 @@ table.data-table, table.detail-table {
 .exp-reason.result-pass { background: var(--pass-bg); color: #166534; font-weight: 500; }
 .exp-reason.result-fail { background: var(--fail-bg); color: #7f1d1d; font-weight: 500; }
 
-/* ── Footer ── */
-.methodology {
-  padding: 1.5rem 0 2.5rem;
-  border-top: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--text-3);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 24px;
-}
-.methodology span strong { color: var(--text-2); font-weight: 600; }
+/* .methodology replaced by usa-footer--slim */
 .pass   { color: var(--pass); }
 .fail   { color: var(--fail); }
 .neutral{ color: var(--neutral); }
@@ -1480,7 +1471,7 @@ table.data-table, table.detail-table {
   .expanded-detail { display: block !important; }
   .chevron { display: none; }
   .sev-link { display: none; }
-  .report-nav { display: none; }
+  .usa-breadcrumb { display: none; }
   .rec-technical[open] .rec-tech-content { display: block; }
   .rec-tech-toggle { color: var(--text); }
 }
@@ -1490,7 +1481,7 @@ table.data-table, table.detail-table {
 
 <!-- Public Infrastructure Banner -->
 <section class="usa-banner" aria-label="Evergreen — digital public infrastructure">
-  <div class="usa-banner__header" style="padding-top:0.5rem;padding-bottom:0.5rem;">
+  <div class="usa-banner__header">
     <div class="usa-banner__inner">
       <div class="grid-col-auto">
         <img class="usa-banner__header-flag" src="/assets/img/us_flag_small.png" alt="U.S. flag">
@@ -1503,10 +1494,18 @@ table.data-table, table.detail-table {
 </section>
 
 <!-- ── Report Nav ── -->
-<nav class="report-nav" style="background:#f8f9fa; border-bottom:1px solid #dee2e6; padding:0.5rem 1.5rem; font-size:0.875rem;">
-  <a href="/builder" style="color:#495057; text-decoration:none;">&larr; Back to Builder</a>
-  <span style="margin:0 0.5rem; color:#adb5bd;">&middot;</span>
-  <a href="/run" style="color:#495057; text-decoration:none;">Run another evaluation</a>
+<nav class="usa-breadcrumb" aria-label="Breadcrumbs">
+  <ol class="usa-breadcrumb__list">
+    <li class="usa-breadcrumb__list-item">
+      <a class="usa-breadcrumb__link" href="/">Home</a>
+    </li>
+    <li class="usa-breadcrumb__list-item">
+      <a class="usa-breadcrumb__link" href="/builder">Builder</a>
+    </li>
+    <li class="usa-breadcrumb__list-item usa-current" aria-current="page">
+      <span>Evaluation Report</span>
+    </li>
+  </ol>
 </nav>
 
 <!-- ── Header ── -->
@@ -1664,13 +1663,18 @@ table.data-table, table.detail-table {
 </section>
 
 <!-- ── Footer ── -->
-<footer class="methodology">
-  <div class="grid-container">
-    <span><strong>Framework:</strong> Evergreen 4-Dimension Eval</span>
-    <span><strong>Test Source:</strong> ${esc(data.testSource)}</span>
-    <span><strong>Metrics:</strong> ${esc(data.gradingMethods)}</span>
-    <span><strong>Generated:</strong> ${esc(data.generatedAt)}</span>
-    ${data.systemPrompt ? `<span><strong>System Prompt:</strong> ${esc(data.systemPrompt.length > 120 ? data.systemPrompt.slice(0, 120) + '…' : data.systemPrompt)}</span>` : ''}
+<footer class="usa-footer usa-footer--slim">
+  <div class="usa-footer__primary-section"></div>
+  <div class="usa-footer__secondary-section">
+    <div class="grid-container">
+      <p class="font-body-xs text-base-dark">
+        <strong>Framework:</strong> Evergreen 4-Dimension Eval &middot;
+        <strong>Test Source:</strong> ${esc(data.testSource)} &middot;
+        <strong>Metrics:</strong> ${esc(data.gradingMethods)} &middot;
+        <strong>Generated:</strong> ${esc(data.generatedAt)}
+        ${data.systemPrompt ? ` &middot; <strong>System Prompt:</strong> ${esc(data.systemPrompt.length > 120 ? data.systemPrompt.slice(0, 120) + '\u2026' : data.systemPrompt)}` : ''}
+      </p>
+    </div>
   </div>
 </footer>
 
