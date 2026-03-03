@@ -3,7 +3,7 @@
 # To run:
 #   1. Copy the Google Sheet template and fill in test cases
 #   2. Share the sheet as "Anyone with the link can view"
-#   3. Set your API key: export OPENAI_API_KEY=sk-...
+#   3. Set your API key: export OPENAI_API_KEY=sk-... (or ANTHROPIC_API_KEY)
 #   4. Run: npx evergreen run -c examples/co-tax-policy/evergreen.yaml
 
 description: "CO Tax Policy Chatbot — Pre-Deployment Eval"

@@ -3,7 +3,7 @@
 #
 # Quick start:
 #   1. Fill in sheetId (the ID from your Google Sheet URL)
-#   2. Set OPENAI_API_KEY in your environment
+#   2. Set your API key: export ANTHROPIC_API_KEY=... (or OPENAI_API_KEY)
 #   3. Run: npx evergreen run
 
 description: "My AI Chatbot — Pre-Deployment Eval"
