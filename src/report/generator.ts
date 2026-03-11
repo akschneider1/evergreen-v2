@@ -557,7 +557,7 @@ function deriveRecommendations(data: ReportData): Recommendation[] {
 
 // ---------- HTML Rendering ----------
 
-function renderHtml(data: ReportData): string {
+function renderHtml(data: ReportData, jobId?: string): string {
   // ── Summary tab ──────────────────────────────────────────────────────────
 
   const nextStepsHtml = data.nextSteps.map(s => `<li>${s}</li>`).join('');
@@ -738,6 +738,13 @@ function renderHtml(data: ReportData): string {
                 <span class="exp-expected-value">${esc(tc.expected)}</span>
               </div>
               ${expandedContent}
+              ${jobId ? `
+              <div class="ev-feedback" id="fb-${tc.number}">
+                <span class="ev-feedback-label">Was this graded correctly?</span>
+                <button class="ev-thumb" onclick="submitFeedback(${tc.number}, 1)" aria-label="Yes, correct" title="Correct">&#128077;</button>
+                <button class="ev-thumb" onclick="submitFeedback(${tc.number}, 0)" aria-label="No, incorrect" title="Incorrect">&#128078;</button>
+                <span class="ev-feedback-thanks" id="fb-thanks-${tc.number}"></span>
+              </div>` : ''}
             </div>
           </td>
         </tr>
@@ -1308,6 +1315,28 @@ table.data-table, table.detail-table {
   border-top: 1px solid var(--border);
 }
 .expanded-detail.open { display: block; }
+.ev-feedback {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.ev-feedback-label { font-size: 12px; color: var(--muted); }
+.ev-thumb {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s;
+}
+.ev-thumb:hover { background: #f0f4ff; border-color: #4a90e2; }
+.ev-thumb:disabled { opacity: 0.4; cursor: default; }
+.ev-feedback-thanks { font-size: 12px; color: #2e8540; font-weight: 600; }
 .exp-expected {
   display: flex;
   align-items: baseline;
@@ -1775,6 +1804,33 @@ table.data-table, table.detail-table {
   }
   window.downloadReport = downloadReport;
 
+  ${jobId ? `
+  // ── User feedback (thumbs up / down) ──
+  var REPORT_JOB_ID = '${jobId}';
+  function submitFeedback(testNumber, value) {
+    var area = document.getElementById('fb-' + testNumber);
+    if (!area) return;
+    fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId: REPORT_JOB_ID, testNumber: testNumber, value: value }),
+    })
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function() {
+      area.querySelectorAll('.ev-thumb').forEach(function(b) {
+        b.disabled = true;
+      });
+      var thanks = document.getElementById('fb-thanks-' + testNumber);
+      if (thanks) thanks.textContent = value === 1 ? 'Marked correct \u2713' : 'Marked incorrect \u2713';
+    })
+    .catch(function() {
+      var thanks = document.getElementById('fb-thanks-' + testNumber);
+      if (thanks) thanks.textContent = 'Could not save \u2014 feedback window may have expired.';
+    });
+  }
+  window.submitFeedback = submitFeedback;
+  ` : ''}
+
 })();
 </script>
 
@@ -1813,9 +1869,9 @@ function esc(s: string | undefined): string {
 
 // ---------- Public API ----------
 
-export function generateReport(input: EvalResults): string {
+export function generateReport(input: EvalResults, jobId?: string): string {
   const data = deriveReportData(input);
-  return renderHtml(data);
+  return renderHtml(data, jobId);
 }
 
 /**

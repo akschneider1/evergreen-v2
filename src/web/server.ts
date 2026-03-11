@@ -37,6 +37,7 @@ interface Job {
   reportHtml?: string;
   createdAt: number;
   traceUrl?: string;
+  generationIds?: string[];  // index = testNumber - 1, populated when Langfuse tracing is on
 }
 
 const jobs = new Map<string, Job>();
@@ -173,23 +174,25 @@ async function runPipeline(
     }
     const passCount = pfOutput.results.filter(r => r.success).length;
 
-    // Log one generation per test case so Langfuse shows full prompts + responses
+    // Log one generation per test case — capture IDs so user-feedback scores can attach later
     if (s3) {
+      const generationIds: string[] = [];
       pfOutput.results.forEach((r, i) => {
-        s3.generation({
-          name: `test-${i + 1}`,
-          model: r.provider?.id ?? body.provider,
-          input: r.prompt?.raw ?? '',
+        const metric   = rows[i]?.metric   ?? '';
+        const severity = rows[i]?.severity ?? '';
+        const gen = s3.generation({
+          name:   `test-${i + 1}`,
+          model:  r.provider?.id ?? body.provider,
+          input:  r.prompt?.raw ?? '',
           output: r.response?.output ?? '',
-          metadata: {
-            metric: r.vars?.metric ?? rows[i]?.metric ?? '',
-            severity: r.vars?.severity ?? rows[i]?.severity ?? '',
-            passed: r.success,
-            score: r.score,
-            gradingReason: r.gradingResult?.reason ?? '',
-          },
+          metadata: { metric, severity, gradingReason: r.gradingResult?.reason ?? '' },
         });
+        gen.score({ name: 'pass-fail',  value: r.success ? 1 : 0, dataType: 'BOOLEAN'     });
+        gen.score({ name: 'metric',     value: metric,              dataType: 'CATEGORICAL' });
+        gen.score({ name: 'severity',   value: severity,            dataType: 'CATEGORICAL' });
+        generationIds.push(gen.id);
       });
+      job.generationIds = generationIds;
     }
 
     s3?.end({ output: { passed: passCount, total: pfOutput.results.length } });
@@ -202,7 +205,7 @@ async function runPipeline(
     evalResults.evaluatorName = body.evaluatorName;
     evalResults.evaluationReason = body.evaluationReason;
     evalResults.presetId = body.presetId;
-    job.reportHtml = generateReport(evalResults);
+    job.reportHtml = generateReport(evalResults, job.generationIds ? jobId : undefined);
     const totalTests = evalResults.testCases.length;
     const passedTests = evalResults.testCases.filter(tc => tc.results.every(r => r.passed)).length;
     s4?.end({ output: { passedTests, totalTests } });
@@ -317,6 +320,25 @@ export function createApp(): express.Application {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="evergreen-test-cases.csv"');
     res.send(csv);
+  });
+
+  // User feedback — attach a score to a specific generation in Langfuse
+  app.post('/api/feedback', async (req, res) => {
+    const { jobId, testNumber, value } = req.body ?? {};
+    if (typeof jobId !== 'string' || typeof testNumber !== 'number' || (value !== 1 && value !== 0)) {
+      res.status(400).json({ error: 'Invalid request.' });
+      return;
+    }
+    const job = jobs.get(jobId);
+    const observationId = job?.generationIds?.[testNumber - 1];
+    if (!observationId || !isLangfuseConfigured()) {
+      res.status(404).json({ error: 'Feedback not available for this report.' });
+      return;
+    }
+    const lf = makeLangfuseClient();
+    lf.score({ traceId: jobId, observationId, name: 'user-feedback', value, dataType: 'BOOLEAN' });
+    await lf.flushAsync();
+    res.json({ ok: true });
   });
 
   // Start eval job
