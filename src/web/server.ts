@@ -172,6 +172,26 @@ async function runPipeline(
       );
     }
     const passCount = pfOutput.results.filter(r => r.success).length;
+
+    // Log one generation per test case so Langfuse shows full prompts + responses
+    if (s3) {
+      pfOutput.results.forEach((r, i) => {
+        s3.generation({
+          name: `test-${i + 1}`,
+          model: r.provider?.id ?? body.provider,
+          input: r.prompt?.raw ?? '',
+          output: r.response?.output ?? '',
+          metadata: {
+            metric: r.vars?.metric ?? rows[i]?.metric ?? '',
+            severity: r.vars?.severity ?? rows[i]?.severity ?? '',
+            passed: r.success,
+            score: r.score,
+            gradingReason: r.gradingResult?.reason ?? '',
+          },
+        });
+      });
+    }
+
     s3?.end({ output: { passed: passCount, total: pfOutput.results.length } });
 
     // Step 4 — Generate report
