@@ -677,7 +677,7 @@ table.data-table, table.detail-table {
   .expanded-detail { display: block !important; }
   .chevron { display: none; }
   .sev-link { display: none; }
-  .usa-breadcrumb { display: none; }
+  .padding-x-4.padding-top-3 { display: none; }
   .rec-technical[open] .rec-tech-content { display: block; }
   .rec-tech-toggle { color: var(--text); }
 }
@@ -700,19 +700,9 @@ table.data-table, table.detail-table {
 </section>
 
 <!-- ── Report Nav ── -->
-<nav class="usa-breadcrumb" aria-label="Breadcrumbs">
-  <ol class="usa-breadcrumb__list">
-    <li class="usa-breadcrumb__list-item">
-      <a class="usa-breadcrumb__link" href="/">Home</a>
-    </li>
-    <li class="usa-breadcrumb__list-item">
-      <a class="usa-breadcrumb__link" href="/builder">Builder</a>
-    </li>
-    <li class="usa-breadcrumb__list-item usa-current" aria-current="page">
-      <span>Evaluation Report</span>
-    </li>
-  </ol>
-</nav>
+<div class="padding-x-4 padding-top-3">
+  <a href="/builder" class="usa-button usa-button--unstyled">← Back to Builder</a>
+</div>
 
 <!-- ── Header ── -->
 <header class="evergreen-hero">
@@ -721,7 +711,7 @@ table.data-table, table.detail-table {
       <div class="hero-titles">
         <h1>CO Tax Policy Chatbot — Test</h1>
         <div class="meta">
-          <span>2026-03-03</span>
+          <span>2026-03-11</span>
           <span>6 test cases</span>
           <span>GPT-4o</span>
           <span>Google Sheets</span>
@@ -1424,7 +1414,7 @@ table.data-table, table.detail-table {
         <strong>Framework:</strong> Evergreen 4-Dimension Eval &middot;
         <strong>Test Source:</strong> Google Sheets &middot;
         <strong>Metrics:</strong> Safety, Accuracy, Ease of Use, Effectiveness, Emotion &middot;
-        <strong>Generated:</strong> 2026-03-03T04:06:51.304Z
+        <strong>Generated:</strong> 2026-03-11T21:24:18.796Z
         
       </p>
     </div>

@@ -179,6 +179,22 @@
         </select>
       </div>
 
+      <!-- Langfuse tracing toggle — shown only if server has keys configured -->
+      <div id="langfuse-section" hidden>
+        <div class="usa-form-group" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #dfe1e2;">
+          <div class="usa-checkbox">
+            <input class="usa-checkbox__input" id="enable-langfuse" name="enableLangfuse" type="checkbox" value="true">
+            <label class="usa-checkbox__label" for="enable-langfuse">
+              Send trace to Langfuse
+              <span class="usa-hint display-block">
+                Records each eval step in your Langfuse project for observability.
+                <a class="usa-link" href="https://us.cloud.langfuse.com" target="_blank" rel="noopener">Open Langfuse ↗</a>
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+
       <button type="submit" class="usa-button margin-top-3" id="run-btn">Run Evaluation</button>
 
     </form>
@@ -330,6 +346,10 @@
       body.aiDescription = document.getElementById('aiDescription').value.trim();
     }
 
+    // Langfuse tracing (optional)
+    var langfuseEl = document.getElementById('enable-langfuse');
+    if (langfuseEl && langfuseEl.checked) body.enableLangfuse = true;
+
     // Eval context (optional)
     var agency = document.getElementById('agencyName').value.trim();
     var evaluator = document.getElementById('evaluatorName').value.trim();
@@ -376,7 +396,7 @@
         }
         if (data.status === 'complete') {
           clearInterval(pollInterval);
-          showSuccess('/report/' + currentJobId);
+          showSuccess('/report/' + currentJobId, data.traceUrl);
         } else if (data.status === 'error') {
           clearInterval(pollInterval);
           showError(data.error || 'Evaluation failed.');
@@ -400,8 +420,32 @@
     if (announceEl) announceEl.textContent = statusEl ? statusEl.textContent : '';
   }
 
-  function showSuccess(reportUrl) {
-    window.location.href = reportUrl;
+  function showSuccess(reportUrl, traceUrl) {
+    var progressSection = document.getElementById('progress-section');
+    var loaderDiv = progressSection.querySelector('.ev-loader');
+
+    // Replace spinner with completion message and action buttons
+    loaderDiv.innerHTML =
+      '<p class="ev-loader-heading" style="color:#2e8540;">Evaluation complete!</p>' +
+      '<div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin-top:1rem;" id="success-buttons"></div>';
+
+    var btnArea = document.getElementById('success-buttons');
+
+    var reportLink = document.createElement('a');
+    reportLink.href = reportUrl;
+    reportLink.className = 'usa-button';
+    reportLink.textContent = 'View Report';
+    btnArea.appendChild(reportLink);
+
+    if (traceUrl) {
+      var traceLink = document.createElement('a');
+      traceLink.href = traceUrl;
+      traceLink.target = '_blank';
+      traceLink.rel = 'noopener';
+      traceLink.className = 'usa-button usa-button--outline';
+      traceLink.textContent = 'View in Langfuse \u2192';
+      btnArea.appendChild(traceLink);
+    }
   }
 
   function showError(msg) {
@@ -432,6 +476,16 @@
     document.getElementById('error-section').style.display   = 'none';
     document.getElementById('progress-section').style.display = 'none';
   }
+
+  // Fetch server capabilities — show Langfuse toggle if keys are configured
+  fetch('/api/capabilities')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.langfuseEnabled) {
+        document.getElementById('langfuse-section').removeAttribute('hidden');
+      }
+    })
+    .catch(function() {}); // silently ignore if endpoint not available
 
   // Handle ?preset= query param — auto-select preset on page load
   (function() {

@@ -26,6 +26,7 @@ import { generateReport } from '../report/generator';
 import { normalizePromptfooOutput, EvergreenConfig, SheetRow } from '../types';
 import { getPreset, getAllPresets } from '../presets/index';
 import { getBuilderCases, builderCasesToCsv, metricDistribution } from '../builder';
+import { isLangfuseConfigured, makeLangfuseClient, getTraceUrl } from '../langfuse';
 
 // ── Job state ────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ interface Job {
   error?: string;
   reportHtml?: string;
   createdAt: number;
+  traceUrl?: string;
 }
 
 const jobs = new Map<string, Job>();
@@ -88,10 +90,24 @@ async function runPipeline(
   jobId: string,
   body: {
     description: string; sheetUrl?: string; provider: string; aiDescription?: string; presetId?: string;
-    agencyName?: string; evaluatorName?: string; evaluationReason?: string;
+    agencyName?: string; evaluatorName?: string; evaluationReason?: string; enableLangfuse?: boolean;
   },
 ): Promise<void> {
   const job = jobs.get(jobId)!;
+
+  const useLangfuse = body.enableLangfuse && isLangfuseConfigured();
+  const lf = useLangfuse ? makeLangfuseClient() : null;
+  const trace = lf ? lf.trace({
+    id: jobId,
+    name: body.description || 'Evergreen Evaluation',
+    metadata: {
+      provider: body.provider,
+      agencyName: body.agencyName,
+      evaluatorName: body.evaluatorName,
+      evaluationReason: body.evaluationReason,
+      testSource: body.presetId ? `preset:${body.presetId}` : 'google-sheet',
+    },
+  }) : null;
 
   try {
     // Step 1 — Load test cases (from preset or Google Sheet)
@@ -101,6 +117,7 @@ async function runPipeline(
     let testSource: string;
     let sheetId: string;
 
+    const s1 = trace?.span({ name: 'load-test-cases', input: { source: body.presetId ?? body.sheetUrl } });
     if (body.presetId) {
       const preset = getPreset(body.presetId);
       if (!preset) throw new Error(`The selected test suite could not be found. Try selecting a different suite.`);
@@ -116,9 +133,11 @@ async function runPipeline(
         : undefined;
       testSource = 'Google Sheets';
     }
+    s1?.end({ output: { rowCount: rows.length } });
 
     // Step 2 — Build Promptfoo config
     job.step = 2;
+    const s2 = trace?.span({ name: 'build-config', input: { rowCount: rows.length, provider: body.provider } });
     const config: EvergreenConfig = {
       description: body.description || 'Evergreen Evaluation',
       sheetId,
@@ -130,9 +149,11 @@ async function runPipeline(
     const pfConfig = buildPromptfooConfig(rows, config);
     const pfConfigPath = path.join(os.tmpdir(), `evergreen-config-${jobId}.yaml`);
     writePromptfooConfig(pfConfig, pfConfigPath);
+    s2?.end({ output: { testCount: rows.length } });
 
     // Step 3 — Run evaluations (async, non-blocking)
     job.step = 3;
+    const s3 = trace?.span({ name: 'run-eval', input: { provider: body.provider, testCount: rows.length } });
     const pfRaw = await runPromptfooAsync(pfConfigPath, config.outputPath!);
     const pfOutput = normalizePromptfooOutput(pfRaw);
 
@@ -150,15 +171,25 @@ async function runPipeline(
         `Set the API key in your environment and try again.`
       );
     }
+    const passCount = pfOutput.results.filter(r => r.success).length;
+    s3?.end({ output: { passed: passCount, total: pfOutput.results.length } });
 
     // Step 4 — Generate report
     job.step = 4;
+    const s4 = trace?.span({ name: 'generate-report' });
     const evalResults = mapToEvalResults(pfOutput, rows, config.description, testSource, systemPrompt);
     evalResults.agencyName = body.agencyName;
     evalResults.evaluatorName = body.evaluatorName;
     evalResults.evaluationReason = body.evaluationReason;
     evalResults.presetId = body.presetId;
     job.reportHtml = generateReport(evalResults);
+    const totalTests = evalResults.testCases.length;
+    const passedTests = evalResults.testCases.filter(tc => tc.results.every(r => r.passed)).length;
+    s4?.end({ output: { passedTests, totalTests } });
+
+    if (trace) {
+      job.traceUrl = getTraceUrl(jobId);
+    }
     job.status = 'complete';
 
     // Cleanup temp files
@@ -166,8 +197,11 @@ async function runPipeline(
     try { fs.unlinkSync(config.outputPath!); } catch { /* ignore */ }
 
   } catch (err) {
+    trace?.update({ metadata: { error: String(err) } });
     job.status = 'error';
     job.error = err instanceof Error ? err.message : String(err);
+  } finally {
+    await lf?.flushAsync();
   }
 }
 
@@ -193,6 +227,11 @@ export function createApp(): express.Application {
     maxAge: '1d',
     immutable: true,
   }));
+
+  // Capabilities — lets the client know which optional features are available
+  app.get('/api/capabilities', (_req, res) => {
+    res.json({ langfuseEnabled: isLangfuseConfigured() });
+  });
 
   // Landing page
   app.get('/', (_req, res) => {
@@ -317,8 +356,10 @@ export function createApp(): express.Application {
     const evaluatorName = typeof body?.evaluatorName === 'string' ? body.evaluatorName.trim().slice(0, 200) : undefined;
     const evaluationReason = typeof body?.evaluationReason === 'string' ? body.evaluationReason.trim().slice(0, 200) : undefined;
 
+    const enableLangfuse = body?.enableLangfuse === true;
+
     // Fire-and-forget — response returns immediately with jobId
-    runPipeline(jobId, { description, sheetUrl, presetId, provider, aiDescription, agencyName, evaluatorName, evaluationReason });
+    runPipeline(jobId, { description, sheetUrl, presetId, provider, aiDescription, agencyName, evaluatorName, evaluationReason, enableLangfuse });
 
     res.status(202).json({ jobId });
   });
@@ -330,7 +371,7 @@ export function createApp(): express.Application {
       res.status(404).json({ error: 'Job not found' });
       return;
     }
-    res.json({ step: job.step, status: job.status, error: job.error });
+    res.json({ step: job.step, status: job.status, error: job.error, traceUrl: job.traceUrl });
   });
 
   // Serve completed report

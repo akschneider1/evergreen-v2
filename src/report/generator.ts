@@ -1471,7 +1471,7 @@ table.data-table, table.detail-table {
   .expanded-detail { display: block !important; }
   .chevron { display: none; }
   .sev-link { display: none; }
-  .usa-breadcrumb { display: none; }
+  .padding-x-4.padding-top-3 { display: none; }
   .rec-technical[open] .rec-tech-content { display: block; }
   .rec-tech-toggle { color: var(--text); }
 }
@@ -1494,19 +1494,9 @@ table.data-table, table.detail-table {
 </section>
 
 <!-- ── Report Nav ── -->
-<nav class="usa-breadcrumb" aria-label="Breadcrumbs">
-  <ol class="usa-breadcrumb__list">
-    <li class="usa-breadcrumb__list-item">
-      <a class="usa-breadcrumb__link" href="/">Home</a>
-    </li>
-    <li class="usa-breadcrumb__list-item">
-      <a class="usa-breadcrumb__link" href="/builder">Builder</a>
-    </li>
-    <li class="usa-breadcrumb__list-item usa-current" aria-current="page">
-      <span>Evaluation Report</span>
-    </li>
-  </ol>
-</nav>
+<div class="padding-x-4 padding-top-3">
+  <a href="/builder" class="usa-button usa-button--unstyled">\u2190 Back to Builder</a>
+</div>
 
 <!-- ── Header ── -->
 <header class="evergreen-hero">

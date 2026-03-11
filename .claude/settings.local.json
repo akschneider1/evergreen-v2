@@ -36,7 +36,11 @@
       "Bash(git -C /home/runner/workspace log --oneline -20)",
       "Bash(git -C /home/runner/workspace status --porcelain)",
       "Bash(git -C /home/runner/workspace ls-files | grep -E \"\\\\.html$|\\\\.js$|\\\\.d\\\\.ts$|dist/\" | head -20)",
-      "Bash(grep -i \"tailwind\\\\|bootstrap\\\\|custom css\" /home/runner/workspace/src/web/*.html)"
+      "Bash(grep -i \"tailwind\\\\|bootstrap\\\\|custom css\" /home/runner/workspace/src/web/*.html)",
+      "WebFetch(domain:langfuse.com)",
+      "Bash(npm install langfuse 2>&1)",
+      "Bash(npx tsc --noEmit 2>&1)",
+      "Bash(git stash -- src/web/builder.html && npm run test 2>&1; git stash pop 2>&1 | tail -2)"
     ]
   }
 }

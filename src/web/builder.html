@@ -57,11 +57,6 @@
   </div>
 </div>
 
-<!-- Breadcrumb -->
-<nav class="usa-breadcrumb" aria-label="Breadcrumbs">
-  <ol id="breadcrumb-list" class="usa-breadcrumb__list"></ol>
-</nav>
-
 <!-- Library panel -->
 <div id="panel-library" class="padding-4">
   <ul id="lib-grid" class="usa-card-group">
@@ -127,38 +122,6 @@ function metricInfo(id) { return METRICS.find(function(m) { return m.id === id; 
 function sevInfo(id)    { return SEVERITIES.find(function(s) { return s.id === id; }) || null; }
 function caseComplete(c) { return c.metric && c.severity && c.question && (c.should.length > 0 || c.shouldNot.length > 0); }
 
-// ── Breadcrumb ──
-function updateBreadcrumb() {
-  var items = [{ label: 'Home', href: '/' }];
-  if (state.currentTab === 'library') {
-    items.push({ label: 'Builder', href: '/builder' });
-    items.push({ label: 'Library', current: true });
-  } else {
-    items.push({ label: 'Builder', href: '/builder' });
-    if (state.template) {
-      if (state.selectedTemplateId === 'blank') {
-        items.push({ label: 'New Test Suite', current: true });
-      } else {
-        items.push({ label: 'Library', action: 'library' });
-        items.push({ label: state.template.name || 'Untitled', current: true });
-      }
-    }
-  }
-  var html = '';
-  items.forEach(function(item) {
-    html += '<li class="usa-breadcrumb__list-item' + (item.current ? ' usa-current' : '') + '">';
-    if (item.current) {
-      html += '<span aria-current="page">' + esc(item.label) + '</span>';
-    } else if (item.action === 'library') {
-      html += '<button class="ev-breadcrumb-btn" onclick="switchTab(\'library\')">' + esc(item.label) + '</button>';
-    } else {
-      html += '<a class="usa-breadcrumb__link" href="' + esc(item.href) + '">' + esc(item.label) + '</a>';
-    }
-    html += '</li>';
-  });
-  document.getElementById('breadcrumb-list').innerHTML = html;
-}
-
 // ── Tab switching ──
 function switchTab(tab) {
   state.currentTab = tab;
@@ -166,7 +129,6 @@ function switchTab(tab) {
   document.getElementById('panel-builder').hidden = tab !== 'builder';
   document.getElementById('tab-library').className = 'usa-button' + (tab === 'library' ? '' : ' usa-button--outline');
   document.getElementById('tab-builder').className = 'usa-button' + (tab === 'builder' ? '' : ' usa-button--outline');
-  updateBreadcrumb();
   if (tab === 'builder' && state.template) renderBuilder();
 }
 
@@ -347,6 +309,11 @@ function renderBuilder() {
   var t = state.template;
   var html = '';
 
+  // Back to library (not for blank/scratch)
+  if (state.selectedTemplateId && state.selectedTemplateId !== 'blank') {
+    html += '<button class="usa-button usa-button--unstyled margin-bottom-3" onclick="switchTab(\'library\')">\u2190 Library</button>';
+  }
+
   // Header
   html += '<div class="margin-bottom-3">' +
     '<h1 class="font-heading-xl margin-top-0 margin-bottom-05">' + esc(t.name || 'Test Suite') + '</h1>';
@@ -430,7 +397,6 @@ function loadTemplate(id) {
       });
       state.expandedCaseId = null;
       switchTab('builder');
-      updateBreadcrumb();
     })
     .catch(function() {
       alert('Failed to load test suite. Please try again.');
@@ -556,7 +522,6 @@ function runEval() {
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', function() {
-  updateBreadcrumb();
   fetch('/api/templates')
     .then(function(r) { return r.json(); })
     .then(function(templates) {
