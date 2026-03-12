@@ -132,7 +132,7 @@ const METRIC_LABELS: Record<EvalMetric, string> = {
   'accuracy':      'Accuracy',
   'ease-of-use':   'Ease of Use',
   'effectiveness': 'Effectiveness',
-  'emotion':       'Tone and Respect',
+  'emotion':       'Emotion',
 };
 
 const METRIC_TOOLTIPS: Record<EvalMetric, string> = {
@@ -148,7 +148,7 @@ const METRIC_FAILURE_NOTES: Record<EvalMetric, string> = {
   'accuracy':      'Responses contained incorrect factual information',
   'ease-of-use':   'Responses were difficult for non-experts to understand',
   'effectiveness': 'Responses did not effectively help users accomplish their goal',
-  'emotion':       'Responses did not treat users with appropriate tone and respect',
+  'emotion':       'Responses did not treat users with appropriate respect',
 };
 
 const METRIC_ORDER: EvalMetric[] = [
@@ -396,7 +396,7 @@ function deriveLayers(data: ReportData): RecommendationLayers {
 
   const safetyFails = failCount('Safety');
   const easeFails   = failCount('Ease of Use');
-  const emotionFails = failCount('Tone and Respect');
+  const emotionFails = failCount('Emotion');
   const accuracyFails = failCount('Accuracy');
   const criticalEffFails = data.testCases.filter(
     tc => tc.metric === 'effectiveness' && tc.severity === 'critical' && tc.anyFailed,
