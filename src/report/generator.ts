@@ -327,7 +327,7 @@ function deriveReportData(input: EvalResults): ReportData {
       metricTooltip: METRIC_TOOLTIPS[tc.metric] || '',
       expected: tc.expected,
       anyFailed,
-      colspan: 4 + input.providers.length + 1,
+      colspan: (input.testCases.some(tc => tc.persona) ? 5 : 4) + input.providers.length + 1,
       results: tc.results.map(r => ({
         providerName: r.provider,
         resultClass: r.passed ? 'result-pass' : 'result-fail',
@@ -706,6 +706,8 @@ function renderHtml(data: ReportData, jobId?: string): string {
 
   // ── Details tab ──────────────────────────────────────────────────────────
 
+  const hasPersonas = data.testCases.some(tc => tc.persona);
+
   const providerHeaders = data.providers.map(p =>
     `<th>${esc(p.name.split(':').pop() || p.name)}</th>`
   ).join('');
@@ -764,8 +766,8 @@ function renderHtml(data: ReportData, jobId?: string): string {
           <td><span class="usa-tag severity-badge ${tc.severity}">${tc.severity}</span></td>
           <td class="tc-check">
             <span class="check-badge metric-${tc.metric}" title="${esc(tc.metricTooltip)}">${esc(tc.metricLabel)}</span>
-            ${tc.personaLabel ? `<span class="persona-badge">${esc(tc.personaLabel)}</span>` : ''}
           </td>
+          ${hasPersonas ? `<td>${tc.personaLabel ? `<span class="persona-badge">${esc(tc.personaLabel)}</span>` : ''}</td>` : ''}
           ${resultCells}
           <td class="tc-chevron"><span class="chevron" id="chevron-${tc.number}">▼</span></td>
         </tr>
@@ -808,7 +810,7 @@ function renderHtml(data: ReportData, jobId?: string): string {
     const itemsHtml = items.map(item => {
       const techHtml = item.technicalSteps?.length ? `
         <details class="rec-technical">
-          <summary class="rec-tech-toggle">For your technical team &#9656;</summary>
+          <summary class="rec-tech-toggle">Technical recommendations &#9656;</summary>
           <div class="rec-tech-content">
             <ul class="rec-tech-list">
               ${item.technicalSteps.map(s => `<li>${esc(s)}</li>`).join('')}
@@ -1215,10 +1217,10 @@ body {
 .bar-chart { display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
 .bar-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; }
 .bar-meta { display: flex; flex-direction: column; min-width: 0; }
-.bar-label { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bar-count { font-size: 11px; color: var(--text-3); font-weight: 500; margin-top: 1px; }
-.bar-track { flex: none; width: 300px; height: 22px; background: var(--border-sub); border-radius: 4px; overflow: hidden; }
-@media (max-width: 700px) { .bar-track { width: 160px; } }
+.bar-label { font-size: 14px; font-weight: 600; white-space: normal; line-height: 1.3; }
+.bar-count { font-size: 11px; color: var(--text-3); font-weight: 500; margin-top: 2px; }
+.bar-track { flex: none; width: 200px; height: 18px; background: var(--border-sub); border-radius: 4px; overflow: hidden; }
+@media (max-width: 700px) { .bar-track { width: 120px; } }
 .bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(.16,1,.3,1); }
 .bar-fill.green  { background: linear-gradient(90deg, #008817, var(--pass)); }
 .bar-fill.yellow { background: linear-gradient(90deg, #936f38, var(--warn)); }
@@ -1819,7 +1821,6 @@ table.data-table, table.detail-table {
       <span class="tab-sub">What to do next</span>
     </button>
     <div class="tab-nav-spacer"></div>
-    <div class="readiness-pill ${data.readinessClass} tab-nav-pill" aria-hidden="true">${esc(data.readinessLabel)}</div>
   </div>
 </nav>
 
@@ -1839,14 +1840,12 @@ table.data-table, table.detail-table {
     ${criticalCardHtml}
   </div>
 
-  ${smallNWarningHtml}
   ${multiProviderWarningHtml}
 
   <div class="split-cards">
     <div class="card">
       <h2 class="card-title">Results by Metric</h2>
       <div class="bar-chart">${dimensionBarsHtml}</div>
-      ${patternHtml}
     </div>
 
     <div class="card">
@@ -1894,6 +1893,7 @@ table.data-table, table.detail-table {
           <th>Question</th>
           <th>Severity</th>
           <th>Metric</th>
+          ${hasPersonas ? '<th>Persona</th>' : ''}
           ${providerHeaders}
           <th></th>
         </tr>
@@ -1915,16 +1915,6 @@ table.data-table, table.detail-table {
 <!-- ── Recommendations tab ── -->
 <section class="tab-content" id="tab-recommendations">
 <div class="grid-container">
-
-  <div class="rec-synthesis">
-    <p>Overall pass rate: <strong>${data.overallPassRate}%</strong> &middot;
-    ${data.criticalFailureCount > 0
-      ? `<span class="rec-critical-note">${data.criticalFailureCount} critical failure${data.criticalFailureCount > 1 ? 's' : ''} require${data.criticalFailureCount === 1 ? 's' : ''} resolution before deployment.</span>`
-      : 'No critical failures.'
-    }</p>
-    <p class="card-subtitle">Each section below identifies what to change and who should do it.${data.criticalFailureCount > 0 ? ' Start with the critical failures above \u2014 resolve those before working on anything else.' : ''}</p>
-    <p class="card-subtitle" style="margin-top:4px;margin-bottom:0">Note: This evaluation tested expected user queries only. Adversarial inputs, multilingual queries, and multi-turn conversation robustness were not tested in this run.</p>
-  </div>
 
   ${criticalBlockHtml}
 
@@ -2155,20 +2145,34 @@ table.data-table, table.detail-table {
       { label: 'Run 3', weeks: '2 weeks ago', rate: Math.max(35, currentRate - 8)  },
       { label: 'Run 4', weeks: 'Today',        rate: currentRate, current: true      },
     ];
-    var historyRows = historyRuns.map(function(r) {
-      var fillClass = r.rate >= 80 ? 'green' : r.rate >= 60 ? 'yellow' : 'red';
-      return '<div class="bar-row">' +
-        '<div class="bar-meta">' +
-          '<span class="bar-label">' + r.label + '</span>' +
-          '<span class="bar-count">' + r.weeks + (r.current ? ' \u2014 this run' : '') + '</span>' +
-        '</div>' +
-        '<div class="bar-track"><div class="bar-fill ' + fillClass + '" style="width:' + r.rate + '%"></div></div>' +
-        '<span class="bar-pct">' + r.rate + '%</span>' +
-      '</div>';
+    var svgW = 480, svgH = 160, padL = 44, padR = 20, padT = 28, padB = 44;
+    var chartW = svgW - padL - padR;
+    var chartH = svgH - padT - padB;
+    var n = historyRuns.length;
+    var xs = historyRuns.map(function(r, i) { return padL + (i / (n - 1)) * chartW; });
+    var ys = historyRuns.map(function(r) { return padT + (1 - r.rate / 100) * chartH; });
+    var gridSvg = [0, 25, 50, 75, 100].map(function(v) {
+      var gy = padT + (1 - v / 100) * chartH;
+      return '<line x1="' + padL + '" y1="' + gy + '" x2="' + (svgW - padR) + '" y2="' + gy + '" stroke="#e5e7eb" stroke-width="1"/>' +
+        '<text x="' + (padL - 6) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="10" fill="#71767a">' + v + '%</text>';
     }).join('');
+    var pathD = xs.map(function(x, i) { return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + ys[i].toFixed(1); }).join(' ');
+    var dotsSvg = historyRuns.map(function(r, i) {
+      var dotColor = r.rate >= 80 ? '#00a91c' : r.rate >= 60 ? '#e6a817' : '#e52207';
+      var labelY = ys[i] - 10;
+      return '<circle cx="' + xs[i].toFixed(1) + '" cy="' + ys[i].toFixed(1) + '" r="' + (r.current ? 6 : 4) + '" fill="' + dotColor + '" stroke="white" stroke-width="2"/>' +
+        '<text x="' + xs[i].toFixed(1) + '" y="' + labelY.toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="' + (r.current ? '700' : '500') + '" fill="' + dotColor + '">' + r.rate + '%</text>' +
+        '<text x="' + xs[i].toFixed(1) + '" y="' + (padT + chartH + 16) + '" text-anchor="middle" font-size="10" fill="#3d4551">' + r.label + '</text>' +
+        '<text x="' + xs[i].toFixed(1) + '" y="' + (padT + chartH + 30) + '" text-anchor="middle" font-size="9" fill="#71767a">' + r.weeks + '</text>';
+    }).join('');
+    var trendSvg = '<svg width="100%" viewBox="0 0 ' + svgW + ' ' + svgH + '" style="display:block;margin:8px 0 0">' +
+      gridSvg +
+      '<path d="' + pathD + '" fill="none" stroke="#005ea2" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+      dotsSvg +
+      '</svg>';
     var card3 = '<div class="card"><h2 class="card-title">Pass rate over time ' + examplePill() + '</h2>' +
       '<p class="card-subtitle">Historical data shown for illustration &mdash; your real run history will build here over time.</p>' +
-      '<div class="bar-chart">' + historyRows + '</div></div>';
+      trendSvg + '</div>';
 
     // ── Card 4: Reviewer feedback (demo data) ──
     var passCount = d.tests.filter(function(t){return t.passed;}).length;
