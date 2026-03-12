@@ -67,7 +67,6 @@ interface CriticalFailure {
   expectedSummary: string;
   responseSummary: string;
   impact: string;
-  remediation: string;
 }
 
 interface DimensionResult {
@@ -178,17 +177,6 @@ function deriveImpact(tc: TestCaseResult): string {
   return impacts[tc.metric] || 'Users may be negatively affected';
 }
 
-const METRIC_REMEDIATION: Record<EvalMetric, string> = {
-  'safety':        'Work with your AI team to add guardrails for this type of question. Consider updating the system prompt to explicitly prohibit this kind of response.',
-  'accuracy':      'Verify the source data your AI system uses and consider adding this fact to the system\u2019s knowledge base or system prompt.',
-  'ease-of-use':   'Ask your AI team to simplify the response and avoid jargon. Consider adding plain-language guidance to the system prompt.',
-  'effectiveness': 'Review the system prompt to ensure it covers this scenario. The AI should help the user take the right next step.',
-  'emotion':       'Consider adding guidance about tone in the system prompt. The AI should acknowledge sensitive situations with empathy.',
-};
-
-function deriveRemediation(metric: EvalMetric): string {
-  return METRIC_REMEDIATION[metric] || 'Review this test case and work with your AI team to address the issue.';
-}
 
 function enhanceGrading(gradingReason: string, passed: boolean, metric: EvalMetric, expected: string): string {
   if (gradingReason !== 'Assertion failed' && gradingReason !== 'Assertion passed') {
@@ -239,7 +227,6 @@ function deriveReportData(input: EvalResults): ReportData {
           expectedSummary: tc.expected.length > 120 ? tc.expected.slice(0, 120) + '…' : tc.expected,
           responseSummary: r.response.length > 180 ? r.response.slice(0, 180) + '…' : r.response,
           impact: deriveImpact(tc),
-          remediation: deriveRemediation(tc.metric),
         });
       }
     }
@@ -739,10 +726,7 @@ function renderHtml(data: ReportData, jobId?: string): string {
               <div class="cf-col-value actual">${esc(cf.responseSummary)}</div>
             </div>
           </div>
-          <div class="cf-impact">⚠ ${esc(cf.impact)}</div>
-          <div class="cf-remediation" style="margin-top:8px;padding:8px 12px;background:#f0f4f8;border-radius:4px;font-size:0.8125rem;color:#334155;">
-            <strong>Suggested fix:</strong> ${esc(cf.remediation)}
-          </div>
+          <div class="cf-impact">${esc(cf.impact)}</div>
         </div>
       `).join('')}
     </div>
@@ -767,31 +751,21 @@ function renderHtml(data: ReportData, jobId?: string): string {
     ? `<div class="pattern-note">${data.patternNote}</div>`
     : '';
 
-  const severityProviderHeaders = data.providers.map(p =>
-    `<th>${esc(p.name.split(':').pop() || p.name)}</th>`
-  ).join('');
-
-  const severityRowsHtml = data.severities.map(s => {
-    const cells = s.results.map(r => {
-      const pct = s.total > 0 ? Math.round((r.passed / r.total) * 100) : 0;
-      const color = pct === 100 ? 'pass' : pct >= 50 ? 'neutral' : 'fail';
-      return `
-        <td>
-          <div class="sev-cell">
-            <div class="sev-bar-track">
-              <div class="sev-bar-fill ${color}" style="width:${pct}%"></div>
-            </div>
-            <span class="sev-cell-text">${r.passed}/${r.total}</span>
-          </div>
-        </td>`;
-    }).join('');
+  const severityBarsHtml = data.severities.map(s => {
+    const totalPassed = s.results.reduce((sum, r) => sum + r.passed, 0);
+    const totalTests  = s.results.reduce((sum, r) => sum + r.total, 0);
+    const pct = totalTests > 0 ? Math.round((totalPassed / totalTests) * 100) : 0;
     return `
-      <tr class="sev-row" data-sev="${s.level}" onclick="gotoSeverity('${s.level}')">
-        <td><span class="usa-tag severity-badge ${s.level}">${s.level}</span></td>
-        <td class="sev-total">${s.total}</td>
-        ${cells}
-        <td class="sev-link">View →</td>
-      </tr>`;
+    <div class="bar-row sev-bar-row" onclick="gotoSeverity('${s.level}')">
+      <div class="bar-meta">
+        <span class="bar-label"><span class="severity-badge ${s.level}">${s.level}</span></span>
+        <span class="bar-count">${totalPassed}/${totalTests} passing &middot; <span class="sev-see-all">See all &rarr;</span></span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill sev-fill-${s.level}" style="width: ${pct}%"></div>
+      </div>
+      <span class="bar-pct">${pct}%</span>
+    </div>`;
   }).join('');
 
   const comparisonHtml = data.multipleProviders ? `
@@ -1249,9 +1223,9 @@ body {
 
 /* ── Critical failures ── */
 .critical-failure {
-  border-left: 3px solid var(--fail);
+  border-top: 2px solid var(--border);
   background: #fff;
-  border-radius: 0 6px 6px 0;
+  border-radius: var(--radius);
   padding: 16px 20px;
   margin-bottom: 14px;
   box-shadow: var(--shadow);
@@ -1309,12 +1283,9 @@ body {
 .cf-col-value.actual   { background: var(--fail-bg); border: 1px solid var(--fail-border); color: #7f1d1d; }
 .cf-impact {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--fail);
-  padding: 6px 10px;
-  background: var(--fail-bg);
-  border-radius: 4px;
-  display: inline-block;
+  font-style: italic;
+  color: var(--text-3);
+  margin-top: 6px;
 }
 
 /* ── Analysis: dimension bars ── */
@@ -1329,6 +1300,14 @@ body {
 .bar-fill.green  { background: linear-gradient(90deg, #008817, var(--pass)); }
 .bar-fill.yellow { background: linear-gradient(90deg, #936f38, var(--warn)); }
 .bar-fill.red    { background: linear-gradient(90deg, #b50909, var(--fail)); }
+/* Severity bars — color = risk level, width = pass rate */
+.bar-fill.sev-fill-critical { background: linear-gradient(90deg, #991b1b, #ef4444); }
+.bar-fill.sev-fill-high     { background: linear-gradient(90deg, #854d0e, #f59e0b); }
+.bar-fill.sev-fill-medium   { background: linear-gradient(90deg, #1e40af, #60a5fa); }
+.bar-fill.sev-fill-low      { background: linear-gradient(90deg, #374151, #9ca3af); }
+.sev-bar-row { cursor: pointer; border-radius: 4px; padding: 4px 2px; transition: background .12s; }
+.sev-bar-row:hover { background: var(--bg); }
+.sev-see-all { color: var(--brand); font-weight: 600; }
 .bar-pct { font-size: 14px; font-weight: 700; color: var(--text); width: 40px; text-align: right; }
 .pattern-note {
   margin-top: 18px;
@@ -1426,7 +1405,11 @@ table.data-table, table.detail-table {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   flex-wrap: wrap;
 }
 .filter-label { font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.6px; margin-right: 4px; }
@@ -1459,6 +1442,20 @@ table.data-table, table.detail-table {
 .filter-btn-metric.active { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
 .filter-divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
 .filter-result { font-size: 13px; color: var(--text-3); margin-left: auto; }
+.detail-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.filter-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  padding: 5px 14px; font-size: 13px; font-weight: 500; color: var(--text-2);
+  cursor: pointer; transition: all .15s;
+}
+.filter-toggle:hover { border-color: var(--brand); color: var(--brand); }
+.filter-toggle.filter-toggle-open { border-color: var(--brand); color: var(--brand); }
+.filter-toggle.filter-toggle-active::after { content: ' \u25CF'; font-size: 8px; color: var(--brand); vertical-align: middle; }
+.filter-toggle-chevron { font-size: 9px; }
 .toggle-expand { font-size: 12px; color: var(--brand); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 
 /* ── Details: table ── */
@@ -1970,18 +1967,8 @@ table.data-table, table.detail-table {
 
     <div class="card">
       <h2 class="card-title">Results by Severity</h2>
-      <p class="card-subtitle">Click a row to filter test cases below</p>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Severity</th>
-            <th>Tests</th>
-            ${severityProviderHeaders}
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>${severityRowsHtml}</tbody>
-      </table>
+      <p class="card-subtitle">Bar color shows risk level &mdash; click a row to filter test cases below</p>
+      <div class="bar-chart">${severityBarsHtml}</div>
     </div>
   </div>
 
@@ -1989,7 +1976,14 @@ table.data-table, table.detail-table {
 
   ${comparisonHtml}
 
-  <div class="filter-bar">
+  <div class="detail-section-header">
+    <button class="filter-toggle" id="filter-toggle" onclick="toggleFilterBar()">
+      Filters <span class="filter-toggle-chevron" id="filter-toggle-chevron">&#9660;</span>
+    </button>
+    <button class="usa-button usa-button--unstyled toggle-expand" id="toggle-expand" onclick="toggleExpandAll()">Expand all</button>
+  </div>
+
+  <div class="filter-bar" id="filter-bar" style="display:none">
     <span class="filter-group-label">Status</span>
     <button class="usa-button filter-btn filter-btn-status active" data-filter="all" onclick="applyFilter('all')">
       All <span class="filter-count">${data.testCaseCount}</span>
@@ -2004,7 +1998,6 @@ table.data-table, table.detail-table {
     <span class="filter-group-label">Metric</span>
     ${metricFilterButtons}
     <span class="filter-result" id="filter-result"></span>
-    <button class="usa-button usa-button--unstyled toggle-expand" id="toggle-expand" onclick="toggleExpandAll()">Expand all</button>
   </div>
 
   <div class="detail-card">
@@ -2053,22 +2046,6 @@ table.data-table, table.detail-table {
 </div>
 </section>
 
-<!-- ── Footer ── -->
-<footer class="usa-footer usa-footer--slim">
-  <div class="usa-footer__primary-section"></div>
-  <div class="usa-footer__secondary-section">
-    <div class="grid-container">
-      <p class="font-body-xs text-base-dark">
-        <strong>Framework:</strong> Evergreen 4-Dimension Eval &middot;
-        <strong>Test Source:</strong> ${esc(data.testSource)} &middot;
-        <strong>Metrics:</strong> ${esc(data.gradingMethods)} &middot;
-        <strong>Generated:</strong> ${esc(data.generatedAt)}
-        ${data.systemPrompt ? ` &middot; <strong>System Prompt:</strong> ${esc(data.systemPrompt.length > 120 ? data.systemPrompt.slice(0, 120) + '\u2026' : data.systemPrompt)}` : ''}
-      </p>
-    </div>
-  </div>
-</footer>
-
 <script src="/assets/js/uswds.min.js"></script>
 <script>
 (function() {
@@ -2103,6 +2080,19 @@ table.data-table, table.detail-table {
     el.addEventListener('click', function(e) { e.stopPropagation(); });
   });
 
+  // ── Filter bar toggle ──
+  function toggleFilterBar(forceOpen) {
+    var bar = document.getElementById('filter-bar');
+    var chevron = document.getElementById('filter-toggle-chevron');
+    var toggle = document.getElementById('filter-toggle');
+    if (!bar) return;
+    var isOpen = forceOpen !== undefined ? forceOpen : bar.style.display === 'none';
+    bar.style.display = isOpen ? '' : 'none';
+    if (chevron) chevron.innerHTML = isOpen ? '&#9650;' : '&#9660;';
+    if (toggle) toggle.classList.toggle('filter-toggle-open', isOpen);
+  }
+  window.toggleFilterBar = toggleFilterBar;
+
   // ── Details filter ──
   var currentFilter = 'all';
   var severityLevels = ['critical', 'high', 'medium', 'low'];
@@ -2113,6 +2103,8 @@ table.data-table, table.detail-table {
       btn.classList.toggle('active', isActive);
       btn.classList.toggle('usa-button--outline', !isActive);
     });
+    var toggle = document.getElementById('filter-toggle');
+    if (toggle) toggle.classList.toggle('filter-toggle-active', filter !== 'all');
     var isSeverityFilter = severityLevels.indexOf(filter) !== -1;
     var isMetricFilter = filter.indexOf('metric-') === 0;
     var metricValue = isMetricFilter ? filter.slice(7) : '';
@@ -2140,6 +2132,7 @@ table.data-table, table.detail-table {
   function gotoSeverity(sev) {
     activateTab('report');
     applyFilter(sev);
+    toggleFilterBar(true);
     setTimeout(function() {
       var detailCard = document.querySelector('.detail-card');
       if (detailCard) detailCard.scrollIntoView({ behavior: 'smooth' });

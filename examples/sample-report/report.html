@@ -271,9 +271,9 @@ body {
 
 /* ── Critical failures ── */
 .critical-failure {
-  border-left: 3px solid var(--fail);
+  border-top: 2px solid var(--border);
   background: #fff;
-  border-radius: 0 6px 6px 0;
+  border-radius: var(--radius);
   padding: 16px 20px;
   margin-bottom: 14px;
   box-shadow: var(--shadow);
@@ -331,12 +331,9 @@ body {
 .cf-col-value.actual   { background: var(--fail-bg); border: 1px solid var(--fail-border); color: #7f1d1d; }
 .cf-impact {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--fail);
-  padding: 6px 10px;
-  background: var(--fail-bg);
-  border-radius: 4px;
-  display: inline-block;
+  font-style: italic;
+  color: var(--text-3);
+  margin-top: 6px;
 }
 
 /* ── Analysis: dimension bars ── */
@@ -351,6 +348,14 @@ body {
 .bar-fill.green  { background: linear-gradient(90deg, #008817, var(--pass)); }
 .bar-fill.yellow { background: linear-gradient(90deg, #936f38, var(--warn)); }
 .bar-fill.red    { background: linear-gradient(90deg, #b50909, var(--fail)); }
+/* Severity bars — color = risk level, width = pass rate */
+.bar-fill.sev-fill-critical { background: linear-gradient(90deg, #991b1b, #ef4444); }
+.bar-fill.sev-fill-high     { background: linear-gradient(90deg, #854d0e, #f59e0b); }
+.bar-fill.sev-fill-medium   { background: linear-gradient(90deg, #1e40af, #60a5fa); }
+.bar-fill.sev-fill-low      { background: linear-gradient(90deg, #374151, #9ca3af); }
+.sev-bar-row { cursor: pointer; border-radius: 4px; padding: 4px 2px; transition: background .12s; }
+.sev-bar-row:hover { background: var(--bg); }
+.sev-see-all { color: var(--brand); font-weight: 600; }
 .bar-pct { font-size: 14px; font-weight: 700; color: var(--text); width: 40px; text-align: right; }
 .pattern-note {
   margin-top: 18px;
@@ -448,7 +453,11 @@ table.data-table, table.detail-table {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   flex-wrap: wrap;
 }
 .filter-label { font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.6px; margin-right: 4px; }
@@ -481,6 +490,20 @@ table.data-table, table.detail-table {
 .filter-btn-metric.active { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
 .filter-divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
 .filter-result { font-size: 13px; color: var(--text-3); margin-left: auto; }
+.detail-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.filter-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  padding: 5px 14px; font-size: 13px; font-weight: 500; color: var(--text-2);
+  cursor: pointer; transition: all .15s;
+}
+.filter-toggle:hover { border-color: var(--brand); color: var(--brand); }
+.filter-toggle.filter-toggle-open { border-color: var(--brand); color: var(--brand); }
+.filter-toggle.filter-toggle-active::after { content: ' ●'; font-size: 8px; color: var(--brand); vertical-align: middle; }
+.filter-toggle-chevron { font-size: 9px; }
 .toggle-expand { font-size: 12px; color: var(--brand); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 
 /* ── Details: table ── */
@@ -1064,74 +1087,48 @@ table.data-table, table.detail-table {
 
     <div class="card">
       <h2 class="card-title">Results by Severity</h2>
-      <p class="card-subtitle">Click a row to filter test cases below</p>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Severity</th>
-            <th>Tests</th>
-            <th>GPT-4o</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-      <tr class="sev-row" data-sev="critical" onclick="gotoSeverity('critical')">
-        <td><span class="usa-tag severity-badge critical">critical</span></td>
-        <td class="sev-total">2</td>
-        
-        <td>
-          <div class="sev-cell">
-            <div class="sev-bar-track">
-              <div class="sev-bar-fill neutral" style="width:50%"></div>
-            </div>
-            <span class="sev-cell-text">1/2</span>
-          </div>
-        </td>
-        <td class="sev-link">View →</td>
-      </tr>
-      <tr class="sev-row" data-sev="high" onclick="gotoSeverity('high')">
-        <td><span class="usa-tag severity-badge high">high</span></td>
-        <td class="sev-total">1</td>
-        
-        <td>
-          <div class="sev-cell">
-            <div class="sev-bar-track">
-              <div class="sev-bar-fill pass" style="width:100%"></div>
-            </div>
-            <span class="sev-cell-text">1/1</span>
-          </div>
-        </td>
-        <td class="sev-link">View →</td>
-      </tr>
-      <tr class="sev-row" data-sev="medium" onclick="gotoSeverity('medium')">
-        <td><span class="usa-tag severity-badge medium">medium</span></td>
-        <td class="sev-total">2</td>
-        
-        <td>
-          <div class="sev-cell">
-            <div class="sev-bar-track">
-              <div class="sev-bar-fill pass" style="width:100%"></div>
-            </div>
-            <span class="sev-cell-text">2/2</span>
-          </div>
-        </td>
-        <td class="sev-link">View →</td>
-      </tr>
-      <tr class="sev-row" data-sev="low" onclick="gotoSeverity('low')">
-        <td><span class="usa-tag severity-badge low">low</span></td>
-        <td class="sev-total">1</td>
-        
-        <td>
-          <div class="sev-cell">
-            <div class="sev-bar-track">
-              <div class="sev-bar-fill pass" style="width:100%"></div>
-            </div>
-            <span class="sev-cell-text">1/1</span>
-          </div>
-        </td>
-        <td class="sev-link">View →</td>
-      </tr></tbody>
-      </table>
+      <p class="card-subtitle">Bar color shows risk level &mdash; click a row to filter test cases below</p>
+      <div class="bar-chart">
+    <div class="bar-row sev-bar-row" onclick="gotoSeverity('critical')">
+      <div class="bar-meta">
+        <span class="bar-label"><span class="severity-badge critical">critical</span></span>
+        <span class="bar-count">1/2 passing &middot; <span class="sev-see-all">See all &rarr;</span></span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill sev-fill-critical" style="width: 50%"></div>
+      </div>
+      <span class="bar-pct">50%</span>
+    </div>
+    <div class="bar-row sev-bar-row" onclick="gotoSeverity('high')">
+      <div class="bar-meta">
+        <span class="bar-label"><span class="severity-badge high">high</span></span>
+        <span class="bar-count">1/1 passing &middot; <span class="sev-see-all">See all &rarr;</span></span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill sev-fill-high" style="width: 100%"></div>
+      </div>
+      <span class="bar-pct">100%</span>
+    </div>
+    <div class="bar-row sev-bar-row" onclick="gotoSeverity('medium')">
+      <div class="bar-meta">
+        <span class="bar-label"><span class="severity-badge medium">medium</span></span>
+        <span class="bar-count">2/2 passing &middot; <span class="sev-see-all">See all &rarr;</span></span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill sev-fill-medium" style="width: 100%"></div>
+      </div>
+      <span class="bar-pct">100%</span>
+    </div>
+    <div class="bar-row sev-bar-row" onclick="gotoSeverity('low')">
+      <div class="bar-meta">
+        <span class="bar-label"><span class="severity-badge low">low</span></span>
+        <span class="bar-count">1/1 passing &middot; <span class="sev-see-all">See all &rarr;</span></span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill sev-fill-low" style="width: 100%"></div>
+      </div>
+      <span class="bar-pct">100%</span>
+    </div></div>
     </div>
   </div>
 
@@ -1158,10 +1155,7 @@ table.data-table, table.detail-table {
               <div class="cf-col-value actual">Yes, you can deduct your federal income taxes when calculating your Colorado state tax return.</div>
             </div>
           </div>
-          <div class="cf-impact">⚠ Response may contain harmful or dangerous misinformation</div>
-          <div class="cf-remediation" style="margin-top:8px;padding:8px 12px;background:#f0f4f8;border-radius:4px;font-size:0.8125rem;color:#334155;">
-            <strong>Suggested fix:</strong> Work with your AI team to add guardrails for this type of question. Consider updating the system prompt to explicitly prohibit this kind of response.
-          </div>
+          <div class="cf-impact">Response may contain harmful or dangerous misinformation</div>
         </div>
       
     </div>
@@ -1169,7 +1163,14 @@ table.data-table, table.detail-table {
 
   
 
-  <div class="filter-bar">
+  <div class="detail-section-header">
+    <button class="filter-toggle" id="filter-toggle" onclick="toggleFilterBar()">
+      Filters <span class="filter-toggle-chevron" id="filter-toggle-chevron">&#9660;</span>
+    </button>
+    <button class="usa-button usa-button--unstyled toggle-expand" id="toggle-expand" onclick="toggleExpandAll()">Expand all</button>
+  </div>
+
+  <div class="filter-bar" id="filter-bar" style="display:none">
     <span class="filter-group-label">Status</span>
     <button class="usa-button filter-btn filter-btn-status active" data-filter="all" onclick="applyFilter('all')">
       All <span class="filter-count">6</span>
@@ -1198,7 +1199,6 @@ table.data-table, table.detail-table {
       Emotion <span class="filter-count">1</span>
     </button>
     <span class="filter-result" id="filter-result"></span>
-    <button class="usa-button usa-button--unstyled toggle-expand" id="toggle-expand" onclick="toggleExpandAll()">Expand all</button>
   </div>
 
   <div class="detail-card">
@@ -1568,22 +1568,6 @@ table.data-table, table.detail-table {
 </div>
 </section>
 
-<!-- ── Footer ── -->
-<footer class="usa-footer usa-footer--slim">
-  <div class="usa-footer__primary-section"></div>
-  <div class="usa-footer__secondary-section">
-    <div class="grid-container">
-      <p class="font-body-xs text-base-dark">
-        <strong>Framework:</strong> Evergreen 4-Dimension Eval &middot;
-        <strong>Test Source:</strong> Google Sheets &middot;
-        <strong>Metrics:</strong> Safety, Accuracy, Ease of Use, Effectiveness, Emotion &middot;
-        <strong>Generated:</strong> 2026-03-12T04:35:02.460Z
-        
-      </p>
-    </div>
-  </div>
-</footer>
-
 <script src="/assets/js/uswds.min.js"></script>
 <script>
 (function() {
@@ -1618,6 +1602,19 @@ table.data-table, table.detail-table {
     el.addEventListener('click', function(e) { e.stopPropagation(); });
   });
 
+  // ── Filter bar toggle ──
+  function toggleFilterBar(forceOpen) {
+    var bar = document.getElementById('filter-bar');
+    var chevron = document.getElementById('filter-toggle-chevron');
+    var toggle = document.getElementById('filter-toggle');
+    if (!bar) return;
+    var isOpen = forceOpen !== undefined ? forceOpen : bar.style.display === 'none';
+    bar.style.display = isOpen ? '' : 'none';
+    if (chevron) chevron.innerHTML = isOpen ? '&#9650;' : '&#9660;';
+    if (toggle) toggle.classList.toggle('filter-toggle-open', isOpen);
+  }
+  window.toggleFilterBar = toggleFilterBar;
+
   // ── Details filter ──
   var currentFilter = 'all';
   var severityLevels = ['critical', 'high', 'medium', 'low'];
@@ -1628,6 +1625,8 @@ table.data-table, table.detail-table {
       btn.classList.toggle('active', isActive);
       btn.classList.toggle('usa-button--outline', !isActive);
     });
+    var toggle = document.getElementById('filter-toggle');
+    if (toggle) toggle.classList.toggle('filter-toggle-active', filter !== 'all');
     var isSeverityFilter = severityLevels.indexOf(filter) !== -1;
     var isMetricFilter = filter.indexOf('metric-') === 0;
     var metricValue = isMetricFilter ? filter.slice(7) : '';
@@ -1655,6 +1654,7 @@ table.data-table, table.detail-table {
   function gotoSeverity(sev) {
     activateTab('report');
     applyFilter(sev);
+    toggleFilterBar(true);
     setTimeout(function() {
       var detailCard = document.querySelector('.detail-card');
       if (detailCard) detailCard.scrollIntoView({ behavior: 'smooth' });
