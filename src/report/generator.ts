@@ -45,7 +45,6 @@ interface ReportData {
   evaluatorName: string;
   evaluationReason: string;
   presetId: string;
-  recommendations: Recommendation[];
   overallPassRate: number;
   layers: RecommendationLayers;
 }
@@ -105,22 +104,11 @@ interface TestCaseView {
   turns?: ConversationTurn[];
 }
 
-interface Recommendation {
-  id: string;
-  headline: string;
-  explanation: string;
-  steps: string[];
-  metrics: EvalMetric[];
-  metricRates: { label: string; rate: number }[];
-  priority: number;
-  technicalHeadline: string;
-  technicalSteps: string[];
-}
-
 interface LayerRecommendation {
   text: string;
-  dataTag?: string;   // cited evidence, e.g. "4 ease-of-use failures"
-  isClean?: boolean;  // positive confirmation ("✓ No concerns")
+  dataTag?: string;        // cited evidence, e.g. "4 ease-of-use failures"
+  isClean?: boolean;       // positive confirmation ("✓ No concerns")
+  technicalSteps?: string[]; // collapsible "For your technical team" steps
 }
 
 interface RecommendationLayers {
@@ -384,7 +372,6 @@ function deriveReportData(input: EvalResults): ReportData {
     evaluatorName: input.evaluatorName || '',
     evaluationReason: input.evaluationReason || '',
     presetId: input.presetId || '',
-    recommendations: [],
     overallPassRate: bestPassRate,
     layers: { criticalBlock: [], prompt: [], data: [], model: [], process: [] },
   };
@@ -432,18 +419,37 @@ function deriveLayers(data: ReportData): RecommendationLayers {
     prompt.push({
       text: 'Add explicit safety guardrails to your system prompt for the identified failure topics.',
       dataTag: `${safetyFails} safety failure${safetyFails > 1 ? 's' : ''}`,
+      technicalSteps: [
+        'Harden the system prompt with explicit safety boundaries for the identified failure modes',
+        'Add output filtering or classifier-based guardrails (e.g. moderation API, custom classifiers)',
+        'Consider a content-safety layer that screens responses before they reach the user',
+        'Log and alert on safety failures in production for ongoing monitoring',
+      ],
     });
   }
   if (easeFails > 0) {
     prompt.push({
       text: 'Add plain language and brevity instructions to your system prompt — avoid jargon, use short sentences.',
       dataTag: `${easeFails} ease-of-use failure${easeFails > 1 ? 's' : ''}`,
+      technicalSteps: [
+        'Revise the system prompt with explicit formatting guidance and response structure',
+        'Add few-shot examples that demonstrate ideal responses for common question types',
+        'Include plain-language directives: "avoid jargon", "explain acronyms", "give the next step"',
+        'Consider breaking complex prompts into a chain of smaller, focused prompts',
+        'Test system prompt changes in isolation before deploying to see measurable improvement',
+      ],
     });
   }
   if (emotionFails > 0) {
     prompt.push({
       text: "Add tone and empathy instructions — the AI should acknowledge the person's situation before answering.",
       dataTag: `${emotionFails} emotion failure${emotionFails > 1 ? 's' : ''}`,
+      technicalSteps: [
+        'Add tone guidance to the system prompt: "acknowledge the user\'s situation before providing information"',
+        'Include examples of empathetic phrasing for common sensitive topics',
+        'Consider using a separate tone-check step that evaluates response empathy before delivery',
+        'Avoid overly formal or bureaucratic language patterns in prompt templates',
+      ],
     });
   }
   if (prompt.length === 0) {
@@ -455,19 +461,26 @@ function deriveLayers(data: ReportData): RecommendationLayers {
     dataLayer.push({
       text: 'Review expected answers for accuracy test cases — grading criteria may be ambiguous or source data may need updating.',
       dataTag: `${accuracyFails} accuracy failure${accuracyFails > 1 ? 's' : ''}`,
+      technicalSteps: [
+        'Review document chunking strategy \u2014 smaller, overlapping chunks often improve retrieval accuracy',
+        'Evaluate your embedding model and consider re-indexing with a higher-quality model',
+        'Tune retrieval parameters (top-k results, similarity threshold) to improve relevance',
+        'Add structured metadata (dates, categories, source authority) to improve retrieval filtering',
+        'Consider a hybrid search approach combining semantic and keyword-based retrieval',
+      ],
     });
   }
   for (const dim of data.dimensions) {
-    if (dim.totalCount < 2) {
+    if (dim.totalCount < 3) {
       dataLayer.push({
-        text: `Consider adding more ${dim.name} test cases to improve coverage reliability.`,
-        dataTag: `only ${dim.totalCount} ${dim.name} test case`,
+        text: `Add more ${dim.name} test cases to improve coverage reliability.`,
+        dataTag: `only ${dim.totalCount} ${dim.name} test case${dim.totalCount === 1 ? '' : 's'}`,
       });
     }
   }
   if (data.testCaseCount < 10) {
     dataLayer.push({
-      text: 'Small test suite — consider expanding to 15–25 test cases for more reliable results.',
+      text: 'Expand your test suite to at least 15\u201325 test cases for reliable results.',
       dataTag: `${data.testCaseCount} total test cases`,
     });
   }
@@ -480,6 +493,13 @@ function deriveLayers(data: ReportData): RecommendationLayers {
     model.push({
       text: 'Consider a more capable model — critical effectiveness failures may indicate the model cannot handle this use case.',
       dataTag: `${criticalEffFails} critical effectiveness failure${criticalEffFails > 1 ? 's' : ''}`,
+      technicalSteps: [
+        'Compare model performance on each metric dimension, not just overall pass rate',
+        'Evaluate cost per evaluation \u2014 larger models may not justify their cost for your use case',
+        'Consider latency requirements, especially for real-time user-facing applications',
+        'Fine-tuning is rarely necessary for public-sector chatbots \u2014 prompt engineering and retrieval improvements usually deliver better ROI',
+        'Test candidate models with the same evaluation suite to get an apples-to-apples comparison',
+      ],
     });
   }
   if (model.length === 0) {
@@ -488,7 +508,15 @@ function deriveLayers(data: ReportData): RecommendationLayers {
 
   const process: LayerRecommendation[] = [];
   if (data.failedCaseCount > 0) {
-    process.push({ text: 'Re-run this evaluation after making changes to measure the impact.' });
+    process.push({
+      text: 'Re-run this evaluation after making changes to measure the impact.',
+      technicalSteps: [
+        'Integrate evaluation into your CI/CD pipeline so it runs automatically on every deployment',
+        'Track pass rates across runs to establish improvement trends',
+        'Set up automated alerts when pass rates drop below acceptable thresholds',
+        'Version your test suites alongside your code to maintain reproducibility',
+      ],
+    });
   }
   if (data.criticalFailureCount > 0) {
     process.push({
@@ -499,148 +527,6 @@ function deriveLayers(data: ReportData): RecommendationLayers {
   if (safetyFails > 0) {
     process.push({
       text: "Talk to frontline staff about the safety failures — they may reflect real user interactions you haven't anticipated.",
-    });
-  }
-  process.push({ text: 'Share this report with decision-makers as a record of due diligence before deployment.' });
-
-  return { criticalBlock, prompt, data: dataLayer, model, process };
-}
-
-function deriveRecommendations(data: ReportData): Recommendation[] {
-  const safetyRate = dimRate(data.dimensions, 'Safety');
-  const accuracyRate = dimRate(data.dimensions, 'Accuracy');
-  const effectivenessRate = dimRate(data.dimensions, 'Effectiveness');
-  const easeRate = dimRate(data.dimensions, 'Ease of Use');
-  const emotionRate = dimRate(data.dimensions, 'Emotion');
-
-  function metricTag(metric: EvalMetric): { label: string; rate: number } {
-    const rate = dimRate(data.dimensions, METRIC_LABELS[metric]);
-    return { label: METRIC_LABELS[metric], rate: rate != null ? rate : -1 };
-  }
-
-  const recs: Recommendation[] = [
-    {
-      id: 'safety-guardrails',
-      headline: 'Review your safety guardrails',
-      explanation: 'Safety failures mean the AI gave responses that could mislead or harm the people using it. Even one safety failure is worth investigating.',
-      steps: [
-        'Review each safety failure in the Details tab',
-        'Identify the types of unsafe content the AI produced',
-        'Work with your technical team to add protections for those specific issues',
-        'Re-run the evaluation to confirm the fixes work',
-      ],
-      metrics: ['safety'],
-      metricRates: [metricTag('safety')].filter(m => m.rate >= 0),
-      priority: 1,
-      technicalHeadline: 'For your technical team',
-      technicalSteps: [
-        'Harden the system prompt with explicit safety boundaries for the identified failure modes',
-        'Add output filtering or classifier-based guardrails (e.g. moderation API, custom classifiers)',
-        'Consider a content-safety layer that screens responses before they reach the user',
-        'Log and alert on safety failures in production for ongoing monitoring',
-      ],
-    },
-    {
-      id: 'improve-knowledge',
-      headline: 'Improve the information your AI draws from',
-      explanation: 'When the AI gets facts wrong, it usually means the information it has access to is incomplete, outdated, or poorly organized.',
-      steps: [
-        'Check whether the source documents your AI uses are current and complete',
-        'Identify which facts the AI got wrong (see Details tab) and verify them against your records',
-        'Work with your technical team to improve how information is stored and retrieved',
-        'Add missing facts to the knowledge base or correct outdated ones',
-      ],
-      metrics: ['accuracy'],
-      metricRates: [metricTag('accuracy')].filter(m => m.rate >= 0),
-      priority: 2,
-      technicalHeadline: 'For your technical team',
-      technicalSteps: [
-        'Review document chunking strategy \u2014 smaller, overlapping chunks often improve retrieval accuracy',
-        'Evaluate your embedding model and consider re-indexing with a higher-quality model',
-        'Tune retrieval parameters (top-k results, similarity threshold) to improve relevance',
-        'Add structured metadata (dates, categories, source authority) to improve retrieval filtering',
-        'Consider a hybrid search approach combining semantic and keyword-based retrieval',
-      ],
-    },
-    {
-      id: 'strengthen-instructions',
-      headline: 'Strengthen the instructions your AI follows',
-      explanation: 'When the AI understands the question but doesn\u2019t respond in the most helpful way, the instructions it follows (system prompt) likely need improvement.',
-      steps: [
-        'Review the responses that weren\u2019t effective or easy to understand (see Details tab)',
-        'Look for patterns \u2014 are responses too long, too vague, or missing key steps?',
-        'Update the instructions to address the gaps you\u2019ve identified',
-        'Add examples of good responses so the AI knows what to aim for',
-      ],
-      metrics: ['effectiveness', 'ease-of-use'],
-      metricRates: [metricTag('effectiveness'), metricTag('ease-of-use')].filter(m => m.rate >= 0),
-      priority: 3,
-      technicalHeadline: 'For your technical team',
-      technicalSteps: [
-        'Revise the system prompt with explicit formatting guidance and response structure',
-        'Add few-shot examples that demonstrate ideal responses for common question types',
-        'Include plain-language directives: "avoid jargon", "explain acronyms", "give the next step"',
-        'Consider breaking complex prompts into a chain of smaller, focused prompts',
-        'Test system prompt changes in isolation before deploying to see measurable improvement',
-      ],
-    },
-    {
-      id: 'adjust-tone',
-      headline: 'Adjust the tone and style',
-      explanation: 'People using government services are often in stressful situations. If the AI\u2019s tone feels cold, robotic, or dismissive, it can make things worse even when the information is correct.',
-      steps: [
-        'Read through the emotion-related failures in the Details tab',
-        'Note where the AI could have acknowledged the person\u2019s situation before answering',
-        'Update the instructions to include guidance about tone and empathy',
-        'Consider adding specific phrases the AI should use in sensitive situations',
-      ],
-      metrics: ['emotion'],
-      metricRates: [metricTag('emotion')].filter(m => m.rate >= 0),
-      priority: 4,
-      technicalHeadline: 'For your technical team',
-      technicalSteps: [
-        'Add tone guidance to the system prompt: "acknowledge the user\u2019s situation before providing information"',
-        'Include examples of empathetic phrasing for common sensitive topics',
-        'Consider using a separate tone-check step that evaluates response empathy before delivery',
-        'Avoid overly formal or bureaucratic language patterns in prompt templates',
-      ],
-    },
-    {
-      id: 'consider-model',
-      headline: 'Consider a different AI model',
-      explanation: 'Different AI models have different strengths. If you tested more than one, comparing their results can reveal whether switching models would make a meaningful difference.',
-      steps: [
-        'Compare pass rates across models in the Analysis tab',
-        'Check if one model is consistently better across all categories, or only in specific areas',
-        'Factor in cost and speed \u2014 a more expensive model is only worth it if the improvement matters',
-        'Discuss trade-offs with your technical team before switching',
-      ],
-      metrics: [],
-      metricRates: data.providers.map(p => ({ label: p.name, rate: p.passRate })),
-      priority: 5,
-      technicalHeadline: 'For your technical team',
-      technicalSteps: [
-        'Compare model performance on each metric dimension, not just overall pass rate',
-        'Evaluate cost per evaluation \u2014 larger models may not justify their cost for your use case',
-        'Consider latency requirements, especially for real-time user-facing applications',
-        'Fine-tuning is rarely necessary for public-sector chatbots \u2014 prompt engineering and retrieval improvements usually deliver better ROI',
-        'Test candidate models with the same evaluation suite to get an apples-to-apples comparison',
-      ],
-    },
-    {
-      id: 'talk-to-users',
-      headline: 'Talk to the people who use this service',
-      explanation: 'The best way to improve your AI is to understand what real people actually need from it. Test cases based on real user questions catch problems that hypothetical scenarios miss.',
-      steps: [
-        'Interview 5\u201310 people who use (or would use) this service',
-        'Ask what questions they\u2019d ask, what words they\u2019d use, and what would actually help them',
-        'Add their real questions to your test suite as new test cases',
-        'Pay special attention to edge cases and situations that are hard to handle',
-      ],
-      metrics: ['effectiveness'],
-      metricRates: [metricTag('effectiveness')].filter(m => m.rate >= 0),
-      priority: 6,
-      technicalHeadline: 'For your technical team',
       technicalSteps: [
         'Analyze production logs to identify the most common user questions and failure modes',
         'Build test cases from real user interactions, not just policy documents',
@@ -648,31 +534,11 @@ function deriveRecommendations(data: ReportData): Recommendation[] {
         'Set up a feedback loop so user-reported issues automatically become new test cases',
         'Consider A/B testing different response strategies with real users',
       ],
-    },
-    {
-      id: 'run-again',
-      headline: 'Run this evaluation again after making changes',
-      explanation: 'Evaluation isn\u2019t a one-time activity. Every time you update the AI\u2019s instructions, data, or model, run the same tests again to make sure things got better, not worse.',
-      steps: [
-        'Make one or two focused changes based on the recommendations above',
-        'Re-run this same evaluation to measure the impact',
-        'Compare your new pass rates against this baseline',
-        'Repeat until you\u2019re confident the AI is ready for real users',
-      ],
-      metrics: [],
-      metricRates: [],
-      priority: 7,
-      technicalHeadline: 'For your technical team',
-      technicalSteps: [
-        'Integrate evaluation into your CI/CD pipeline so it runs automatically on every deployment',
-        'Track pass rates across runs to establish improvement trends',
-        'Set up automated alerts when pass rates drop below acceptable thresholds',
-        'Version your test suites alongside your code to maintain reproducibility',
-      ],
-    },
-  ];
+    });
+  }
+  process.push({ text: 'Share this report with decision-makers as a record of due diligence before deployment.' });
 
-  return recs;
+  return { criticalBlock, prompt, data: dataLayer, model, process };
 }
 
 // ---------- HTML Rendering ----------
@@ -900,17 +766,30 @@ function renderHtml(data: ReportData, jobId?: string): string {
 
   // ── Recommendations tab ─────────────────────────────────────────────
 
-  function renderLayer(title: string, subtitle: string, items: LayerRecommendation[], layerId: string): string {
-    const itemsHtml = items.map(item => `
+  function renderLayer(title: string, subtitle: string, contextNote: string, items: LayerRecommendation[], layerId: string): string {
+    const itemsHtml = items.map(item => {
+      const techHtml = item.technicalSteps?.length ? `
+        <details class="rec-technical">
+          <summary class="rec-tech-toggle">For your technical team &#9656;</summary>
+          <div class="rec-tech-content">
+            <ul class="rec-tech-list">
+              ${item.technicalSteps.map(s => `<li>${esc(s)}</li>`).join('')}
+            </ul>
+          </div>
+        </details>` : '';
+      return `
       <li class="rec-layer-item${item.isClean ? ' rec-layer-item--clean' : ''}">
         ${item.isClean ? '<span class="rec-clean-check">&#10003;</span> ' : ''}${esc(item.text)}${item.dataTag ? ` <span class="rec-data-tag">${esc(item.dataTag)}</span>` : ''}
-      </li>`).join('');
+        ${techHtml}
+      </li>`;
+    }).join('');
     return `
   <div class="rec-layer" id="rec-layer-${layerId}">
     <div class="rec-layer-header">
       <span class="rec-layer-title">${esc(title)}</span>
       <span class="rec-layer-subtitle">${esc(subtitle)}</span>
     </div>
+    ${contextNote ? `<p class="rec-layer-context">${contextNote}</p>` : ''}
     <ul class="rec-layer-list">${itemsHtml}</ul>
   </div>`;
   }
@@ -926,12 +805,18 @@ function renderHtml(data: ReportData, jobId?: string): string {
     </ul>
   </div>` : '';
 
+  const allLayersClear = data.layers.criticalBlock.length === 0
+    && data.layers.prompt.every(i => i.isClean)
+    && data.layers.data.every(i => i.isClean)
+    && data.layers.model.every(i => i.isClean);
+
   const layersHtml = `
   <div class="rec-layers">
-    ${renderLayer('Prompt', 'Changes to how you instruct the AI', data.layers.prompt, 'prompt')}
-    ${renderLayer('Data', 'Changes to your test cases', data.layers.data, 'data')}
-    ${renderLayer('Model', 'Changes to which AI you are testing', data.layers.model, 'model')}
-    ${renderLayer('Process', "Changes to your team's practices", data.layers.process, 'process')}
+    ${allLayersClear ? `<div class="rec-all-clear"><span class="rec-clean-check">&#10003;</span> All layers clear. Continue to the Process recommendations below to strengthen your evaluation routine for future runs.</div>` : `
+    ${renderLayer('Prompt', 'Changes to how you instruct the AI', 'Your AI team can usually test prompt changes the same day.', data.layers.prompt, 'prompt')}
+    ${renderLayer('Data', 'Changes to your test cases', 'Your subject matter experts can lead this \u2014 no AI expertise required.', data.layers.data, 'data')}
+    ${renderLayer('Model', 'Changes to which AI you are testing', 'Involves cost and procurement decisions. Bring in leadership before changing models.', data.layers.model, 'model')}`}
+    ${renderLayer('Process', "Changes to your team's practices", 'These habits prevent regressions in future evaluations.', data.layers.process, 'process')}
   </div>`;
 
   // ── Engineering tab ──────────────────────────────────────────────────
@@ -1630,44 +1515,7 @@ table.data-table, table.detail-table {
 }
 
 /* ── Recommendations tab ── */
-.rec-intro { font-size: 14px; color: var(--text-2); line-height: 1.6; margin: 0; }
-.rec-card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  margin-bottom: 8px; list-style: none;
-}
-.rec-card[open] { border-color: var(--brand); }
-.rec-card::-webkit-details-marker { display: none; }
-.rec-summary {
-  display: flex; align-items: center; gap: 14px;
-  padding: 16px 20px; cursor: pointer; list-style: none; user-select: none;
-}
-.rec-summary::-webkit-details-marker { display: none; }
-.rec-summary::marker { content: ''; }
-.rec-summary:hover { background: #f8fafc; border-radius: var(--radius); }
-.rec-card[open] .rec-summary { border-bottom: 1px solid var(--border); }
-.rec-number {
-  flex-shrink: 0; width: 28px; height: 28px; background: var(--brand); color: #fff;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 13px;
-}
-.rec-headline { font-size: 15px; font-weight: 600; color: var(--text); margin: 0; flex: 1; }
-.rec-chevron { color: var(--text-3); font-size: 12px; flex-shrink: 0; transition: transform 0.15s; }
-.rec-card[open] .rec-chevron { transform: rotate(180deg); }
-.rec-body { padding: 20px 20px 20px 62px; }
-.rec-explanation { font-size: 14px; color: var(--text-2); line-height: 1.6; margin: 0 0 16px; }
-.rec-steps-label {
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
-  color: var(--text-3); margin-bottom: 8px;
-}
-.rec-step-list { margin: 0 0 16px; padding-left: 20px; }
-.rec-step-list li { font-size: 14px; color: var(--text); line-height: 1.6; margin-bottom: 4px; }
-.rec-evidence { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 16px; }
-.rec-evidence-label { font-size: 12px; font-weight: 600; color: var(--text-2); }
-.rec-evidence-tag {
-  font-size: 11px; font-weight: 600; padding: 2px 8px; background: var(--border-sub);
-  border-radius: 4px; color: var(--text-2);
-}
-.rec-technical { border-top: 1px solid var(--border-sub); padding-top: 12px; }
+.rec-technical { border-top: 1px solid var(--border-sub); padding-top: 12px; margin-top: 8px; }
 .rec-tech-toggle {
   font-size: 13px; font-weight: 600; color: var(--brand); cursor: pointer; list-style: none;
 }
@@ -1676,9 +1524,10 @@ table.data-table, table.detail-table {
 .rec-tech-content { margin-top: 10px; padding: 14px 16px; background: #f0f4f8; border-radius: 6px; }
 .rec-tech-list { margin: 0; padding-left: 20px; }
 .rec-tech-list li { font-size: 13px; color: #334155; line-height: 1.6; margin-bottom: 4px; }
-@media (max-width: 680px) {
-  .rec-body { padding: 16px; }
-  .rec-summary { padding: 14px 16px; }
+.rec-layer-context { font-size: 13px; color: var(--text-3); margin: -6px 0 14px; line-height: 1.5; }
+.rec-all-clear {
+  background: var(--pass-bg); border: 1px solid var(--pass-border); border-radius: var(--radius);
+  padding: 16px 22px; font-size: 14px; color: #166534; margin-bottom: 12px;
 }
 
 /* ── Persona badge ── */
@@ -2026,10 +1875,10 @@ table.data-table, table.detail-table {
   <div class="rec-synthesis">
     <p>Overall pass rate: <strong>${data.overallPassRate}%</strong> &middot;
     ${data.criticalFailureCount > 0
-      ? `<span class="rec-critical-note">${data.criticalFailureCount} critical failure${data.criticalFailureCount > 1 ? 's' : ''} require attention before deployment.</span>`
-      : 'No critical failures detected.'
+      ? `<span class="rec-critical-note">${data.criticalFailureCount} critical failure${data.criticalFailureCount > 1 ? 's' : ''} require${data.criticalFailureCount === 1 ? 's' : ''} resolution before deployment.</span>`
+      : 'No critical failures.'
     }</p>
-    <p style="font-size:13px;color:var(--text-3);margin-top:6px;margin-bottom:0">Recommendations are organized by what type of change is most likely to improve your scores. Performance data from the Performance tab will enrich model and prompt recommendations when available.</p>
+    <p class="card-subtitle">Each section below identifies what to change and who should do it.${data.criticalFailureCount > 0 ? ' Start with the critical failures above \u2014 resolve those before working on anything else.' : ''}</p>
   </div>
 
   ${criticalBlockHtml}
@@ -2336,8 +2185,6 @@ table.data-table, table.detail-table {
     if (d.avgLatencyMs > 2000) {
       var modelLayer = document.getElementById('rec-layer-model');
       if (modelLayer) {
-        var cleanItem = modelLayer.querySelector('.rec-layer-item--clean');
-        if (cleanItem) cleanItem.remove();
         var ul = modelLayer.querySelector('.rec-layer-list');
         if (ul) {
           var li = document.createElement('li');

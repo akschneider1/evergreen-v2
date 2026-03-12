@@ -678,44 +678,7 @@ table.data-table, table.detail-table {
 }
 
 /* ── Recommendations tab ── */
-.rec-intro { font-size: 14px; color: var(--text-2); line-height: 1.6; margin: 0; }
-.rec-card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  margin-bottom: 8px; list-style: none;
-}
-.rec-card[open] { border-color: var(--brand); }
-.rec-card::-webkit-details-marker { display: none; }
-.rec-summary {
-  display: flex; align-items: center; gap: 14px;
-  padding: 16px 20px; cursor: pointer; list-style: none; user-select: none;
-}
-.rec-summary::-webkit-details-marker { display: none; }
-.rec-summary::marker { content: ''; }
-.rec-summary:hover { background: #f8fafc; border-radius: var(--radius); }
-.rec-card[open] .rec-summary { border-bottom: 1px solid var(--border); }
-.rec-number {
-  flex-shrink: 0; width: 28px; height: 28px; background: var(--brand); color: #fff;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 13px;
-}
-.rec-headline { font-size: 15px; font-weight: 600; color: var(--text); margin: 0; flex: 1; }
-.rec-chevron { color: var(--text-3); font-size: 12px; flex-shrink: 0; transition: transform 0.15s; }
-.rec-card[open] .rec-chevron { transform: rotate(180deg); }
-.rec-body { padding: 20px 20px 20px 62px; }
-.rec-explanation { font-size: 14px; color: var(--text-2); line-height: 1.6; margin: 0 0 16px; }
-.rec-steps-label {
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
-  color: var(--text-3); margin-bottom: 8px;
-}
-.rec-step-list { margin: 0 0 16px; padding-left: 20px; }
-.rec-step-list li { font-size: 14px; color: var(--text); line-height: 1.6; margin-bottom: 4px; }
-.rec-evidence { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 16px; }
-.rec-evidence-label { font-size: 12px; font-weight: 600; color: var(--text-2); }
-.rec-evidence-tag {
-  font-size: 11px; font-weight: 600; padding: 2px 8px; background: var(--border-sub);
-  border-radius: 4px; color: var(--text-2);
-}
-.rec-technical { border-top: 1px solid var(--border-sub); padding-top: 12px; }
+.rec-technical { border-top: 1px solid var(--border-sub); padding-top: 12px; margin-top: 8px; }
 .rec-tech-toggle {
   font-size: 13px; font-weight: 600; color: var(--brand); cursor: pointer; list-style: none;
 }
@@ -724,9 +687,10 @@ table.data-table, table.detail-table {
 .rec-tech-content { margin-top: 10px; padding: 14px 16px; background: #f0f4f8; border-radius: 6px; }
 .rec-tech-list { margin: 0; padding-left: 20px; }
 .rec-tech-list li { font-size: 13px; color: #334155; line-height: 1.6; margin-bottom: 4px; }
-@media (max-width: 680px) {
-  .rec-body { padding: 16px; }
-  .rec-summary { padding: 14px 16px; }
+.rec-layer-context { font-size: 13px; color: var(--text-3); margin: -6px 0 14px; line-height: 1.5; }
+.rec-all-clear {
+  background: var(--pass-bg); border: 1px solid var(--pass-border); border-radius: var(--radius);
+  padding: 16px 22px; font-size: 14px; color: #166534; margin-bottom: 12px;
 }
 
 /* ── Persona badge ── */
@@ -1471,8 +1435,8 @@ table.data-table, table.detail-table {
 
   <div class="rec-synthesis">
     <p>Overall pass rate: <strong>83%</strong> &middot;
-    <span class="rec-critical-note">1 critical failure require attention before deployment.</span></p>
-    <p style="font-size:13px;color:var(--text-3);margin-top:6px;margin-bottom:0">Recommendations are organized by what type of change is most likely to improve your scores. Performance data from the Performance tab will enrich model and prompt recommendations when available.</p>
+    <span class="rec-critical-note">1 critical failure requires resolution before deployment.</span></p>
+    <p class="card-subtitle">Each section below identifies what to change and who should do it. Start with the critical failures above — resolve those before working on anything else.</p>
   </div>
 
   
@@ -1492,14 +1456,25 @@ table.data-table, table.detail-table {
   
   <div class="rec-layers">
     
+    
   <div class="rec-layer" id="rec-layer-prompt">
     <div class="rec-layer-header">
       <span class="rec-layer-title">Prompt</span>
       <span class="rec-layer-subtitle">Changes to how you instruct the AI</span>
     </div>
+    <p class="rec-layer-context">Your AI team can usually test prompt changes the same day.</p>
     <ul class="rec-layer-list">
       <li class="rec-layer-item">
         Add explicit safety guardrails to your system prompt for the identified failure topics. <span class="rec-data-tag">1 safety failure</span>
+        
+        <details class="rec-technical">
+          <summary class="rec-tech-toggle">For your technical team &#9656;</summary>
+          <div class="rec-tech-content">
+            <ul class="rec-tech-list">
+              <li>Harden the system prompt with explicit safety boundaries for the identified failure modes</li><li>Add output filtering or classifier-based guardrails (e.g. moderation API, custom classifiers)</li><li>Consider a content-safety layer that screens responses before they reach the user</li><li>Log and alert on safety failures in production for ongoing monitoring</li>
+            </ul>
+          </div>
+        </details>
       </li></ul>
   </div>
     
@@ -1508,21 +1483,31 @@ table.data-table, table.detail-table {
       <span class="rec-layer-title">Data</span>
       <span class="rec-layer-subtitle">Changes to your test cases</span>
     </div>
+    <p class="rec-layer-context">Your subject matter experts can lead this — no AI expertise required.</p>
     <ul class="rec-layer-list">
       <li class="rec-layer-item">
-        Consider adding more Safety test cases to improve coverage reliability. <span class="rec-data-tag">only 1 Safety test case</span>
+        Add more Safety test cases to improve coverage reliability. <span class="rec-data-tag">only 1 Safety test case</span>
+        
       </li>
       <li class="rec-layer-item">
-        Consider adding more Ease of Use test cases to improve coverage reliability. <span class="rec-data-tag">only 1 Ease of Use test case</span>
+        Add more Accuracy test cases to improve coverage reliability. <span class="rec-data-tag">only 2 Accuracy test cases</span>
+        
       </li>
       <li class="rec-layer-item">
-        Consider adding more Effectiveness test cases to improve coverage reliability. <span class="rec-data-tag">only 1 Effectiveness test case</span>
+        Add more Ease of Use test cases to improve coverage reliability. <span class="rec-data-tag">only 1 Ease of Use test case</span>
+        
       </li>
       <li class="rec-layer-item">
-        Consider adding more Emotion test cases to improve coverage reliability. <span class="rec-data-tag">only 1 Emotion test case</span>
+        Add more Effectiveness test cases to improve coverage reliability. <span class="rec-data-tag">only 1 Effectiveness test case</span>
+        
       </li>
       <li class="rec-layer-item">
-        Small test suite — consider expanding to 15–25 test cases for more reliable results. <span class="rec-data-tag">6 total test cases</span>
+        Add more Emotion test cases to improve coverage reliability. <span class="rec-data-tag">only 1 Emotion test case</span>
+        
+      </li>
+      <li class="rec-layer-item">
+        Expand your test suite to at least 15–25 test cases for reliable results. <span class="rec-data-tag">6 total test cases</span>
+        
       </li></ul>
   </div>
     
@@ -1531,9 +1516,11 @@ table.data-table, table.detail-table {
       <span class="rec-layer-title">Model</span>
       <span class="rec-layer-subtitle">Changes to which AI you are testing</span>
     </div>
+    <p class="rec-layer-context">Involves cost and procurement decisions. Bring in leadership before changing models.</p>
     <ul class="rec-layer-list">
       <li class="rec-layer-item rec-layer-item--clean">
         <span class="rec-clean-check">&#10003;</span> No model-layer concerns detected.
+        
       </li></ul>
   </div>
     
@@ -1542,18 +1529,39 @@ table.data-table, table.detail-table {
       <span class="rec-layer-title">Process</span>
       <span class="rec-layer-subtitle">Changes to your team's practices</span>
     </div>
+    <p class="rec-layer-context">These habits prevent regressions in future evaluations.</p>
     <ul class="rec-layer-list">
       <li class="rec-layer-item">
         Re-run this evaluation after making changes to measure the impact.
+        
+        <details class="rec-technical">
+          <summary class="rec-tech-toggle">For your technical team &#9656;</summary>
+          <div class="rec-tech-content">
+            <ul class="rec-tech-list">
+              <li>Integrate evaluation into your CI/CD pipeline so it runs automatically on every deployment</li><li>Track pass rates across runs to establish improvement trends</li><li>Set up automated alerts when pass rates drop below acceptable thresholds</li><li>Version your test suites alongside your code to maintain reproducibility</li>
+            </ul>
+          </div>
+        </details>
       </li>
       <li class="rec-layer-item">
         Have a subject matter expert review the critical failures before deployment. <span class="rec-data-tag">1 critical failure</span>
+        
       </li>
       <li class="rec-layer-item">
         Talk to frontline staff about the safety failures — they may reflect real user interactions you haven't anticipated.
+        
+        <details class="rec-technical">
+          <summary class="rec-tech-toggle">For your technical team &#9656;</summary>
+          <div class="rec-tech-content">
+            <ul class="rec-tech-list">
+              <li>Analyze production logs to identify the most common user questions and failure modes</li><li>Build test cases from real user interactions, not just policy documents</li><li>Expand test coverage to include multilingual queries and accessibility scenarios</li><li>Set up a feedback loop so user-reported issues automatically become new test cases</li><li>Consider A/B testing different response strategies with real users</li>
+            </ul>
+          </div>
+        </details>
       </li>
       <li class="rec-layer-item">
         Share this report with decision-makers as a record of due diligence before deployment.
+        
       </li></ul>
   </div>
   </div>
