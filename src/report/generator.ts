@@ -62,6 +62,7 @@ interface ProviderSummary {
 interface CriticalFailure {
   testNumber: number;
   question: string;
+  metric: EvalMetric;
   provider: string;
   expectedSummary: string;
   responseSummary: string;
@@ -131,7 +132,7 @@ const METRIC_LABELS: Record<EvalMetric, string> = {
   'accuracy':      'Accuracy',
   'ease-of-use':   'Ease of Use',
   'effectiveness': 'Effectiveness',
-  'emotion':       'Emotion',
+  'emotion':       'Tone and Respect',
 };
 
 const METRIC_TOOLTIPS: Record<EvalMetric, string> = {
@@ -147,7 +148,7 @@ const METRIC_FAILURE_NOTES: Record<EvalMetric, string> = {
   'accuracy':      'Responses contained incorrect factual information',
   'ease-of-use':   'Responses were difficult for non-experts to understand',
   'effectiveness': 'Responses did not effectively help users accomplish their goal',
-  'emotion':       'Responses did not treat users with appropriate respect',
+  'emotion':       'Responses did not treat users with appropriate tone and respect',
 };
 
 const METRIC_ORDER: EvalMetric[] = [
@@ -211,6 +212,7 @@ function deriveReportData(input: EvalResults): ReportData {
         criticalFailures.push({
           testNumber: tc.number,
           question: tc.question,
+          metric: tc.metric,
           provider: r.provider,
           expectedSummary: tc.expected.length > 120 ? tc.expected.slice(0, 120) + '…' : tc.expected,
           responseSummary: r.response.length > 180 ? r.response.slice(0, 180) + '…' : r.response,
@@ -233,7 +235,7 @@ function deriveReportData(input: EvalResults): ReportData {
     readinessExplanation = `There ${criticalFailures.length === 1 ? 'is' : 'are'} ${criticalFailures.length} critical failure${criticalFailures.length > 1 ? 's' : ''} that could directly harm users. The system must not be deployed until these are resolved.`;
     nextSteps = [
       'Review each critical failure below and identify the root cause',
-      'Update the system prompt or knowledge base to address the gaps',
+      "Work with your technical team to update the AI's instructions and reference materials",
       'Re-run the evaluation to confirm the fixes',
       'See the Recommendations tab for specific next steps by layer',
     ];
@@ -244,7 +246,7 @@ function deriveReportData(input: EvalResults): ReportData {
     nextSteps = [
       'Scroll down to review metric results and identify which dimensions are weakest',
       'Review failing test cases in the table below for patterns',
-      'Update the system prompt or knowledge base to address widespread gaps',
+      "Work with your technical team to update the AI's instructions and source materials across all failing areas",
       'Re-run the evaluation after making changes',
     ];
   } else if (bestPassRate < PASS_RATE_THRESHOLD) {
@@ -255,7 +257,7 @@ function deriveReportData(input: EvalResults): ReportData {
       'Scroll down to review metric results and identify which dimensions are weakest',
       'Review failing test cases in the table below for specific failures',
       'Update the system prompt with more specific guidance for the failing areas',
-      'Consider retrieval-augmented generation if facts are consistently wrong',
+      "Ask your technical team whether the AI is drawing from current, accurate source documents \u2014 outdated or missing documents are the most common cause of factual errors",
       'Re-run the evaluation after making changes',
     ];
   } else {
@@ -297,7 +299,7 @@ function deriveReportData(input: EvalResults): ReportData {
   if (dimensions.length > 0) {
     const lowest = dimensions.reduce((a, b) => a.passRate < b.passRate ? a : b);
     if (lowest.passRate < PASS_RATE_THRESHOLD) {
-      patternNote = `Weakest area: <strong>${esc(lowest.name)}</strong> (${lowest.passedCount}/${lowest.totalCount} tests passing). Focus system prompt improvements here first, then re-run the evaluation.`;
+      patternNote = `Weakest area: <strong>${esc(lowest.name)}</strong> (${lowest.passedCount}/${lowest.totalCount} tests passing). Review the failing test cases below and bring these to your AI team \u2014 this is the first thing to fix.`;
     }
   }
 
@@ -394,7 +396,7 @@ function deriveLayers(data: ReportData): RecommendationLayers {
 
   const safetyFails = failCount('Safety');
   const easeFails   = failCount('Ease of Use');
-  const emotionFails = failCount('Emotion');
+  const emotionFails = failCount('Tone and Respect');
   const accuracyFails = failCount('Accuracy');
   const criticalEffFails = data.testCases.filter(
     tc => tc.metric === 'effectiveness' && tc.severity === 'critical' && tc.anyFailed,
@@ -543,16 +545,27 @@ function deriveLayers(data: ReportData): RecommendationLayers {
 
 // ---------- HTML Rendering ----------
 
+function expectedFieldLabel(metric: EvalMetric): string {
+  if (metric === 'safety') return 'Failure condition';
+  if (metric === 'accuracy') return 'Must include';
+  return 'Grading criteria';
+}
+
 function renderHtml(data: ReportData, jobId?: string): string {
   // ── Summary tab ──────────────────────────────────────────────────────────
 
-  const nextStepsHtml = data.nextSteps.map(s => `<li>${s}</li>`).join('');
+  const nextStepsHtml = data.nextSteps.map(s => {
+    if (s.includes('Recommendations tab')) {
+      return `<li><button class="rh-rec-link" onclick="activateTab('recommendations')">${esc(s)}</button></li>`;
+    }
+    return `<li>${s}</li>`;
+  }).join('');
 
   const providerStatCardsHtml = data.providers.map(p => `
     <div class="stat-card">
       <div class="stat-value ${p.passRateClass}">${p.passRate}%</div>
-      <div class="stat-fraction">${p.passed} of ${p.total} tests</div>
-      <div class="stat-label">${esc(p.name)}</div>
+      <div class="stat-fraction">${p.passed} of ${p.total} tests${data.providers.length === 1 ? ` \u00b7 ${esc(p.name)}` : ''}</div>
+      <div class="stat-label">${data.providers.length === 1 ? 'Tests passed' : esc(p.name)}</div>
     </div>
   `).join('');
 
@@ -584,8 +597,8 @@ function renderHtml(data: ReportData, jobId?: string): string {
           </div>
           <div class="cf-comparison">
             <div class="cf-col">
-              <div class="cf-col-label">Expected</div>
-              <div class="cf-col-value expected">${esc(cf.expectedSummary)}</div>
+              <div class="cf-col-label">${expectedFieldLabel(cf.metric)}</div>
+              <div class="cf-col-value ${cf.metric === 'safety' ? 'cf-failure-cond' : 'expected'}">${esc(cf.expectedSummary)}</div>
             </div>
             <div class="cf-col">
               <div class="cf-col-label">Actual response</div>
@@ -666,6 +679,37 @@ function renderHtml(data: ReportData, jobId?: string): string {
     </div>
   ` : '';
 
+  // ── Transparency / disclosure blocks ──────────────────────────────────────
+
+  const smallNWarningHtml = data.testCaseCount < 20 ? `
+  <div class="small-n-warning">
+    <strong>Small test suite:</strong> ${data.testCaseCount} test cases is too few for a statistically reliable result \u2014
+    pass rates on small suites can vary widely. Expand to at least 25 tests before making a deployment decision.
+  </div>` : '';
+
+  const providerSpread = data.providers.length > 1
+    ? Math.max(...data.providers.map(p => p.passRate)) - Math.min(...data.providers.map(p => p.passRate))
+    : 0;
+  const multiProviderWarningHtml = providerSpread > 15 ? `
+  <div class="small-n-warning">
+    Results vary by <strong>${providerSpread} percentage points</strong> across models \u2014
+    confirm which model you intend to deploy before using this verdict.
+  </div>` : '';
+
+  const aiGraded = data.dimensions
+    .filter(d => METRIC_ORDER.find(k => METRIC_LABELS[k] === d.name) !== 'accuracy')
+    .map(d => d.name);
+  const stringGraded = data.dimensions
+    .filter(d => METRIC_ORDER.find(k => METRIC_LABELS[k] === d.name) === 'accuracy')
+    .map(d => d.name);
+  const gradingDisclosureHtml = `
+  <div class="grading-disclosure">
+    <span class="grading-disclosure-label">How this was graded \u2014</span>
+    ${aiGraded.length ? `<span><strong>${aiGraded.join(', ')}</strong>: AI judge (rubric-based).</span>` : ''}
+    ${stringGraded.length ? `<span><strong>${stringGraded.join(', ')}</strong>: keyword matching against expected answers.</span>` : ''}
+    <span>AI grading is an approximation \u2014 have a subject matter expert review critical failures before making a deployment decision.</span>
+  </div>`;
+
   // ── Details tab ──────────────────────────────────────────────────────────
 
   const providerHeaders = data.providers.map(p =>
@@ -711,7 +755,7 @@ function renderHtml(data: ReportData, jobId?: string): string {
             <div class="exp-response">${esc(r.response)}</div>
           </div>
           <div class="exp-col exp-grading">
-            <div class="exp-label">Grading</div>
+            <div class="exp-label">${r.resultClass === 'result-pass' ? 'Why it passed' : 'Why it failed'}</div>
             <div class="exp-reason ${r.resultClass}">${esc(r.enhancedGradingReason)}</div>
           </div>
         </div>
@@ -734,10 +778,10 @@ function renderHtml(data: ReportData, jobId?: string): string {
         <tr class="detail-row">
           <td colspan="${tc.colspan}">
             <div class="expanded-detail" id="detail-${tc.number}">
-              <div class="exp-expected">
-                <span class="exp-label">Expected</span>
-                <span class="exp-expected-value">${esc(tc.expected)}</span>
-              </div>
+              ${tc.expected ? `<div class="exp-expected">
+                <span class="exp-label">${expectedFieldLabel(tc.metric)}</span>
+                <span class="exp-expected-value${tc.metric === 'safety' ? ' exp-expected-fail-cond' : ''}">${esc(tc.expected)}</span>
+              </div>` : ''}
               ${conversationHtml}
               ${expandedContent}
               ${jobId ? `
@@ -1530,6 +1574,39 @@ table.data-table, table.detail-table {
   padding: 16px 22px; font-size: 14px; color: #166534; margin-bottom: 12px;
 }
 
+/* ── Cross-tab bridge ── */
+.rh-rec-link {
+  background: none; border: none; padding: 0;
+  color: inherit; font: inherit; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+
+/* ── Tab nav pill ── */
+.tab-nav-inner { display: flex; align-items: center; }
+.tab-nav-spacer { flex: 1; }
+.tab-nav-pill { margin: 0 4px; font-size: 11px; padding: 4px 10px; }
+
+/* ── Expected field variants ── */
+.cf-failure-cond {
+  background: var(--warn-bg); border: 1px solid var(--warn-border);
+  border-radius: 4px; padding: 4px 8px; font-size: 13px; color: var(--text-2); line-height: 1.5;
+}
+.exp-expected-fail-cond { background: var(--warn-bg); border-color: var(--warn-border); }
+
+/* ── Statistical transparency ── */
+.small-n-warning {
+  background: var(--warn-bg); border: 1px solid var(--warn-border);
+  border-radius: var(--radius); padding: 10px 16px;
+  font-size: 13px; color: var(--text-2); margin-bottom: 12px;
+}
+.grading-disclosure {
+  display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 16px;
+  font-size: 12px; color: var(--text-3); margin-bottom: 8px;
+}
+.grading-disclosure-label { font-weight: 700; color: var(--text-2); }
+
 /* ── Persona badge ── */
 .persona-badge {
   display: inline-block;
@@ -1768,19 +1845,22 @@ table.data-table, table.detail-table {
 
 <!-- ── Tab nav ── -->
 <nav class="tab-nav">
-  <div class="grid-container" style="display:flex">
+  <div class="grid-container tab-nav-inner">
     <button class="tab-btn active" data-tab="report">
       <span class="tab-label">Report</span>
-      <span class="tab-sub">Compliance artifact</span>
+      <span class="tab-sub">Results &amp; readiness</span>
     </button>
+    ${jobId ? `
     <button class="tab-btn" id="tab-btn-engineering" data-tab="engineering">
       <span class="tab-label">Performance</span>
       <span class="tab-sub">Speed, cost &amp; trends</span>
-    </button>
+    </button>` : ''}
     <button class="tab-btn" data-tab="recommendations">
       <span class="tab-label">Recommendations</span>
       <span class="tab-sub">What to do next</span>
     </button>
+    <div class="tab-nav-spacer"></div>
+    <div class="readiness-pill ${data.readinessClass} tab-nav-pill">${esc(data.readinessLabel)}</div>
   </div>
 </nav>
 
@@ -1800,6 +1880,9 @@ table.data-table, table.detail-table {
     ${criticalCardHtml}
   </div>
 
+  ${smallNWarningHtml}
+  ${multiProviderWarningHtml}
+
   <div class="split-cards">
     <div class="card">
       <h2 class="card-title">Results by Metric</h2>
@@ -1817,6 +1900,8 @@ table.data-table, table.detail-table {
   ${criticalFailuresHtml}
 
   ${comparisonHtml}
+
+  ${gradingDisclosureHtml}
 
   <div class="detail-section-header">
     <button class="filter-toggle" id="filter-toggle" onclick="toggleFilterBar()">
@@ -1879,6 +1964,7 @@ table.data-table, table.detail-table {
       : 'No critical failures.'
     }</p>
     <p class="card-subtitle">Each section below identifies what to change and who should do it.${data.criticalFailureCount > 0 ? ' Start with the critical failures above \u2014 resolve those before working on anything else.' : ''}</p>
+    <p class="card-subtitle" style="margin-top:4px;margin-bottom:0">Note: This evaluation tested expected user queries only. Adversarial inputs, multilingual queries, and multi-turn conversation robustness were not tested in this run.</p>
   </div>
 
   ${criticalBlockHtml}
