@@ -53,6 +53,8 @@ Choose one of three paths:
 
 Pick a pre-built test suite (25 tests each) from the landing page. Click **"Run now"** on any template card to jump straight to the run form with that suite pre-selected.
 
+> **Personas and multi-turn conversations:** Some test suites — like **Permitting Assistant** — test how the AI responds to the same question from different types of people. For example, a homeowner, a renter, and a contractor may ask about the same permit requirement but each need a slightly different answer. Each "persona" gives the AI a short conversation history before the graded question, so you're testing how it handles real-world context. Persona-based test cases are only available in the built-in presets — you can't add them manually in Google Sheets or the Builder.
+
 **Path 2 — Build your own in the Builder**
 
 Click **"Get started →"** or **"Open in Builder"** on any template card to open the Test Suite Builder at `/builder`. In the **Library** tab, pick a starting point — or click "Start building →" to start from scratch. In the **Builder** tab, review and edit test cases, or add new ones. Each case gets a question, a metric (Safety, Accuracy, Ease of Use, Effectiveness, or Emotion), criteria for what the AI should or shouldn't say, and a severity level. When you're ready, click **"Run Evaluation →"** to move to the run form.

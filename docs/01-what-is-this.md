@@ -62,11 +62,10 @@ The report shows:
 3. **An overall recommendation** — ready to deploy, needs improvement, or not ready
 4. **Details** — the AI's exact response and why it passed or failed
 
-There are four tabs:
-- **Summary** — for leadership and decision-makers
-- **Analysis** — for operations teams
-- **Details** — for technical staff who need to debug failures
-- **Recommendations** — prioritized next steps for improving the AI before re-evaluation
+There are three tabs:
+- **Report** — pass rates, critical failures, and a readiness verdict for leadership and compliance
+- **Performance** — per-test latency, token counts, and cost (only visible when Langfuse tracing is enabled)
+- **Recommendations** — prioritised next steps for improving the AI before re-evaluation
 
 ---
 

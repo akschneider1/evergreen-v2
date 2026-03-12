@@ -283,7 +283,7 @@ Converts the sheet rows + your `evergreen.yaml` config into a Promptfoo-compatib
 Invokes `npx promptfoo eval` as a subprocess. Promptfoo handles sending prompts to LLM providers, running assertions, and writing JSON results.
 
 ### Step 4: Report
-Maps Promptfoo's JSON output to the report generator's input format, then renders a single-file HTML report with three tabs (Report, Engineering, Recommendations).
+Maps Promptfoo's JSON output to the report generator's input format, then renders a single-file HTML report with three tabs (Report, Performance, Recommendations).
 
 ---
 

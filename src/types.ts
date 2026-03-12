@@ -36,15 +36,6 @@ export type EvalMetric =
   | 'effectiveness'
   | 'emotion';
 
-/** Internal Promptfoo assertion types — not exposed to test makers */
-export type CheckType =
-  | 'contains'
-  | 'icontains'
-  | 'not-contains'
-  | 'contains-all'
-  | 'regex'
-  | 'llm-rubric';
-
 export type Severity = 'critical' | 'high' | 'medium' | 'low';
 
 // ── Builder test case (structured criteria for the builder UI) ──

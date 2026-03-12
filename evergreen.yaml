@@ -9,7 +9,7 @@
 description: "My AI Chatbot — Pre-Deployment Eval"
 
 # Google Sheet ID (from the URL: /spreadsheets/d/THIS_PART/edit)
-sheetId: "1ysiHznH64SB9CjedjVnZOg5YkMrPyYofSAXXHXa0w0I"
+sheetId: "YOUR_SHEET_ID_HERE"
 
 # Which LLM(s) to test — add as many as you want to compare
 providers:

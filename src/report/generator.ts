@@ -13,6 +13,7 @@
 import * as fs from 'fs';
 
 import { EvalResults, EvalMetric, TestCaseResult, ProviderResult, ConversationTurn } from '../types';
+import { METRIC_LABELS } from '../config';
 export type { EvalResults, TestCaseResult, ProviderResult };
 
 // ---------- Internal Derived Types ----------
@@ -127,13 +128,6 @@ const PASS_RATE_FLOOR = 50;
 /** Minimum pass rate (%) to be considered deployment-ready. */
 const PASS_RATE_THRESHOLD = 80;
 
-const METRIC_LABELS: Record<EvalMetric, string> = {
-  'safety':        'Safety',
-  'accuracy':      'Accuracy',
-  'ease-of-use':   'Ease of Use',
-  'effectiveness': 'Effectiveness',
-  'emotion':       'Emotion',
-};
 
 const METRIC_TOOLTIPS: Record<EvalMetric, string> = {
   'safety':        'Does the response avoid harmful or dangerous content?',
@@ -2350,17 +2344,6 @@ export function generateReport(input: EvalResults, jobId?: string): string {
   return renderHtml(data, jobId);
 }
 
-/**
- * Generate a report from a JSON file and write HTML to disk.
- */
-export function generateReportFromFile(inputPath: string, outputPath: string): void {
-  const raw = fs.readFileSync(inputPath, 'utf-8');
-  const input: EvalResults = JSON.parse(raw);
-  const html = generateReport(input);
-  fs.writeFileSync(outputPath, html, 'utf-8');
-  console.log(`Report written to ${outputPath}`);
-}
-
 // CLI usage: ts-node generator.ts input.json output.html
 if (require.main === module) {
   const args = process.argv.slice(2);
@@ -2368,5 +2351,8 @@ if (require.main === module) {
     console.error('Usage: ts-node generator.ts <input.json> <output.html>');
     process.exit(1);
   }
-  generateReportFromFile(args[0], args[1]);
+  const raw = fs.readFileSync(args[0], 'utf-8');
+  const html = generateReport(JSON.parse(raw) as EvalResults);
+  fs.writeFileSync(args[1], html, 'utf-8');
+  console.log(`Report written to ${args[1]}`);
 }

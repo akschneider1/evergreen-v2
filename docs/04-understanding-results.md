@@ -29,7 +29,7 @@ The report has three tabs, designed as a sequence — start at the left and move
 | Tab | For | What It Shows |
 |-----|-----|--------------|
 | **Report** | Leadership, decision-makers, compliance | Pass rates, critical failures, metric breakdown, all test case results — the full compliance artifact |
-| **Engineering** | Technical staff | Per-test latency, token counts, and estimated cost pulled from Langfuse (requires Langfuse to be enabled) |
+| **Performance** | Technical staff | Per-test latency, token counts, and estimated cost pulled from Langfuse (requires Langfuse to be enabled) |
 | **Recommendations** | Anyone | Actionable next steps organized by what type of change is needed: Prompt, Data, Model, or Process |
 
 ---
@@ -130,11 +130,11 @@ For **Accuracy** tests, the grading reason explains which expected item was foun
 
 ---
 
-## Engineering Tab
+## Performance Tab
 
 This tab is for technical staff who want to understand model performance at a lower level. It requires Langfuse to be enabled when the evaluation ran.
 
-When you click the Engineering tab, it loads live data from Langfuse for this specific run. You'll see:
+When you click the Performance tab, it loads live data from Langfuse for this specific run. You'll see:
 
 - **Summary cards:** average latency, total tokens, estimated cost, number of tests traced
 - **Model badge:** which model was used
@@ -172,7 +172,7 @@ Each recommendation includes a **citation chip** showing the evidence behind it 
 
 Layers that have no issues show a green positive confirmation ("✓ No model-layer concerns detected") so you know you can skip them.
 
-**Engineering enrichment:** If you've clicked the Engineering tab and Langfuse data loaded, the Prompt and Model layers may gain additional recommendations based on response verbosity (tokens) and latency — marked with "from live data."
+**Performance enrichment:** If you've clicked the Performance tab and Langfuse data loaded, the Prompt and Model layers may gain additional recommendations based on response verbosity (tokens) and latency — marked with "from live data."
 
 ---
 
@@ -217,7 +217,7 @@ The report is a single HTML file. You can:
 - **Upload it** to a shared drive
 - **Print it** to PDF (use File > Print in your browser — it has print-friendly styles)
 
-The report serves as a concrete artifact of due diligence for procurement, oversight, or leadership review. The Engineering tab will show a placeholder in downloaded/offline reports — only live server reports can load Langfuse data.
+The report serves as a concrete artifact of due diligence for procurement, oversight, or leadership review. The Performance tab will show a placeholder in downloaded/offline reports — only live server reports can load Langfuse data.
 
 ---
 

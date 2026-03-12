@@ -79,7 +79,7 @@ Google Sheet  →  Evergreen          →  Promptfoo        →  LLM Under Test 
 
 Optional: set `LANGFUSE_SECRET_KEY` + `LANGFUSE_PUBLIC_KEY` to enable Langfuse tracing — per-test scores, conversation traces, and thumbs up/down feedback from inside the report.
 
-Evergreen wraps **[Promptfoo](https://github.com/promptfoo/promptfoo)** — an open-source eval runner — with a Google Sheets connector (no config files required for non-technical users), a web-based test suite builder, and a public-sector-specific HTML report with severity grading, a readiness badge, and three tabs: Report (compliance artifact), Engineering (Langfuse latency/cost), and Recommendations (layered by Prompt / Data / Model / Process).
+Evergreen wraps **[Promptfoo](https://github.com/promptfoo/promptfoo)** — an open-source eval runner — with a Google Sheets connector (no config files required for non-technical users), a web-based test suite builder, and a public-sector-specific HTML report with severity grading, a readiness badge, and three tabs: Report (compliance artifact), Performance (Langfuse latency/cost), and Recommendations (layered by Prompt / Data / Model / Process).
 
 **Source layout:**
 
@@ -95,7 +95,7 @@ src/
 ├── langfuse.ts       # Optional Langfuse observability helpers
 ├── presets/          # 6 presets + blank + 2 demo suites
 ├── report/
-│   └── generator.ts  # HTML report (3 tabs: Report, Engineering, Recommendations)
+│   └── generator.ts  # HTML report (3 tabs: Report, Performance, Recommendations)
 └── web/
     ├── server.ts     # Express web app
     ├── landing.html  # Home page
@@ -123,7 +123,8 @@ src/
 | [Understanding Results](./docs/04-understanding-results.md) | How to read the report and make decisions |
 | [Evaluation Design](./docs/05-evaluation-design.md) | The five metrics framework |
 | [Technical Reference](./docs/06-technical-reference.md) | CLI, config options, and extending |
-| [Roadmap: Human Evaluation](./docs/08-roadmap-human-evaluation.md) | Adding human review and public participation |
+
+For market research and design principles behind Evergreen, see [RESEARCH.md](./RESEARCH.md).
 
 ---
 

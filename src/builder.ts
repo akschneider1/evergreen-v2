@@ -5,6 +5,7 @@
 
 import { SheetRow, BuilderTestCase, EvalMetric, Severity } from './types';
 import { PresetSuite } from './presets/index';
+import { METRIC_LABELS } from './config';
 
 /** Convert a BuilderTestCase to a SheetRow for the eval pipeline. */
 export function builderCaseToSheetRow(bc: BuilderTestCase): SheetRow {
@@ -78,14 +79,6 @@ export function metricDistribution(cases: BuilderTestCase[]): Record<string, num
 
 // ── CSV export ──
 
-const METRIC_DISPLAY: Record<string, string> = {
-  safety: 'Safety',
-  accuracy: 'Accuracy',
-  'ease-of-use': 'Ease of Use',
-  effectiveness: 'Effectiveness',
-  emotion: 'Emotion',
-};
-
 function csvEscape(val: string): string {
   if (val.includes(',') || val.includes('"') || val.includes('\n')) {
     return `"${val.replace(/"/g, '""')}"`;
@@ -106,7 +99,7 @@ export function builderCasesToCsv(cases: BuilderTestCase[]): string {
       csvEscape(row.question),
       csvEscape(row.expectedAnswer),
       csvEscape(row.context),
-      csvEscape(METRIC_DISPLAY[row.metric] || row.metric),
+      csvEscape(METRIC_LABELS[row.metric] || row.metric),
       csvEscape(capitalize(row.severity)),
     ].join(',');
   });

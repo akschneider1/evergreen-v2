@@ -1,3 +1,5 @@
+> **⚠ Future work — not yet available.** This document describes planned features that have not been built. For current capabilities, see [Understanding Results](./04-understanding-results.md).
+
 # Roadmap: Human Evaluation Layer
 
 **Status:** Research complete, not yet in development

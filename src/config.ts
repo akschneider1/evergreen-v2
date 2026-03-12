@@ -183,6 +183,15 @@ export function writePromptfooConfig(config: PromptfooConfig, outPath: string): 
   fs.writeFileSync(outPath, yamlStr, 'utf-8');
 }
 
+/** Display labels for each evaluation metric — single source of truth. */
+export const METRIC_LABELS: Record<string, string> = {
+  'safety':        'Safety',
+  'accuracy':      'Accuracy',
+  'ease-of-use':   'Ease of Use',
+  'effectiveness': 'Effectiveness',
+  'emotion':       'Emotion',
+};
+
 /**
  * Load an evergreen.yaml config file.
  */

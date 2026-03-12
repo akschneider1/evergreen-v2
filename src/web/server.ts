@@ -126,6 +126,9 @@ async function runPipeline(
     },
   }) : null;
 
+  let pfConfigPath: string | undefined;
+  let outputPath: string | undefined;
+
   try {
     // Step 1 — Load test cases (from preset or Google Sheet)
     job.step = 1;
@@ -168,16 +171,17 @@ async function runPipeline(
     // Step 2 — Build Promptfoo config
     job.step = 2;
     const s2 = trace?.span({ name: 'build-config', input: { rowCount: rows.length, provider: body.provider } });
+    outputPath = path.join(os.tmpdir(), `evergreen-results-${jobId}.json`);
     const config: EvergreenConfig = {
       description: body.description || 'Evergreen Evaluation',
       sheetId,
       sheetRange: 'A2:E',
       providers: [{ id: body.provider, systemPrompt }],
       defaultSystemPrompt: systemPrompt,
-      outputPath: path.join(os.tmpdir(), `evergreen-results-${jobId}.json`),
+      outputPath,
     };
     const pfConfig = buildPromptfooConfig(rows, config, personas);
-    const pfConfigPath = path.join(os.tmpdir(), `evergreen-config-${jobId}.yaml`);
+    pfConfigPath = path.join(os.tmpdir(), `evergreen-config-${jobId}.yaml`);
     writePromptfooConfig(pfConfig, pfConfigPath);
     s2?.end({ output: { testCount: rows.length } });
 
@@ -299,16 +303,15 @@ async function runPipeline(
     }
     job.status = 'complete';
 
-    // Cleanup temp files
-    try { fs.unlinkSync(pfConfigPath); } catch { /* ignore */ }
-    try { fs.unlinkSync(config.outputPath!); } catch { /* ignore */ }
-
   } catch (err) {
     trace?.update({ metadata: { error: String(err) } });
     job.status = 'error';
     job.error = err instanceof Error ? err.message : String(err);
   } finally {
     await lf?.flushAsync();
+    // Cleanup temp files — always runs, even on error
+    if (pfConfigPath) try { fs.unlinkSync(pfConfigPath); } catch { /* ignore */ }
+    if (outputPath)   try { fs.unlinkSync(outputPath);   } catch { /* ignore */ }
   }
 }
 
@@ -538,7 +541,11 @@ export function createApp(): express.Application {
     const personaFilter = typeof body?.personaFilter === 'string' ? body.personaFilter.trim().slice(0, 100) : undefined;
 
     // Fire-and-forget — response returns immediately with jobId
-    runPipeline(jobId, { description, sheetUrl, presetId, provider, aiDescription, agencyName, evaluatorName, evaluationReason, enableLangfuse, personaFilter });
+    runPipeline(jobId, { description, sheetUrl, presetId, provider, aiDescription, agencyName, evaluatorName, evaluationReason, enableLangfuse, personaFilter }).catch(err => {
+      console.error(`[pipeline] unhandled error for job ${jobId}:`, err);
+      const j = jobs.get(jobId);
+      if (j && j.status !== 'error') { j.status = 'error'; j.error = String(err); }
+    });
 
     res.status(202).json({ jobId });
   });
