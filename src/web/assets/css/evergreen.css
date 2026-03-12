@@ -6,7 +6,7 @@
 /* ── A: Metric semantic color tokens ─────────────────────── */
 :root {
   --ev-navy:            #1b3a5c;
-  --ev-border:          var(--ev-border);
+  --ev-border:          #dfe1e2;
 
   --ev-safety:          #b71c1c;  --ev-safety-bg:         #fce8e8;
   --ev-accuracy:        #2672de;  --ev-accuracy-bg:       #e8f0fe;

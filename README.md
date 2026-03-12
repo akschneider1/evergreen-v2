@@ -125,7 +125,11 @@ Two additional **demo suites** (5 tests each) are included for training and onbo
 ```
 Google Sheet  →  Evergreen          →  Promptfoo        →  LLM Under Test      →  Evergreen Report
 (test cases)     CLI or Web App        (eval engine)       (OpenAI, Anthropic)     (3-tab HTML)
+                                             ┆
+                                        Langfuse (optional)
+                                        traces & scores
 ```
+*Dotted line: when Langfuse is configured, Promptfoo evaluation spans are traced and scores are sent automatically. The report's Performance tab reads this data to show per-test latency, token counts, and cost.*
 
 Evergreen wraps **[Promptfoo](https://github.com/promptfoo/promptfoo)** — an open-source eval runner — with a Google Sheets connector, a browser-based test suite builder, and a public-sector-specific report format with severity grading, readiness verdicts, and layered recommendations.
 
