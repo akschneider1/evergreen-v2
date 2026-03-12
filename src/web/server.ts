@@ -38,6 +38,7 @@ interface EngTestEntry {
   passed: boolean;
   metric: string;
   severity: string;
+  persona: string;  // empty string if not a persona-based suite
 }
 
 interface Job {
@@ -273,6 +274,7 @@ async function runPipeline(
           passed: r.success,
           metric: rows[i]?.metric ?? '',
           severity: rows[i]?.severity ?? '',
+          persona: rows[i]?.persona ?? '',
         })),
       };
     }

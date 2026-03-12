@@ -56,7 +56,8 @@
       "Bash(ls -la /home/runner/workspace/*.md 2>/dev/null)",
       "Bash(ls -la /home/runner/workspace/src/web/*.html 2>/dev/null | head -20)",
       "Bash(git add src/report/generator.ts src/web/server.ts test/test-pipeline.ts docs/04-understanding-results.md docs/06-technical-reference.md README.md CLAUDE.md && git status)",
-      "Bash(git add -A && git diff --cached --stat)"
+      "Bash(git add -A && git diff --cached --stat)",
+      "Bash(git commit -m \"$\\(cat <<'EOF'\nBuilder library redesign, persona run filter, and Engineering tab fixes\n\n- Library: split into 'My org' / 'My partner orgs' sections; domain as card\n  title; compact metadata line \\(cases · author · single/multi-turn\\); remove\n  Export Sheet button; add Propel attribution and multiTurn flag to presets\n- Persona filter: run-form Audience dropdown appears for suites with personas;\n  filters rows by selected persona before eval; description auto-includes label\n- Builder: show persona badge and multi-turn chip in collapsed row header;\n  show seeded conversation history in expanded view \\(read-only\\)\n- Engineering tab: collect latency/token data directly from Promptfoo output\n  instead of calling Langfuse REST API; eliminates timing/availability errors\n- Report: Results by Metric + Results by Severity as split side-by-side card,\n  moved above Critical Failures\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
