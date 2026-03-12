@@ -2137,37 +2137,60 @@ table.data-table, table.detail-table {
         '<div class="bar-chart">' + personaRows + '</div></div>';
     }
 
-    // ── Card 3: Run history trend (demo data anchored to real pass rate) ──
+    // ── Card 3: Run history trend (10 runs, anchored to real pass rate) ──
     var currentRate = d.totalTests > 0 ? Math.round(d.tests.filter(function(t){return t.passed;}).length / d.totalTests * 100) : 0;
-    var historyRuns = [
-      { label: 'Run 1', weeks: '6 weeks ago', rate: Math.max(15, currentRate - 28) },
-      { label: 'Run 2', weeks: '4 weeks ago', rate: Math.max(25, currentRate - 17) },
-      { label: 'Run 3', weeks: '2 weeks ago', rate: Math.max(35, currentRate - 8)  },
-      { label: 'Run 4', weeks: 'Today',        rate: currentRate, current: true      },
-    ];
-    var svgW = 480, svgH = 160, padL = 44, padR = 20, padT = 28, padB = 44;
+    var offsets = [-34, -29, -24, -20, -16, -12, -8, -5, -2, 0];
+    var historyRuns = offsets.map(function(offset, i) {
+      var isLast = i === offsets.length - 1;
+      return { label: isLast ? 'Today' : 'R' + (i + 1), rate: Math.min(100, Math.max(5, currentRate + offset)), current: isLast };
+    });
+    var GO_LIVE = 85;
+    var svgW = 580, svgH = 210, padL = 46, padR = 108, padT = 32, padB = 36;
     var chartW = svgW - padL - padR;
     var chartH = svgH - padT - padB;
     var n = historyRuns.length;
-    var xs = historyRuns.map(function(r, i) { return padL + (i / (n - 1)) * chartW; });
-    var ys = historyRuns.map(function(r) { return padT + (1 - r.rate / 100) * chartH; });
+    var xs = historyRuns.map(function(run, i) { return padL + (i / (n - 1)) * chartW; });
+    var ys = historyRuns.map(function(run) { return padT + (1 - run.rate / 100) * chartH; });
+    // Grid lines
     var gridSvg = [0, 25, 50, 75, 100].map(function(v) {
-      var gy = padT + (1 - v / 100) * chartH;
-      return '<line x1="' + padL + '" y1="' + gy + '" x2="' + (svgW - padR) + '" y2="' + gy + '" stroke="#e5e7eb" stroke-width="1"/>' +
-        '<text x="' + (padL - 6) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="10" fill="#71767a">' + v + '%</text>';
+      var gy = (padT + (1 - v / 100) * chartH).toFixed(1);
+      return '<line x1="' + padL + '" y1="' + gy + '" x2="' + (svgW - padR) + '" y2="' + gy + '" stroke="#f0f0f0" stroke-width="1"/>' +
+        '<text x="' + (padL - 8) + '" y="' + (parseFloat(gy) + 4).toFixed(1) + '" text-anchor="end" font-size="10" fill="#71767a">' + v + '%</text>';
     }).join('');
+    // Go-live threshold
+    var thy = (padT + (1 - GO_LIVE / 100) * chartH).toFixed(1);
+    var thresholdSvg =
+      '<line x1="' + padL + '" y1="' + thy + '" x2="' + (svgW - padR) + '" y2="' + thy + '" stroke="#00a91c" stroke-width="1.5" stroke-dasharray="5,4"/>' +
+      '<text x="' + (svgW - padR + 10) + '" y="' + (parseFloat(thy) + 4).toFixed(1) + '" font-size="10" font-weight="700" fill="#00a91c">Go-live</text>' +
+      '<text x="' + (svgW - padR + 10) + '" y="' + (parseFloat(thy) + 17).toFixed(1) + '" font-size="9" fill="#00a91c">85% target</text>';
+    // Area fill
+    var areaD = 'M' + xs[0].toFixed(1) + ',' + (padT + chartH) +
+      ' ' + xs.map(function(x, i) { return 'L' + x.toFixed(1) + ',' + ys[i].toFixed(1); }).join(' ') +
+      ' L' + xs[n - 1].toFixed(1) + ',' + (padT + chartH) + ' Z';
+    // Line
     var pathD = xs.map(function(x, i) { return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + ys[i].toFixed(1); }).join(' ');
-    var dotsSvg = historyRuns.map(function(r, i) {
-      var dotColor = r.rate >= 80 ? '#00a91c' : r.rate >= 60 ? '#e6a817' : '#e52207';
-      var labelY = ys[i] - 10;
-      return '<circle cx="' + xs[i].toFixed(1) + '" cy="' + ys[i].toFixed(1) + '" r="' + (r.current ? 6 : 4) + '" fill="' + dotColor + '" stroke="white" stroke-width="2"/>' +
-        '<text x="' + xs[i].toFixed(1) + '" y="' + labelY.toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="' + (r.current ? '700' : '500') + '" fill="' + dotColor + '">' + r.rate + '%</text>' +
-        '<text x="' + xs[i].toFixed(1) + '" y="' + (padT + chartH + 16) + '" text-anchor="middle" font-size="10" fill="#3d4551">' + r.label + '</text>' +
-        '<text x="' + xs[i].toFixed(1) + '" y="' + (padT + chartH + 30) + '" text-anchor="middle" font-size="9" fill="#71767a">' + r.weeks + '</text>';
+    // Dots — value labels only at R1, R5, Today to avoid overlap
+    var showVal = [0, 4, 9];
+    var dotsSvg = historyRuns.map(function(run, i) {
+      var dotColor = run.rate >= GO_LIVE ? '#00a91c' : run.rate >= 60 ? '#e6a817' : '#e52207';
+      var dotR = run.current ? 5.5 : 3.5;
+      var dot = '<circle cx="' + xs[i].toFixed(1) + '" cy="' + ys[i].toFixed(1) + '" r="' + dotR + '" fill="' + dotColor + '" stroke="white" stroke-width="1.5"/>';
+      var valLabel = showVal.indexOf(i) !== -1
+        ? '<text x="' + xs[i].toFixed(1) + '" y="' + (ys[i] - 11).toFixed(1) + '" text-anchor="middle" font-size="10" font-weight="' + (run.current ? '700' : '500') + '" fill="' + dotColor + '">' + run.rate + '%</text>'
+        : '';
+      var xLabel = '<text x="' + xs[i].toFixed(1) + '" y="' + (padT + chartH + 18) + '" text-anchor="middle" font-size="9" fill="' + (run.current ? '#1b1b1b' : '#71767a') + '" font-weight="' + (run.current ? '700' : '400') + '">' + run.label + '</text>';
+      return dot + valLabel + xLabel;
     }).join('');
-    var trendSvg = '<svg width="100%" viewBox="0 0 ' + svgW + ' ' + svgH + '" style="display:block;margin:8px 0 0">' +
+    var trendSvg =
+      '<svg width="100%" viewBox="0 0 ' + svgW + ' ' + svgH + '" style="display:block;margin:12px 0 0" role="img" aria-label="Pass rate over time chart">' +
+      '<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="#005ea2" stop-opacity="0.10"/>' +
+        '<stop offset="100%" stop-color="#005ea2" stop-opacity="0.01"/>' +
+      '</linearGradient></defs>' +
       gridSvg +
-      '<path d="' + pathD + '" fill="none" stroke="#005ea2" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+      thresholdSvg +
+      '<path d="' + areaD + '" fill="url(#areaGrad)"/>' +
+      '<path d="' + pathD + '" fill="none" stroke="#005ea2" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
       dotsSvg +
       '</svg>';
     var card3 = '<div class="card"><h2 class="card-title">Pass rate over time ' + examplePill() + '</h2>' +
