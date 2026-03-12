@@ -1,15 +1,3 @@
-# Evergreen — Pre-Deployment AI Evaluation Tool
-#
-# Run/Deploy notes for the Replit agent:
-#   - The web app runs on port 5000 (mapped to external port 80)
-#   - The run command builds TypeScript first, then starts the web server
-#   - Required secrets: ANTHROPIC_API_KEY and/or OPENAI_API_KEY (set in Replit Secrets)
-#   - PORT NOTE: Only one port mapping should exist — localPort 5000 → externalPort 80.
-#     If a stale port 3000 entry appears in the Networking/Ports panel, delete it there;
-#     the config file cannot remove system-managed entries. Only port 5000 should be active.
-#   - After an evaluation completes, the browser navigates automatically to the report page.
-#     Users can return to the form via the "New Evaluation" button in the report header.
-
 run = "npm run build && node dist/index.js app -p 5000"
 entrypoint = "src/web/server.ts"
 modules = ["nodejs-20", "web", "bash", "nix"]
