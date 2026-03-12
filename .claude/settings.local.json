@@ -40,7 +40,21 @@
       "WebFetch(domain:langfuse.com)",
       "Bash(npm install langfuse 2>&1)",
       "Bash(npx tsc --noEmit 2>&1)",
-      "Bash(git stash -- src/web/builder.html && npm run test 2>&1; git stash pop 2>&1 | tail -2)"
+      "Bash(git stash -- src/web/builder.html && npm run test 2>&1; git stash pop 2>&1 | tail -2)",
+      "Bash(ls -la /home/runner/workspace/src/presets/*.ts)",
+      "Bash(find /home/runner/workspace/node_modules/promptfoo/dist/src -name \"*.d.ts\" -type f 2>/dev/null | head -20)",
+      "Bash(grep -r \"interface Test\\\\|type Test\\\\|export.*Test\" /home/runner/workspace/node_modules/promptfoo/dist/src --include=\"*.d.ts\" 2>/dev/null | head -30)",
+      "Bash(find /home/runner/workspace/node_modules/promptfoo -name \"*.yaml\" -o -name \"*.yml\" 2>/dev/null | head -20)",
+      "WebFetch(domain:www.promptfoo.dev)",
+      "Bash(grep -r \"conversationId\\\\|_conversation\\\\|EvalConversations\" /home/runner/workspace/node_modules/promptfoo/dist/src --include=\"*.d.ts\" 2>/dev/null | head -20)",
+      "Bash(find /home/runner/workspace -type f \\\\\\( -name \"promptfoo.yaml\" -o -name \"promptfoo.yml\" -o -name \"*.promptfoo.*\" \\\\\\) 2>/dev/null | head -10)",
+      "Bash(grep -l \"messages\" /home/runner/workspace/node_modules/promptfoo/dist/src/*.js 2>/dev/null | head -10)",
+      "Bash(grep -n \"{{messages}}\\\\|prompt\\\\.raw.*message\\\\|renderPrompt\\\\|vars\\\\[.*message\" /home/runner/workspace/node_modules/promptfoo/dist/src/*.js | head -30)",
+      "Bash(grep -r \"messages.*:\" /home/runner/workspace --include=\"*.yaml\" --include=\"*.yml\" --include=\"*.json\" 2>/dev/null | grep -v node_modules | head -20)",
+      "Bash(git stash && npm run test 2>&1 | tail -10)",
+      "Bash(find /home/runner/workspace -type f \\\\\\( -name \"*.md\" -o -name \"*.txt\" -o -name \"*.rst\" \\\\\\) 2>/dev/null | head -20)",
+      "Bash(ls -la /home/runner/workspace/*.md 2>/dev/null)",
+      "Bash(ls -la /home/runner/workspace/src/web/*.html 2>/dev/null | head -20)"
     ]
   }
 }
