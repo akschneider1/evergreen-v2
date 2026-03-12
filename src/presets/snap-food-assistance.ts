@@ -288,6 +288,7 @@ export const snapFoodAssistance: PresetSuite = {
     'contacting a caseworker for final determinations.',
   icon: '🏠',
   domain: 'Benefits',
+  author: 'Propel',
   source: 'Propel — 25 Illustrative SNAP Eval Cases',
   sourceUrl: 'https://docs.google.com/spreadsheets/d/1-0zlX-80w7edpOlZWUPvTkp28J4HS_ZyKnuDjDtKeoc/edit?usp=sharing',
   builderCases,

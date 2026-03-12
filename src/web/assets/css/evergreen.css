@@ -222,8 +222,43 @@
   display: inline-block; background: var(--ev-accuracy-bg); color: var(--ev-accuracy);
   font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 3px; margin-bottom: 0.5rem;
 }
+.persona-badge {
+  font-size: 0.6875rem; font-weight: 600; padding: 0.15rem 0.45rem;
+  border-radius: 3px; white-space: nowrap; flex-shrink: 0;
+  background: #e8eaf6; color: #3949ab;
+}
+.multiturn-chip {
+  font-size: 0.6875rem; font-weight: 600; padding: 0.15rem 0.45rem;
+  border-radius: 3px; white-space: nowrap; flex-shrink: 0;
+  background: #e0f2f1; color: #00695c; text-transform: lowercase;
+}
+.conv-readonly-note {
+  font-size: 0.6875rem; font-weight: 400; color: #71767a; text-transform: none; letter-spacing: 0;
+}
+.conv-history {
+  background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;
+  padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem;
+}
+.conv-turn {
+  display: flex; gap: 0.5rem; font-size: 0.8125rem; align-items: flex-start;
+}
+.conv-turn-label {
+  font-weight: 700; white-space: nowrap; flex-shrink: 0; min-width: 5rem; color: #495057;
+}
+.conv-turn-user .conv-turn-label   { color: #1a4480; }
+.conv-turn-assistant .conv-turn-label { color: #2e7d32; }
+.conv-turn-text { color: #343a40; line-height: 1.4; }
 
-/* ── L: Builder — pill selector buttons ──────────────────── */
+/* ── L: Builder — library section labels & card metadata ─── */
+.lib-section-label {
+  font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: #71767a; margin: 0 0 0.75rem;
+}
+.lib-card-meta {
+  font-size: 0.75rem; color: #71767a; margin: 0.25rem 0 0; line-height: 1.4;
+}
+
+/* ── M: Builder — pill selector buttons ──────────────────── */
 /* Mutually exclusive metric/severity selection — no USWDS match */
 .pill-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .pill-btn {

@@ -1127,6 +1127,21 @@ body {
   align-items: center;
   gap: 8px;
 }
+.card-subtitle {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: -14px;
+  margin-bottom: 16px;
+}
+.split-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.split-cards > .card {
+  margin-bottom: 0;
+}
 .card-title-icon {
   display: inline-flex;
   align-items: center;
@@ -1600,6 +1615,7 @@ table.data-table, table.detail-table {
   .tc-question { max-width: 200px; }
   .data-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .split-cards { grid-template-columns: 1fr; }
   .cf-comparison { grid-template-columns: 1fr; }
   .bar-track { width: 120px; }
   .exp-grading { min-width: 200px; max-width: 260px; }
@@ -1945,28 +1961,31 @@ table.data-table, table.detail-table {
     ${criticalCardHtml}
   </div>
 
+  <div class="split-cards">
+    <div class="card">
+      <h2 class="card-title">Results by Metric</h2>
+      <div class="bar-chart">${dimensionBarsHtml}</div>
+      ${patternHtml}
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Results by Severity</h2>
+      <p class="card-subtitle">Click a row to filter test cases below</p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Severity</th>
+            <th>Tests</th>
+            ${severityProviderHeaders}
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>${severityRowsHtml}</tbody>
+      </table>
+    </div>
+  </div>
+
   ${criticalFailuresHtml}
-
-  <div class="card">
-    <h2 class="card-title">Results by Metric</h2>
-    <div class="bar-chart">${dimensionBarsHtml}</div>
-    ${patternHtml}
-  </div>
-
-  <div class="card">
-    <h2 class="card-title">Results by Severity — click a row to filter test cases</h2>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Severity</th>
-          <th>Tests</th>
-          ${severityProviderHeaders}
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>${severityRowsHtml}</tbody>
-    </table>
-  </div>
 
   ${comparisonHtml}
 
@@ -2186,6 +2205,8 @@ table.data-table, table.detail-table {
           var p = ph.querySelector('.eng-placeholder-text');
           if (p) p.textContent = err === 404
             ? 'Engineering data not available — Langfuse was not enabled for this evaluation.'
+            : err === 502
+            ? 'Could not reach Langfuse — check that your Langfuse API keys are valid and the service is reachable.'
             : 'Could not load engineering data. This view requires the Evergreen server to be running.';
         }
       });

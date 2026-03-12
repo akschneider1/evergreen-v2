@@ -151,9 +151,13 @@ export interface PromptfooResult {
   prompt: { raw: string };
   provider: { id: string; label?: string };
   vars: Record<string, string>;
-  response?: { output: string };
+  response?: {
+    output: string;
+    tokenUsage?: { prompt: number; completion: number; total: number };
+  };
   success: boolean;
   score: number;
+  latencyMs?: number;
   namedScores?: Record<string, number>;
   gradingResult?: {
     pass: boolean;

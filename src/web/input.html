@@ -148,6 +148,16 @@
         </select>
       </div>
 
+      <div class="usa-form-group" id="personaFilter-group" style="display:none">
+        <label class="usa-label" for="personaFilter">
+          Audience
+          <span class="usa-hint">Run for all personas or focus on one</span>
+        </label>
+        <select class="usa-select" id="personaFilter" name="personaFilter">
+          <option value="">All personas</option>
+        </select>
+      </div>
+
       <!-- 4. What does this AI do? (only for sheet-based runs) -->
       <div class="usa-form-group" id="aiDescription-group">
         <label class="usa-label" for="aiDescription">
@@ -341,6 +351,18 @@
 
     if (isPreset) {
       body.presetId = document.getElementById('presetId').value;
+      var personaVal = document.getElementById('personaFilter').value;
+      if (personaVal) {
+        body.personaFilter = personaVal;
+        // Append persona label to description for the report
+        var personaSelect = document.getElementById('personaFilter');
+        var personaLabel = personaSelect.options[personaSelect.selectedIndex].text;
+        var descEl = document.getElementById('description');
+        if (descEl && !descEl.value.includes('(')) {
+          descEl.value = descEl.value + ' (' + personaLabel + ')';
+          body.description = descEl.value;
+        }
+      }
     } else {
       body.sheetUrl = document.getElementById('sheetUrl').value.trim();
       body.aiDescription = document.getElementById('aiDescription').value.trim();
@@ -457,10 +479,40 @@
   function handlePresetChange() {
     var presetEl = document.getElementById('presetId');
     var descEl = document.getElementById('description');
-    if (presetEl && descEl && presetEl.value) {
-      var label = presetEl.options[presetEl.selectedIndex].text.replace(/ \(\d+ tests\)$/, '');
-      descEl.value = label + ' \u2014 ' + getDateLabel();
+    var personaGroup = document.getElementById('personaFilter-group');
+    var personaSelect = document.getElementById('personaFilter');
+
+    if (!presetEl || !presetEl.value) {
+      if (personaGroup) personaGroup.style.display = 'none';
+      return;
     }
+
+    var label = presetEl.options[presetEl.selectedIndex].text.replace(/ \(\d+ tests\)$/, '');
+    if (descEl) descEl.value = label + ' \u2014 ' + getDateLabel();
+
+    // Fetch persona info for this preset
+    fetch('/api/templates/' + presetEl.value)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var personas = data.personas || [];
+        if (personas.length > 0 && personaGroup && personaSelect) {
+          // Rebuild options
+          personaSelect.innerHTML = '<option value="">All personas</option>';
+          personas.forEach(function(p) {
+            var opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.label;
+            personaSelect.appendChild(opt);
+          });
+          personaGroup.style.display = 'block';
+        } else {
+          if (personaGroup) personaGroup.style.display = 'none';
+          if (personaSelect) personaSelect.value = '';
+        }
+      })
+      .catch(function() {
+        if (personaGroup) personaGroup.style.display = 'none';
+      });
   }
 
   function resetForm() {
@@ -471,6 +523,8 @@
     document.getElementById('aiDescription').value = '';
     document.getElementById('presetId').value = '';
     document.getElementById('description').value = '';
+    document.getElementById('personaFilter').value = '';
+    document.getElementById('personaFilter-group').style.display = 'none';
     handleDataSourceChange();
     document.getElementById('form-section').style.display    = 'block';
     document.getElementById('error-section').style.display   = 'none';

@@ -26,9 +26,19 @@ import { generateReport } from '../report/generator';
 import { normalizePromptfooOutput, EvergreenConfig, SheetRow, PresetPersona } from '../types';
 import { getPreset, getAllPresets } from '../presets/index';
 import { getBuilderCases, builderCasesToCsv, metricDistribution } from '../builder';
-import { isLangfuseConfigured, makeLangfuseClient, getTraceUrl, getLangfuseBaseUrl } from '../langfuse';
+import { isLangfuseConfigured, makeLangfuseClient, getTraceUrl } from '../langfuse';
 
 // ── Job state ────────────────────────────────────────────────────────────────
+
+interface EngTestEntry {
+  testNumber: number;
+  latencyMs: number;
+  promptTokens: number;
+  completionTokens: number;
+  passed: boolean;
+  metric: string;
+  severity: string;
+}
 
 interface Job {
   step: number;           // 0 = not started, 1–4 = pipeline steps
@@ -38,6 +48,10 @@ interface Job {
   createdAt: number;
   traceUrl?: string;
   generationIds?: string[];  // index = testNumber - 1, populated when Langfuse tracing is on
+  engineeringData?: {        // per-test stats from Promptfoo output, available when Langfuse enabled
+    model: string;
+    tests: EngTestEntry[];
+  };
 }
 
 const jobs = new Map<string, Job>();
@@ -92,6 +106,7 @@ async function runPipeline(
   body: {
     description: string; sheetUrl?: string; provider: string; aiDescription?: string; presetId?: string;
     agencyName?: string; evaluatorName?: string; evaluationReason?: string; enableLangfuse?: boolean;
+    personaFilter?: string;
   },
 ): Promise<void> {
   const job = jobs.get(jobId)!;
@@ -124,6 +139,9 @@ async function runPipeline(
       const preset = getPreset(body.presetId);
       if (!preset) throw new Error(`The selected test suite could not be found. Try selecting a different suite.`);
       rows = preset.rows;
+      if (body.personaFilter) {
+        rows = rows.filter(r => r.persona === body.personaFilter);
+      }
       systemPrompt = preset.systemPrompt;
       testSource = `Built-in: ${preset.name}`;
       sheetId = '';
@@ -243,6 +261,20 @@ async function runPipeline(
         }
       });
       job.generationIds = generationIds;
+
+      // Collect per-test engineering stats directly from Promptfoo output
+      job.engineeringData = {
+        model: pfOutput.results[0]?.provider?.id ?? body.provider,
+        tests: pfOutput.results.map((r, i) => ({
+          testNumber: i + 1,
+          latencyMs: Math.round(r.latencyMs ?? 0),
+          promptTokens: r.response?.tokenUsage?.prompt ?? 0,
+          completionTokens: r.response?.tokenUsage?.completion ?? 0,
+          passed: r.success,
+          metric: rows[i]?.metric ?? '',
+          severity: rows[i]?.severity ?? '',
+        })),
+      };
     }
 
     s3?.end({ output: { passed: passCount, total: pfOutput.results.length } });
@@ -348,6 +380,8 @@ export function createApp(): express.Application {
         caseCount: p.rows.length,
         description: p.description,
         metricDistribution: metricDistribution(getBuilderCases(p)),
+        author: p.author || '',
+        multiTurn: p.multiTurn || false,
       }));
     res.json(presets);
   });
@@ -369,6 +403,7 @@ export function createApp(): express.Application {
       sourceUrl: preset.sourceUrl || '',
       systemPrompt: preset.systemPrompt,
       builderCases: getBuilderCases(preset),
+      personas: preset.personas || [],
     });
   });
 
@@ -405,7 +440,7 @@ export function createApp(): express.Application {
   });
 
   // Langfuse engineering data — latency, tokens, cost per test
-  app.get('/api/langfuse-data/:jobId', async (req, res) => {
+  app.get('/api/langfuse-data/:jobId', (req, res) => {
     if (!isLangfuseConfigured()) {
       res.status(404).json({ error: 'Langfuse is not configured on this server.' });
       return;
@@ -415,62 +450,29 @@ export function createApp(): express.Application {
       res.status(404).json({ error: 'Job not found or not complete.' });
       return;
     }
-
-    const baseUrl = getLangfuseBaseUrl();
-    const pubKey = process.env.LANGFUSE_PUBLIC_KEY!;
-    const secKey = process.env.LANGFUSE_SECRET_KEY!;
-    const auth = Buffer.from(`${pubKey}:${secKey}`).toString('base64');
-
-    try {
-      const r = await fetch(`${baseUrl}/api/public/traces/${req.params.jobId}`, {
-        headers: { Authorization: `Basic ${auth}` },
-      });
-      if (!r.ok) throw new Error(`Langfuse returned ${r.status}`);
-      const trace = await r.json() as any;
-
-      const observations: any[] = trace.observations ?? [];
-      const genIds: string[] = job.generationIds ?? [];
-
-      const idToTestNum = new Map<string, number>();
-      genIds.forEach((id, i) => idToTestNum.set(id, i + 1));
-
-      const tests = observations
-        .filter((o: any) => idToTestNum.has(o.id))
-        .map((o: any) => {
-          const passScore = (o.scores ?? []).find((s: any) => s.name === 'pass-fail');
-          return {
-            testNumber: idToTestNum.get(o.id)!,
-            latencyMs: Math.round(o.latencyMs ?? 0),
-            promptTokens: o.usage?.promptTokens ?? 0,
-            completionTokens: o.usage?.completionTokens ?? 0,
-            passed: passScore?.value === 1,
-            metric: o.metadata?.metric ?? '',
-            severity: o.metadata?.severity ?? '',
-          };
-        })
-        .sort((a: any, b: any) => a.testNumber - b.testNumber);
-
-      const totalTests = tests.length;
-      const avgLatencyMs = totalTests > 0
-        ? Math.round(tests.reduce((s: number, t: any) => s + t.latencyMs, 0) / totalTests)
-        : 0;
-      const totalPromptTokens = tests.reduce((s: number, t: any) => s + t.promptTokens, 0);
-      const totalCompletionTokens = tests.reduce((s: number, t: any) => s + t.completionTokens, 0);
-      const model = observations.find((o: any) => o.model)?.model ?? 'unknown';
-
-      res.json({
-        traceUrl: getTraceUrl(req.params.jobId),
-        model,
-        totalTests,
-        avgLatencyMs,
-        totalPromptTokens,
-        totalCompletionTokens,
-        estimatedCostUsd: estimateCost(model, totalPromptTokens, totalCompletionTokens),
-        tests,
-      });
-    } catch {
-      res.status(502).json({ error: 'Could not fetch Langfuse data.' });
+    if (!job.engineeringData) {
+      res.status(404).json({ error: 'Langfuse was not enabled for this evaluation.' });
+      return;
     }
+
+    const { model, tests } = job.engineeringData;
+    const totalTests = tests.length;
+    const avgLatencyMs = totalTests > 0
+      ? Math.round(tests.reduce((s, t) => s + t.latencyMs, 0) / totalTests)
+      : 0;
+    const totalPromptTokens = tests.reduce((s, t) => s + t.promptTokens, 0);
+    const totalCompletionTokens = tests.reduce((s, t) => s + t.completionTokens, 0);
+
+    res.json({
+      traceUrl: job.traceUrl ?? '',
+      model,
+      totalTests,
+      avgLatencyMs,
+      totalPromptTokens,
+      totalCompletionTokens,
+      estimatedCostUsd: estimateCost(model, totalPromptTokens, totalCompletionTokens),
+      tests,
+    });
   });
 
   // Start eval job
@@ -531,9 +533,10 @@ export function createApp(): express.Application {
     const evaluationReason = typeof body?.evaluationReason === 'string' ? body.evaluationReason.trim().slice(0, 200) : undefined;
 
     const enableLangfuse = body?.enableLangfuse === true;
+    const personaFilter = typeof body?.personaFilter === 'string' ? body.personaFilter.trim().slice(0, 100) : undefined;
 
     // Fire-and-forget — response returns immediately with jobId
-    runPipeline(jobId, { description, sheetUrl, presetId, provider, aiDescription, agencyName, evaluatorName, evaluationReason, enableLangfuse });
+    runPipeline(jobId, { description, sheetUrl, presetId, provider, aiDescription, agencyName, evaluatorName, evaluationReason, enableLangfuse, personaFilter });
 
     res.status(202).json({ jobId });
   });

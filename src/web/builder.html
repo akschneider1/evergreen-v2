@@ -35,9 +35,6 @@
     <nav aria-label="Primary navigation" class="usa-nav">
       <ul class="usa-nav__primary usa-accordion">
         <li class="usa-nav__primary-item">
-          <button id="export-btn" class="usa-button usa-button--outline" onclick="exportCsv()" disabled>Export Sheet</button>
-        </li>
-        <li class="usa-nav__primary-item">
           <button id="run-btn" class="usa-button" onclick="runEval()">Run Evaluation &rarr;</button>
         </li>
       </ul>
@@ -59,13 +56,9 @@
 
 <!-- Library panel -->
 <div id="panel-library" class="padding-4">
-  <ul id="lib-grid" class="usa-card-group">
-    <li class="usa-card tablet:grid-col-4">
-      <div class="usa-card__container">
-        <div class="usa-card__body"><p class="text-base">Loading&hellip;</p></div>
-      </div>
-    </li>
-  </ul>
+  <div id="lib-grid">
+    <p class="text-base">Loading&hellip;</p>
+  </div>
 </div>
 
 <!-- Builder panel -->
@@ -120,6 +113,9 @@ function esc(s) {
 function truncate(s, n) { return s && s.length > n ? s.slice(0, n) + '\u2026' : (s || ''); }
 function metricInfo(id) { return METRICS.find(function(m) { return m.id === id; }) || null; }
 function sevInfo(id)    { return SEVERITIES.find(function(s) { return s.id === id; }) || null; }
+function formatPersona(id) {
+  return id.split('-').map(function(w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
+}
 function caseComplete(c) { return c.metric && c.severity && c.question && (c.should.length > 0 || c.shouldNot.length > 0); }
 
 // ── Tab switching ──
@@ -133,55 +129,60 @@ function switchTab(tab) {
 }
 
 // ── Library rendering ──
-function renderLibrary() {
-  var filtered = state.templates.slice();
+function renderCard(t) {
+  var isActive = t.id === state.selectedTemplateId;
+  if (t.id === 'blank') {
+    var btnLabel = isActive ? 'Currently editing' : 'Start building \u2192';
+    return '<li class="usa-card tablet:grid-col-4">' +
+      '<div class="usa-card__container lib-card-start' + (isActive ? ' border-primary' : '') + '">' +
+        '<div class="usa-card__header"><h2 class="usa-card__heading">Start your own</h2></div>' +
+        '<div class="usa-card__body"><p>Build a test suite from scratch, tailored to your specific AI tool.</p></div>' +
+        '<div class="usa-card__footer">' +
+          '<button class="usa-button" style="width:100%;" data-action="load-template" data-id="blank">' + btnLabel + '</button>' +
+        '</div>' +
+      '</div></li>';
+  }
+  var metaParts = [];
+  if (t.caseCount) metaParts.push(t.caseCount + ' cases');
+  if (t.author)    metaParts.push('by ' + esc(t.author));
+  metaParts.push(t.multiTurn ? 'multi-turn' : 'single-turn');
+  var btnLabel2 = isActive ? 'Currently editing' : 'Customize \u2192';
+  return '<li class="usa-card tablet:grid-col-4">' +
+    '<div class="usa-card__container' + (isActive ? ' border-primary' : '') + '">' +
+      '<div class="usa-card__header">' +
+        '<h2 class="usa-card__heading">' + esc(t.domain || t.name) + '</h2>' +
+        '<p class="lib-card-meta">' + metaParts.join(' \u00b7 ') + '</p>' +
+      '</div>' +
+      '<div class="usa-card__body"><p>' + esc(t.description || '') + '</p></div>' +
+      '<div class="usa-card__footer">' +
+        '<button class="usa-button' + (isActive ? '' : ' usa-button--outline') + '" style="width:100%;" ' +
+          'data-action="load-template" data-id="' + esc(t.id) + '">' + btnLabel2 + '</button>' +
+      '</div>' +
+    '</div></li>';
+}
 
-  // Blank card always first
-  filtered.sort(function(a, b) {
+function renderSection(label, templates) {
+  if (templates.length === 0) return '';
+  return '<p class="lib-section-label">' + label + '</p>' +
+    '<ul class="usa-card-group margin-bottom-4">' +
+    templates.map(renderCard).join('') +
+    '</ul>';
+}
+
+function renderLibrary() {
+  var mine   = state.templates.filter(function(t) { return !t.author; });
+  var theirs = state.templates.filter(function(t) { return !!t.author; });
+
+  // Blank card first within "mine"
+  mine.sort(function(a, b) {
     if (a.id === 'blank') return -1;
     if (b.id === 'blank') return 1;
     return 0;
   });
 
-  var html = '';
-  filtered.forEach(function(t) {
-    var isActive = t.id === state.selectedTemplateId;
-    if (t.id === 'blank') {
-      var btnLabel = isActive ? 'Currently editing' : 'Start building \u2192';
-      html +=
-        '<li class="usa-card tablet:grid-col-4">' +
-        '<div class="usa-card__container lib-card-start' + (isActive ? ' border-primary' : '') + '">' +
-          '<div class="usa-card__header">' +
-            '<h2 class="usa-card__heading">Start your own</h2>' +
-          '</div>' +
-          '<div class="usa-card__body">' +
-            '<p>Build a test suite from scratch, tailored to your specific AI tool.</p>' +
-          '</div>' +
-          '<div class="usa-card__footer">' +
-            '<button class="usa-button" style="width:100%;" data-action="load-template" data-id="blank">' + btnLabel + '</button>' +
-          '</div>' +
-        '</div></li>';
-    } else {
-      var btnLabel2 = isActive ? 'Currently editing' : 'Customize \u2192';
-      html +=
-        '<li class="usa-card tablet:grid-col-4">' +
-        '<div class="usa-card__container' + (isActive ? ' border-primary' : '') + '">' +
-          '<div class="usa-card__header">' +
-            '<h2 class="usa-card__heading">' + esc(t.name) + '</h2>' +
-            (t.domain ? '<p class="margin-0"><span class="usa-tag">' + esc(t.domain) + '</span></p>' : '') +
-          '</div>' +
-          '<div class="usa-card__body">' +
-            '<p>' + esc(t.description || '') + '</p>' +
-          '</div>' +
-          '<div class="usa-card__footer">' +
-            (t.caseCount ? '<p class="font-body-sm text-base margin-bottom-1">' + t.caseCount + ' cases</p>' : '') +
-            '<button class="usa-button' + (isActive ? '' : ' usa-button--outline') + '" style="width:100%;" ' +
-              'data-action="load-template" data-id="' + esc(t.id) + '">' + btnLabel2 + '</button>' +
-          '</div>' +
-        '</div></li>';
-    }
-  });
-  document.getElementById('lib-grid').innerHTML = html;
+  document.getElementById('lib-grid').innerHTML =
+    renderSection('My organization\u2019s tests', mine) +
+    renderSection('My partner organizations\u2019 tests', theirs);
 }
 
 // ── Builder rendering ──
@@ -226,6 +227,12 @@ function renderRow(c, overallIdx) {
   var chipHtml = numCriteria > 0
     ? '<span class="criteria-chip">' + numCriteria + '\u00a0' + (numCriteria === 1 ? 'criterion' : 'criteria') + '</span>'
     : '';
+  var personaHtml = c.persona
+    ? '<span class="persona-badge">' + esc(formatPersona(c.persona)) + '</span>'
+    : '';
+  var multiTurnHtml = c.turns && c.turns.length > 0
+    ? '<span class="multiturn-chip">multi-turn</span>'
+    : '';
 
   var html = '<div class="usa-accordion margin-bottom-1" data-case-id="' + c._id + '">';
 
@@ -236,7 +243,7 @@ function renderRow(c, overallIdx) {
     'data-action="toggle" data-id="' + c._id + '">' +
     '<span>' +
       '<span class="case-row-num">' + (overallIdx + 1) + '</span>' +
-      sevHtml + qHtml + chipHtml +
+      sevHtml + personaHtml + multiTurnHtml + qHtml + chipHtml +
     '</span>' +
     '</button></h4>';
 
@@ -261,6 +268,19 @@ function renderRow(c, overallIdx) {
   });
   html += '</div>';
   if (sev) html += '<span class="usa-hint display-block margin-top-1">' + esc(sev.hint) + '</span>';
+
+  // Conversation history (multi-turn preset cases)
+  if (c.turns && c.turns.length > 0) {
+    html += '<p class="usa-label margin-top-3">Prior conversation <span class="conv-readonly-note">(seeded context — read only)</span></p>';
+    html += '<div class="conv-history">';
+    c.turns.forEach(function(turn) {
+      html += '<div class="conv-turn conv-turn-' + turn.role + '">' +
+        '<span class="conv-turn-label">' + (turn.role === 'user' ? 'User' : 'Assistant') + '</span>' +
+        '<span class="conv-turn-text">' + esc(turn.content) + '</span>' +
+      '</div>';
+    });
+    html += '</div>';
+  }
 
   // Question
   html += '<p class="usa-label margin-top-3">What would a real person ask?</p>';
@@ -380,7 +400,6 @@ function renderBuilder() {
   }
 
   document.getElementById('builder-inner').innerHTML = html;
-  document.getElementById('export-btn').disabled = !state.cases.some(caseComplete);
   document.getElementById('tab-builder-label').textContent = t.name ? ' \u2014 ' + t.name : '';
 }
 
@@ -487,29 +506,6 @@ document.addEventListener('focusout', function(e) {
     renderBuilder();
   }
 });
-
-// ── Export ──
-function exportCsv() {
-  var validCases = state.cases.filter(function(c) { return c.metric && c.severity && c.question; });
-  if (validCases.length === 0) {
-    alert('No complete test cases to export. Each case needs a metric, severity, and question.');
-    return;
-  }
-  fetch('/api/export-sheet', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cases: validCases })
-  })
-  .then(function(r) { if (!r.ok) throw new Error(); return r.blob(); })
-  .then(function(blob) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = 'evergreen-test-cases.csv';
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); URL.revokeObjectURL(url);
-  })
-  .catch(function() { alert('Export failed. Please try again.'); });
-}
 
 // ── Run ──
 function runEval() {

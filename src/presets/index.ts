@@ -24,6 +24,8 @@ export interface PresetSuite {
   sourceUrl?: string;
   builderCases?: BuilderTestCase[];
   personas?: PresetPersona[];
+  author?: string;     // external org attribution, e.g. 'Propel'
+  multiTurn?: boolean; // true if the suite uses seeded multi-turn conversations
 }
 
 // ── Presets ──
@@ -848,6 +850,7 @@ const permittingAssistant: PresetSuite = {
   description: 'Multi-turn evaluation with Home Owner, Renter, and Contractor personas navigating the permit process',
   icon: '📝',
   domain: 'Licensing',
+  multiTurn: true,
   source: 'Template — customize for your permit type',
   systemPrompt:
     'You are a helpful assistant for residents and contractors navigating the permit application process. ' +
