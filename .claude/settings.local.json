@@ -54,7 +54,8 @@
       "Bash(git stash && npm run test 2>&1 | tail -10)",
       "Bash(find /home/runner/workspace -type f \\\\\\( -name \"*.md\" -o -name \"*.txt\" -o -name \"*.rst\" \\\\\\) 2>/dev/null | head -20)",
       "Bash(ls -la /home/runner/workspace/*.md 2>/dev/null)",
-      "Bash(ls -la /home/runner/workspace/src/web/*.html 2>/dev/null | head -20)"
+      "Bash(ls -la /home/runner/workspace/src/web/*.html 2>/dev/null | head -20)",
+      "Bash(git add src/report/generator.ts src/web/server.ts test/test-pipeline.ts docs/04-understanding-results.md docs/06-technical-reference.md README.md CLAUDE.md && git status)"
     ]
   }
 }
