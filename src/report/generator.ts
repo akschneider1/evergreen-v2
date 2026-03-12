@@ -757,7 +757,7 @@ function renderHtml(data: ReportData, jobId?: string): string {
     `).join('');
 
     return `
-      <tbody class="test-case-group" data-severity="${tc.severity}" data-passed="${!tc.anyFailed}" data-metric="${tc.metric}" tabindex="0" role="button" aria-expanded="false" aria-controls="detail-${tc.number}" onclick="toggleRow(${tc.number})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(${tc.number})}">
+      <tbody class="test-case-group" data-severity="${tc.severity}" data-passed="${!tc.anyFailed}" data-metric="${tc.metric}" tabindex="0" aria-expanded="false" aria-controls="detail-${tc.number}" onclick="toggleRow(${tc.number})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRow(${tc.number})}">
         <tr class="main-row ${tc.anyFailed ? 'fail-row' : 'pass-row'}">
           <td class="tc-num">${tc.number}</td>
           <td class="tc-question">${esc(tc.question)}</td>
@@ -1014,7 +1014,7 @@ body {
   margin-bottom: 1.5rem;
 }
 .card-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -1273,18 +1273,6 @@ table.data-table, table.detail-table {
 }
 .data-table td { padding: 12px 14px; border-bottom: 1px solid var(--border-sub); font-size: 13px; vertical-align: middle; }
 .data-table tbody tr:last-child td { border-bottom: none; }
-.sev-row { cursor: pointer; transition: background .12s; }
-.sev-row:hover { background: var(--bg); }
-.sev-row:hover .sev-link { opacity: 1; }
-.sev-total { font-weight: 600; color: var(--text-2); }
-.sev-link { font-size: 12px; font-weight: 600; color: var(--brand); opacity: 0; transition: opacity .15s; }
-.sev-cell { display: flex; align-items: center; gap: 8px; }
-.sev-bar-track { width: 80px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; flex-shrink: 0; }
-.sev-bar-fill { height: 100%; border-radius: 4px; }
-.sev-bar-fill.pass    { background: var(--pass); }
-.sev-bar-fill.neutral { background: var(--warn); }
-.sev-bar-fill.fail    { background: var(--fail); }
-.sev-cell-text { font-weight: 600; font-size: 13px; color: var(--text); }
 .dimtext { color: var(--text-3); font-weight: 400; font-size: 12px; }
 
 /* ── Severity & check badges ── */
@@ -1427,28 +1415,6 @@ table.data-table, table.detail-table {
   border-top: 1px solid var(--border);
 }
 .expanded-detail.open { display: block; }
-.ev-feedback {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-.ev-feedback-label { font-size: 12px; color: var(--muted); }
-.ev-thumb {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 16px;
-  cursor: pointer;
-  line-height: 1;
-  transition: background 0.15s;
-}
-.ev-thumb:hover { background: #f0f4ff; border-color: #4a90e2; }
-.ev-thumb:disabled { opacity: 0.4; cursor: default; }
-.ev-feedback-thanks { font-size: 12px; color: #2e8540; font-weight: 600; }
 .exp-expected {
   display: flex;
   align-items: baseline;
@@ -1522,7 +1488,6 @@ table.data-table, table.detail-table {
 .exp-reason.result-pass { background: var(--pass-bg); color: #166534; font-weight: 500; }
 .exp-reason.result-fail { background: var(--fail-bg); color: #7f1d1d; font-weight: 500; }
 
-/* .methodology replaced by usa-footer--slim */
 .pass   { color: var(--pass); }
 .fail   { color: var(--fail); }
 .neutral{ color: var(--neutral); }
@@ -1854,7 +1819,7 @@ table.data-table, table.detail-table {
       <span class="tab-sub">What to do next</span>
     </button>
     <div class="tab-nav-spacer"></div>
-    <div class="readiness-pill ${data.readinessClass} tab-nav-pill">${esc(data.readinessLabel)}</div>
+    <div class="readiness-pill ${data.readinessClass} tab-nav-pill" aria-hidden="true">${esc(data.readinessLabel)}</div>
   </div>
 </nav>
 

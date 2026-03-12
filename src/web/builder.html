@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/assets/css/evergreen.css">
 </head>
 <body class="bg-base-lightest">
+<a class="usa-skipnav" href="#main-content">Skip to main content</a>
 
 <!-- Public Infrastructure Banner -->
 <section class="usa-banner" aria-label="Evergreen — digital public infrastructure">
@@ -35,34 +36,39 @@
     <nav aria-label="Primary navigation" class="usa-nav">
       <ul class="usa-nav__primary usa-accordion">
         <li class="usa-nav__primary-item">
-          <button id="run-btn" class="usa-button" onclick="runEval()">Run Evaluation &rarr;</button>
+          <button id="run-btn" class="usa-button" onclick="runEval()">Run Evaluation <span aria-hidden="true">&rarr;</span></button>
         </li>
       </ul>
     </nav>
   </div>
 </header>
 
-<!-- Tab bar -->
-<div class="bg-white border-bottom border-base-light padding-x-3 padding-y-1">
-  <div class="usa-button-group usa-button-group--segmented">
-    <div class="usa-button-group__item">
-      <button id="tab-library" class="usa-button" type="button" onclick="switchTab('library')">Library</button>
-    </div>
-    <div class="usa-button-group__item">
-      <button id="tab-builder" class="usa-button usa-button--outline" type="button" onclick="switchTab('builder')">Builder<span id="tab-builder-label"></span></button>
-    </div>
+<main id="main-content">
+
+<div id="lib-error" class="usa-alert usa-alert--error margin-3" role="alert" hidden>
+  <div class="usa-alert__body">
+    <p class="usa-alert__text">Failed to load test suite. Please try again.</p>
   </div>
 </div>
 
+<!-- Tab bar -->
+<div class="bg-white border-bottom border-base-light padding-x-3 padding-y-1"
+     role="tablist" aria-label="Builder sections">
+  <button id="tab-library" role="tab" aria-selected="true" aria-controls="panel-library"
+          tabindex="0" class="usa-button" type="button" onclick="switchTab('library')">Library</button>
+  <button id="tab-builder" role="tab" aria-selected="false" aria-controls="panel-builder"
+          tabindex="-1" class="usa-button usa-button--outline" type="button" onclick="switchTab('builder')">Builder<span id="tab-builder-label"></span></button>
+</div>
+
 <!-- Library panel -->
-<div id="panel-library" class="padding-4">
+<div id="panel-library" class="padding-4" role="tabpanel" aria-labelledby="tab-library">
   <div id="lib-grid">
     <p class="text-base">Loading&hellip;</p>
   </div>
 </div>
 
 <!-- Builder panel -->
-<div id="panel-builder" class="padding-4" hidden>
+<div id="panel-builder" class="padding-4" role="tabpanel" aria-labelledby="tab-builder" hidden>
   <div class="grid-container-desktop" id="builder-inner">
     <div class="builder-no-suite">
       <h2>No test suite loaded</h2>
@@ -74,6 +80,8 @@
     </div>
   </div>
 </div>
+
+</main>
 
 <script src="/assets/js/uswds.min.js"></script>
 <script>
@@ -125,6 +133,10 @@ function switchTab(tab) {
   document.getElementById('panel-builder').hidden = tab !== 'builder';
   document.getElementById('tab-library').className = 'usa-button' + (tab === 'library' ? '' : ' usa-button--outline');
   document.getElementById('tab-builder').className = 'usa-button' + (tab === 'builder' ? '' : ' usa-button--outline');
+  document.getElementById('tab-library').setAttribute('aria-selected', tab === 'library' ? 'true' : 'false');
+  document.getElementById('tab-library').tabIndex = tab === 'library' ? 0 : -1;
+  document.getElementById('tab-builder').setAttribute('aria-selected', tab === 'builder' ? 'true' : 'false');
+  document.getElementById('tab-builder').tabIndex = tab === 'builder' ? 0 : -1;
   if (tab === 'builder' && state.template) renderBuilder();
 }
 
@@ -132,7 +144,7 @@ function switchTab(tab) {
 function renderCard(t) {
   var isActive = t.id === state.selectedTemplateId;
   if (t.id === 'blank') {
-    var btnLabel = isActive ? 'Currently editing' : 'Start building \u2192';
+    var btnLabel = isActive ? 'Currently editing' : 'Start building <span aria-hidden="true">\u2192</span>';
     return '<li class="usa-card tablet:grid-col-4">' +
       '<div class="usa-card__container lib-card-start' + (isActive ? ' border-primary' : '') + '">' +
         '<div class="usa-card__header"><h2 class="usa-card__heading">Start your own</h2></div>' +
@@ -146,7 +158,7 @@ function renderCard(t) {
   if (t.caseCount) metaParts.push(t.caseCount + ' cases');
   if (t.author)    metaParts.push('by ' + esc(t.author));
   metaParts.push(t.multiTurn ? 'multi-turn' : 'single-turn');
-  var btnLabel2 = isActive ? 'Currently editing' : 'Customize \u2192';
+  var btnLabel2 = isActive ? 'Currently editing' : 'Customize <span aria-hidden="true">\u2192</span>';
   return '<li class="usa-card tablet:grid-col-4">' +
     '<div class="usa-card__container' + (isActive ? ' border-primary' : '') + '">' +
       '<div class="usa-card__header">' +
@@ -236,7 +248,7 @@ function renderRow(c, overallIdx) {
 
   var html = '<div class="usa-accordion margin-bottom-1" data-case-id="' + c._id + '">';
 
-  html += '<h4 class="usa-accordion__heading">' +
+  html += '<h3 class="usa-accordion__heading">' +
     '<button type="button" class="usa-accordion__button" ' +
     'aria-expanded="' + (isExpanded ? 'true' : 'false') + '" ' +
     'aria-controls="case-content-' + c._id + '" ' +
@@ -245,26 +257,30 @@ function renderRow(c, overallIdx) {
       '<span class="case-row-num">' + (overallIdx + 1) + '</span>' +
       sevHtml + personaHtml + multiTurnHtml + qHtml + chipHtml +
     '</span>' +
-    '</button></h4>';
+    '</button></h3>';
 
   html += '<div id="case-content-' + c._id + '" class="usa-accordion__content"' +
     (isExpanded ? '' : ' hidden') + '>';
 
   // Category (metric)
   html += '<p class="usa-label margin-top-0">Category</p>';
-  html += '<div class="pill-row">';
+  html += '<div class="pill-row" role="radiogroup" aria-label="Category">';
   METRICS.forEach(function(m) {
-    var sel = c.metric === m.id ? ' selected' : '';
-    html += '<button class="pill-btn' + sel + '" data-action="set-metric" data-id="' + c._id + '" data-value="' + m.id + '">' + m.label + '</button>';
+    var sel = c.metric === m.id;
+    html += '<button class="pill-btn' + (sel ? ' selected' : '') + '"' +
+      ' role="radio" aria-checked="' + (sel ? 'true' : 'false') + '"' +
+      ' data-action="set-metric" data-id="' + c._id + '" data-value="' + m.id + '">' + m.label + '</button>';
   });
   html += '</div>';
 
   // Severity
   html += '<p class="usa-label margin-top-3">How serious is it if the AI gets this wrong?</p>';
-  html += '<div class="pill-row">';
+  html += '<div class="pill-row" role="radiogroup" aria-label="Severity">';
   SEVERITIES.forEach(function(sv) {
-    var sel = c.severity === sv.id ? ' selected' : '';
-    html += '<button class="pill-btn' + sel + '" data-action="set-severity" data-id="' + c._id + '" data-value="' + sv.id + '">' + sv.label + '</button>';
+    var sel = c.severity === sv.id;
+    html += '<button class="pill-btn' + (sel ? ' selected' : '') + '"' +
+      ' role="radio" aria-checked="' + (sel ? 'true' : 'false') + '"' +
+      ' data-action="set-severity" data-id="' + c._id + '" data-value="' + sv.id + '">' + sv.label + '</button>';
   });
   html += '</div>';
   if (sev) html += '<span class="usa-hint display-block margin-top-1">' + esc(sev.hint) + '</span>';
@@ -272,10 +288,12 @@ function renderRow(c, overallIdx) {
   // Persona (only when template has named personas)
   if (state.template && state.template.personas && state.template.personas.length > 0) {
     html += '<p class="usa-label margin-top-3">Persona</p>';
-    html += '<div class="pill-row">';
+    html += '<div class="pill-row" role="radiogroup" aria-label="Persona">';
     state.template.personas.forEach(function(p) {
-      var sel = c.persona === p.id ? ' selected' : '';
-      html += '<button class="pill-btn' + sel + '" data-action="set-persona" data-id="' + c._id + '" data-value="' + esc(p.id) + '">' + esc(p.label) + '</button>';
+      var sel = c.persona === p.id;
+      html += '<button class="pill-btn' + (sel ? ' selected' : '') + '"' +
+        ' role="radio" aria-checked="' + (sel ? 'true' : 'false') + '"' +
+        ' data-action="set-persona" data-id="' + c._id + '" data-value="' + esc(p.id) + '">' + esc(p.label) + '</button>';
     });
     html += '</div>';
   }
@@ -306,7 +324,7 @@ function renderRow(c, overallIdx) {
       html += '<div class="criteria-row">' +
         '<span class="criteria-icon should">\u2713</span>' +
         '<textarea class="usa-textarea criteria-input" rows="2" data-action="edit-should" data-id="' + c._id + '" data-index="' + i + '">' + esc(val) + '</textarea>' +
-        '<button class="criteria-remove" data-action="remove-should" data-id="' + c._id + '" data-index="' + i + '">&times;</button>' +
+        '<button class="criteria-remove" aria-label="Remove criterion" data-action="remove-should" data-id="' + c._id + '" data-index="' + i + '">&times;</button>' +
       '</div>';
     });
     html += '<button class="usa-button usa-button--unstyled text-primary margin-top-1" data-action="add-should" data-id="' + c._id + '">+ Add criterion</button>';
@@ -318,7 +336,7 @@ function renderRow(c, overallIdx) {
       html += '<div class="criteria-row">' +
         '<span class="criteria-icon shouldnot">\u2717</span>' +
         '<textarea class="usa-textarea criteria-input" rows="2" data-action="edit-shouldnot" data-id="' + c._id + '" data-index="' + i + '">' + esc(val) + '</textarea>' +
-        '<button class="criteria-remove" data-action="remove-shouldnot" data-id="' + c._id + '" data-index="' + i + '">&times;</button>' +
+        '<button class="criteria-remove" aria-label="Remove criterion" data-action="remove-shouldnot" data-id="' + c._id + '" data-index="' + i + '">&times;</button>' +
       '</div>';
     });
     html += '<button class="usa-button usa-button--unstyled text-primary margin-top-1" data-action="add-shouldnot" data-id="' + c._id + '">+ Add criterion</button>';
@@ -341,7 +359,7 @@ function renderBuilder() {
 
   // Back to library (not for blank/scratch)
   if (state.selectedTemplateId && state.selectedTemplateId !== 'blank') {
-    html += '<button class="usa-button usa-button--unstyled margin-bottom-3" onclick="switchTab(\'library\')">\u2190 Library</button>';
+    html += '<button class="usa-button usa-button--unstyled margin-bottom-3" onclick="switchTab(\'library\')"><span aria-hidden="true">\u2190</span> Library</button>';
   }
 
   // Header
@@ -372,7 +390,7 @@ function renderBuilder() {
     html += '<div class="metric-group mg-' + m.id + '">';
     html += '<div class="metric-group-header">' +
       '<span class="metric-group-swatch"></span>' +
-      '<span class="metric-group-name">' + esc(m.label) + '</span>' +
+      '<h2 class="metric-group-name">' + esc(m.label) + '</h2>' +
       '<span class="metric-group-count">' + groupCases.length + '\u00a0' + (groupCases.length === 1 ? 'case' : 'cases') + '</span>' +
       '<button class="usa-button usa-button--unstyled text-primary font-body-sm margin-left-auto" data-action="add-case-metric" data-value="' + m.id + '">+ Add</button>' +
     '</div>';
@@ -381,7 +399,7 @@ function renderBuilder() {
       groupCases.forEach(function(c) { html += renderRow(c, globalIdx++); });
       html += '</div>';
     } else {
-      html += '<p class="metric-group-empty">No cases yet &mdash; click + Add to create one.</p>';
+      html += '<p class="metric-group-empty">No cases yet &mdash; select + Add above to create one.</p>';
     }
     html += '</div>';
   });
@@ -392,7 +410,7 @@ function renderBuilder() {
     html += '<div class="metric-group mg-unassigned">';
     html += '<div class="metric-group-header">' +
       '<span class="metric-group-swatch"></span>' +
-      '<span class="metric-group-name">Unassigned</span>' +
+      '<h2 class="metric-group-name">Unassigned</h2>' +
       '<span class="metric-group-count">' + unassigned.length + '\u00a0' + (unassigned.length === 1 ? 'case' : 'cases') + '</span>' +
     '</div>';
     html += '<div>';
@@ -405,7 +423,7 @@ function renderBuilder() {
   if (state.cases.length > 0) {
     html += '<div class="run-cta">' +
       '<p>Ready to run? Your test suite has ' + state.cases.length + '\u00a0' + (state.cases.length === 1 ? 'case' : 'cases') + '.</p>' +
-      '<button class="usa-button" onclick="runEval()">Run Evaluation \u2192</button>' +
+      '<button class="usa-button" onclick="runEval()">Run Evaluation <span aria-hidden="true">\u2192</span></button>' +
     '</div>';
   }
 
@@ -420,6 +438,7 @@ function loadTemplate(id) {
   fetch('/api/templates/' + encodeURIComponent(id))
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      document.getElementById('lib-error').hidden = true;
       state.template = data;
       state.cases = (data.builderCases || []).map(function(c) {
         return Object.assign({ _id: state.nextId++ }, c);
@@ -428,7 +447,7 @@ function loadTemplate(id) {
       switchTab('builder');
     })
     .catch(function() {
-      alert('Failed to load test suite. Please try again.');
+      document.getElementById('lib-error').hidden = false;
     });
 }
 
@@ -459,6 +478,7 @@ function handleAction(action, id, value, index) {
       c = findCase(Number(id));
       if (c) { c.persona = value; renderBuilder(); }
       break;
+    // Note: aria-checked is re-rendered on each renderBuilder() call
     case 'add-should':
       c = findCase(Number(id));
       if (c) { c.should.push(''); renderBuilder(); }

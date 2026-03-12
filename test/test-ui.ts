@@ -88,17 +88,16 @@ function testBuilderHtml(): void {
 
   // ── HTML assertions ──
   assert(html.includes('usa-header usa-header--basic'),      'usa-header--basic missing');
-  assert(html.includes('usa-button-group--segmented'),        'usa-button-group--segmented missing (tab bar)');
-  assert(html.includes('usa-button-group__item'),             'usa-button-group__item missing (tab items)');
-  assert(html.includes('class="usa-breadcrumb"'),            'usa-breadcrumb missing');
-  assert(html.includes('usa-breadcrumb__list'),               'usa-breadcrumb__list missing');
-  assert(html.includes('class="usa-card-group"'),            'usa-card-group missing (library grid)');
+  assert(html.includes('role="tablist"'),                     'role="tablist" missing (ARIA tab bar)');
+  assert(html.includes('role="tab"'),                        'role="tab" missing (ARIA tab buttons)');
+  assert(html.includes('role="tabpanel"'),                   'role="tabpanel" missing (ARIA tab panels)');
+  assert(html.includes('usa-card-group'),                    'usa-card-group missing (library grid)');
   assert(html.includes('class="bg-base-lightest"'),          'bg-base-lightest missing (body background)');
   assert(html.includes('class="padding-4"'),                 'padding-4 missing (panel padding)');
+  assert(html.includes('id="main-content"'),                 'main-content landmark missing');
 
   // ── JS-generated HTML assertions (string literals inside JS) ──
   assert(html.includes("'usa-button'"),              "JS: 'usa-button' string missing (switchTab)");
-  assert(html.includes('usa-breadcrumb__list-item'), 'JS: usa-breadcrumb__list-item missing (updateBreadcrumb)');
   assert(html.includes('usa-card__container'),        'JS: usa-card__container missing (renderLibrary)');
   assert(html.includes('usa-accordion__button'),      'JS: usa-accordion__button missing (renderRow)');
   assert(html.includes('usa-accordion__content'),     'JS: usa-accordion__content missing (renderRow)');
@@ -115,7 +114,7 @@ function testBuilderHtml(): void {
   assert(!html.includes("classList.toggle('active'"), 'stale classList.toggle(active) found (old tab pattern)');
   assert(!html.includes('<style>'),                   'inline <style> block found — should have been removed');
 
-  console.log('  PASSED (USWDS tab bar, breadcrumb, cards, accordion confirmed; old classes absent)\n');
+  console.log('  PASSED (ARIA tablist/tab/tabpanel, skip-nav, cards, accordion confirmed; old classes absent)\n');
 }
 
 function testEvergreenCss(): void {
@@ -173,16 +172,13 @@ function testEvergreenCss(): void {
   // Section N: library card variant
   assert(css.includes('.lib-card-start'), 'Section N: lib-card-start missing');
 
-  // Section O: breadcrumb button
-  assert(css.includes('.ev-breadcrumb-btn'), 'Section O: ev-breadcrumb-btn missing');
-
   // Section P: criteria textarea flex fix
   assert(css.includes('.criteria-row .usa-textarea'), 'Section P: criteria-row usa-textarea flex fix missing');
 
   // Section Q: accordion button override
   assert(css.includes('.usa-accordion__button'), 'Section Q: usa-accordion__button override missing');
 
-  console.log('  PASSED (all 17 CSS sections verified, every required class present)\n');
+  console.log('  PASSED (all CSS sections verified, every required class present)\n');
 }
 
 function testGeneratorTs(): void {
@@ -192,23 +188,15 @@ function testGeneratorTs(): void {
   // USWDS stylesheet linked
   assert(src.includes('href="/assets/css/evergreen.css"'), 'evergreen.css link missing from report');
 
-  // Breadcrumb nav replaces old report-nav
-  assert(src.includes('class="usa-breadcrumb"'),    'usa-breadcrumb missing from report');
-  assert(src.includes('usa-breadcrumb__list'),       'usa-breadcrumb__list missing from report');
-
-  // Slim footer replaces methodology
+  // Slim footer present
   assert(src.includes('class="usa-footer usa-footer--slim"'), 'usa-footer--slim missing from report');
   assert(src.includes('usa-footer__secondary-section'),       'usa-footer__secondary-section missing');
-
-  // Print rule updated
-  assert(src.includes('.usa-breadcrumb { display: none; }'), 'print hide rule for usa-breadcrumb missing');
 
   // Old patterns removed
   assert(!src.includes('class="report-nav"'),       'stale report-nav class found');
   assert(!src.includes('class="methodology"'),      'stale methodology class found');
-  assert(!src.includes('.report-nav { display: none'), 'stale report-nav print rule found');
 
-  console.log('  PASSED (USWDS breadcrumb and slim footer confirmed, old chrome removed)\n');
+  console.log('  PASSED (USWDS slim footer confirmed, old chrome removed)\n');
 }
 
 function testNoStaleVarReferences(): void {

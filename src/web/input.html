@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/assets/css/evergreen.css">
 </head>
 <body>
+<a class="usa-skipnav" href="#main-content">Skip to main content</a>
 
 <!-- Public Infrastructure Banner -->
 <section class="usa-banner" aria-label="Evergreen — digital public infrastructure">
@@ -43,7 +44,7 @@
 </header>
 
 <!-- Main Content -->
-<main class="grid-container-mobile-lg padding-y-5">
+<main id="main-content" class="grid-container-mobile-lg padding-y-5">
   <h1 class="font-heading-xl margin-top-0">Run an Evaluation</h1>
   <p class="text-base font-body-md margin-bottom-3">Choose your test cases and AI provider, then click Run.</p>
 
@@ -63,29 +64,36 @@
       </div>
 
       <!-- 2. Evaluation context (optional, collapsed) -->
-      <details class="margin-top-3">
-        <summary class="usa-label text-base font-body-sm" style="cursor:pointer;">Evaluation context (optional)</summary>
-        <div class="margin-top-2">
-          <div class="usa-form-group">
-            <label class="usa-label" for="agencyName">Agency name</label>
-            <input class="usa-input" id="agencyName" type="text" placeholder="e.g. Colorado Dept. of Human Services">
-          </div>
-          <div class="usa-form-group">
-            <label class="usa-label" for="evaluatorName">Evaluator name</label>
-            <input class="usa-input" id="evaluatorName" type="text" placeholder="e.g. Jane Smith, Policy Division">
-          </div>
-          <div class="usa-form-group">
-            <label class="usa-label" for="evaluationReason">Reason for evaluation</label>
-            <select class="usa-select" id="evaluationReason">
-              <option value="">-- Optional --</option>
-              <option value="Initial evaluation">Initial evaluation</option>
-              <option value="Post-update re-evaluation">Post-update re-evaluation</option>
-              <option value="Periodic review">Periodic review</option>
-              <option value="other">Other</option>
-            </select>
+      <div class="usa-accordion margin-top-3">
+        <h4 class="usa-accordion__heading">
+          <button class="usa-accordion__button font-body-sm" type="button"
+                  aria-expanded="false" aria-controls="eval-context-content">
+            Evaluation context <span class="text-base">(optional)</span>
+          </button>
+        </h4>
+        <div id="eval-context-content" class="usa-accordion__content" hidden>
+          <div class="margin-top-1">
+            <div class="usa-form-group">
+              <label class="usa-label" for="agencyName">Agency name</label>
+              <input class="usa-input" id="agencyName" type="text" placeholder="e.g. Colorado Dept. of Human Services">
+            </div>
+            <div class="usa-form-group">
+              <label class="usa-label" for="evaluatorName">Evaluator name</label>
+              <input class="usa-input" id="evaluatorName" type="text" placeholder="e.g. Jane Smith, Policy Division">
+            </div>
+            <div class="usa-form-group">
+              <label class="usa-label" for="evaluationReason">Reason for evaluation</label>
+              <select class="usa-select" id="evaluationReason">
+                <option value="">None</option>
+                <option value="Initial evaluation">Initial evaluation</option>
+                <option value="Post-update re-evaluation">Post-update re-evaluation</option>
+                <option value="Periodic review">Periodic review</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
           </div>
         </div>
-      </details>
+      </div>
 
       <!-- 3. Test cases — what am I testing? -->
       <div class="usa-form-group margin-top-3">
@@ -96,12 +104,12 @@
           </legend>
           <div class="usa-radio">
             <input class="usa-radio__input" id="dataSource-sheet" type="radio"
-                   name="dataSource" value="sheet" checked onchange="handleDataSourceChange()">
+                   name="dataSource" value="sheet" checked>
             <label class="usa-radio__label" for="dataSource-sheet">My Google Sheet</label>
           </div>
           <div class="usa-radio">
             <input class="usa-radio__input" id="dataSource-preset" type="radio"
-                   name="dataSource" value="preset" onchange="handleDataSourceChange()">
+                   name="dataSource" value="preset">
             <label class="usa-radio__label" for="dataSource-preset">
               Built-in test suite
             </label>
@@ -131,8 +139,8 @@
           <span class="usa-hint">Choose a pre-built evaluation for your use case</span>
         </label>
         <span class="usa-error-message" id="presetId-error" role="alert" style="display:none">Please select a test suite.</span>
-        <select class="usa-select" id="presetId" name="presetId" required aria-describedby="presetId-error" onchange="handlePresetChange()">
-          <option value="">-- Select a test suite --</option>
+        <select class="usa-select" id="presetId" name="presetId" aria-describedby="presetId-error" onchange="handlePresetChange()">
+          <option value="">Select a test suite</option>
           <optgroup label="Live test suites (requires API key)">
             <option value="snap-food-assistance">SNAP / Food Assistance (25 tests)</option>
             <option value="wheres-my-refund">Where's My Refund (25 tests)</option>
@@ -170,11 +178,11 @@
                aria-describedby="aiDescription-error">
       </div>
 
-      <!-- 5. LLM provider (defaulted) -->
+      <!-- 5. AI model (defaulted) -->
       <div class="usa-form-group" id="provider-group">
         <label class="usa-label" for="provider">
-          LLM provider
-          <span class="usa-hint">The AI model to evaluate</span>
+          AI model
+          <span class="usa-hint">Choose which AI you want to evaluate</span>
         </label>
         <select class="usa-select" id="provider" name="provider" required>
           <optgroup label="Anthropic">
@@ -191,14 +199,14 @@
 
       <!-- Langfuse tracing toggle — shown only if server has keys configured -->
       <div id="langfuse-section" hidden>
-        <div class="usa-form-group" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #dfe1e2;">
+        <div class="usa-form-group margin-top-3 padding-top-2 border-top border-base-light">
           <div class="usa-checkbox">
             <input class="usa-checkbox__input" id="enable-langfuse" name="enableLangfuse" type="checkbox" value="true">
             <label class="usa-checkbox__label" for="enable-langfuse">
               Send trace to Langfuse
               <span class="usa-hint display-block">
                 Records each eval step in your Langfuse project for observability.
-                <a class="usa-link" href="https://us.cloud.langfuse.com" target="_blank" rel="noopener">Open Langfuse ↗</a>
+                <a class="usa-link" href="https://us.cloud.langfuse.com" target="_blank" rel="noopener">Open Langfuse <span aria-hidden="true">↗</span></a>
               </span>
             </label>
           </div>
@@ -221,7 +229,7 @@
   </div>
 
   <!-- Error Section -->
-  <div id="error-section" style="display:none">
+  <div id="error-section" style="display:none" tabindex="-1">
     <div class="usa-alert usa-alert--error" role="alert">
       <div class="usa-alert__body">
         <h4 class="usa-alert__heading">Evaluation failed</h4>
@@ -312,6 +320,8 @@
     document.getElementById('sheetUrl-group').style.display     = isPreset ? 'none'  : 'block';
     document.getElementById('presetId-group').style.display     = isPreset ? 'block' : 'none';
     document.getElementById('aiDescription-group').style.display = isPreset ? 'none'  : 'block';
+    document.getElementById('presetId').required  = isPreset;
+    document.getElementById('sheetUrl').required  = !isPreset;
     // Auto-fill eval name when switching to sheet mode
     var descEl = document.getElementById('description');
     if (!isPreset && !descEl.value.trim()) {
@@ -428,8 +438,8 @@
   }
 
   const stepStatus = {
-    1: 'Getting ready\u2026',
-    2: 'Getting ready\u2026',
+    1: 'Reading your test cases\u2026',
+    2: 'Setting up the evaluation\u2026',
     3: 'This usually takes 1\u20132 minutes \u2014 the longest part.',
     4: 'Almost done\u2026'
   };
@@ -465,15 +475,17 @@
       traceLink.target = '_blank';
       traceLink.rel = 'noopener';
       traceLink.className = 'usa-button usa-button--outline';
-      traceLink.textContent = 'View in Langfuse \u2192';
+      traceLink.innerHTML = 'View in Langfuse <span aria-hidden="true">\u2192</span>';
       btnArea.appendChild(traceLink);
     }
   }
 
   function showError(msg) {
     document.getElementById('progress-section').style.display = 'none';
-    document.getElementById('error-section').style.display    = 'block';
+    var errSection = document.getElementById('error-section');
+    errSection.style.display = 'block';
     document.getElementById('error-message').textContent = msg;
+    errSection.focus();
   }
 
   function handlePresetChange() {
@@ -540,6 +552,11 @@
       }
     })
     .catch(function() {}); // silently ignore if endpoint not available
+
+  // Wire up data source radio buttons
+  document.querySelectorAll('input[name="dataSource"]').forEach(function(el) {
+    el.addEventListener('change', handleDataSourceChange);
+  });
 
   // Handle ?preset= query param — auto-select preset on page load
   (function() {
