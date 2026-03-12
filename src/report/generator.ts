@@ -944,8 +944,8 @@ function renderHtml(data: ReportData, jobId?: string): string {
   <div id="eng-content" style="display:none"></div>` : `
   <div class="card">
     <h2 class="card-title">Performance View</h2>
-    <p style="color:var(--text-2);font-size:14px;line-height:1.6;margin-bottom:12px">Connect Langfuse to see performance metrics for this run — latency, token counts, and estimated cost per test case.</p>
-    <a class="usa-link" href="https://langfuse.com" target="_blank" rel="noopener" style="font-size:14px">Learn about Langfuse →</a>
+    <p class="card-subtitle">Connect Langfuse to see latency, token counts, and estimated cost per test case.</p>
+    <a class="usa-link" href="https://langfuse.com" target="_blank" rel="noopener">Learn about Langfuse →</a>
   </div>`;
 
   // ── Full HTML ──────────────────────────────────────────────────────────
@@ -1769,20 +1769,13 @@ table.data-table, table.detail-table {
 }
 
 /* ── Engineering tab ── */
-.eng-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+.example-pill {
+  display: inline-block;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  background: #f1f3f5; color: #71767a;
+  padding: 2px 7px; border-radius: 3px; margin-left: 8px;
+  vertical-align: middle;
 }
-.eng-metric-card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-}
-.eng-metric-value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: var(--brand); line-height: 1; }
-.eng-metric-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-3); margin-top: 4px; }
 .eng-model-badge {
   display: inline-block;
   padding: 3px 10px;
@@ -2204,11 +2197,8 @@ table.data-table, table.detail-table {
         }
       });
   }
-  function engBar(rate) {
-    return '<div class="bar-track" style="width:180px"><div class="bar-fill" style="width:' + rate + '%;background:var(--brand)"></div></div>';
-  }
-  function demoPill() {
-    return '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:#f1f3f5;color:#71767a;padding:2px 7px;border-radius:3px;margin-left:8px">Demo data</span>';
+  function examplePill() {
+    return '<span class="example-pill">Example</span>';
   }
   function formatPersonaLabel(id) {
     return id.split('-').map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(' ');
@@ -2222,17 +2212,18 @@ table.data-table, table.detail-table {
     content.style.display = '';
 
     // ── Card 1: Summary metrics ──
-    var summaryHtml = '<div class="eng-summary-grid">' +
-      '<div class="eng-metric-card"><div class="eng-metric-value">' + d.avgLatencyMs + 'ms</div><div class="eng-metric-label">Avg latency</div></div>' +
-      '<div class="eng-metric-card"><div class="eng-metric-value">' + (d.totalPromptTokens + d.totalCompletionTokens).toLocaleString() + '</div><div class="eng-metric-label">Total tokens</div></div>' +
-      '<div class="eng-metric-card"><div class="eng-metric-value">$' + d.estimatedCostUsd.toFixed(4) + '</div><div class="eng-metric-label">Est. cost</div></div>' +
-      '<div class="eng-metric-card"><div class="eng-metric-value">' + d.totalTests + '</div><div class="eng-metric-label">Tests traced</div></div>' +
+    var latencyDisplay = d.avgLatencyMs >= 1000
+      ? (d.avgLatencyMs / 1000).toFixed(1) + 's'
+      : d.avgLatencyMs + 'ms';
+    var summaryHtml = '<div class="stats-grid">' +
+      '<div class="stat-card"><div class="stat-value neutral">' + latencyDisplay + '</div><div class="stat-fraction">average per test</div><div class="stat-label">Latency</div></div>' +
+      '<div class="stat-card"><div class="stat-value neutral">' + (d.totalPromptTokens + d.totalCompletionTokens).toLocaleString() + '</div><div class="stat-fraction">prompt + completion</div><div class="stat-label">Total tokens</div></div>' +
+      '<div class="stat-card"><div class="stat-value neutral">$' + d.estimatedCostUsd.toFixed(4) + '</div><div class="stat-fraction">estimated this run</div><div class="stat-label">Est. cost</div></div>' +
+      '<div class="stat-card"><div class="stat-value neutral">' + d.totalTests + '</div><div class="stat-fraction">test cases traced</div><div class="stat-label">Tests traced</div></div>' +
     '</div>';
-    var modelHtml = '<div class="eng-model-badge">Model: ' + escHtml(d.model) + '</div>';
-    var traceHtml = d.traceUrl
-      ? '<p style="margin-top:10px"><a class="usa-link" href="' + escHtml(d.traceUrl) + '" target="_blank" rel="noopener" style="font-size:13px">View full trace in Langfuse &#8599;</a></p>'
-      : '';
-    var card1 = '<div class="card">' + summaryHtml + modelHtml + traceHtml + '</div>';
+    var contextHtml = '<div class="eng-model-badge">Model: ' + escHtml(d.model) + '</div>' +
+      (d.traceUrl ? '<p style="margin-top:8px"><a class="usa-link" href="' + escHtml(d.traceUrl) + '" target="_blank" rel="noopener" style="font-size:13px">View full trace in Langfuse &#8599;</a></p>' : '');
+    var card1 = '<div class="card">' + summaryHtml + contextHtml + '</div>';
 
     // ── Card 2: Pass rate by persona (only when personas present) ──
     var personaGroups = {};
@@ -2248,14 +2239,17 @@ table.data-table, table.detail-table {
       var personaRows = personaKeys.map(function(pid) {
         var g = personaGroups[pid];
         var rate = Math.round(g.passed / g.total * 100);
-        return '<div class="bar-row" style="align-items:center">' +
-          '<div class="bar-label" style="min-width:110px">' + escHtml(formatPersonaLabel(pid)) + '</div>' +
-          '<div class="bar-meta" style="min-width:64px;text-align:right;padding-right:12px"><span class="' + (rate >= 80 ? 'pass' : rate >= 60 ? 'neutral' : 'fail') + '">' + rate + '%</span></div>' +
-          engBar(rate) +
-          '<div class="bar-count" style="margin-left:10px">' + g.passed + '/' + g.total + '</div>' +
+        var fillClass = rate >= 80 ? 'green' : rate >= 60 ? 'yellow' : 'red';
+        return '<div class="bar-row">' +
+          '<div class="bar-meta">' +
+            '<span class="bar-label">' + escHtml(formatPersonaLabel(pid)) + '</span>' +
+            '<span class="bar-count">' + g.passed + '/' + g.total + ' tests</span>' +
+          '</div>' +
+          '<div class="bar-track"><div class="bar-fill ' + fillClass + '" style="width:' + rate + '%"></div></div>' +
+          '<span class="bar-pct">' + rate + '%</span>' +
         '</div>';
       }).join('');
-      card2 = '<div class="card"><h2 class="card-title">Pass rate by audience</h2>' +
+      card2 = '<div class="card"><h2 class="card-title">Pass rate by persona</h2>' +
         '<div class="bar-chart">' + personaRows + '</div></div>';
     }
 
@@ -2268,15 +2262,18 @@ table.data-table, table.detail-table {
       { label: 'Run 4', weeks: 'Today',        rate: currentRate, current: true      },
     ];
     var historyRows = historyRuns.map(function(r) {
-      return '<div class="bar-row" style="align-items:center">' +
-        '<div class="bar-label" style="min-width:50px">' + r.label + '</div>' +
-        '<div style="min-width:90px;font-size:11px;color:var(--text-3);padding-right:12px">' + r.weeks + '</div>' +
-        '<div class="bar-meta" style="min-width:40px;text-align:right;padding-right:12px"><span class="' + (r.rate >= 80 ? 'pass' : r.rate >= 60 ? 'neutral' : 'fail') + (r.current ? '" style="font-weight:700' : '') + '">' + r.rate + '%</span></div>' +
-        engBar(r.rate) +
-        (r.current ? '<div class="bar-count" style="margin-left:10px;font-weight:700">← this run</div>' : '<div class="bar-count" style="margin-left:10px"></div>') +
+      var fillClass = r.rate >= 80 ? 'green' : r.rate >= 60 ? 'yellow' : 'red';
+      return '<div class="bar-row">' +
+        '<div class="bar-meta">' +
+          '<span class="bar-label">' + r.label + '</span>' +
+          '<span class="bar-count">' + r.weeks + (r.current ? ' \u2014 this run' : '') + '</span>' +
+        '</div>' +
+        '<div class="bar-track"><div class="bar-fill ' + fillClass + '" style="width:' + r.rate + '%"></div></div>' +
+        '<span class="bar-pct">' + r.rate + '%</span>' +
       '</div>';
     }).join('');
-    var card3 = '<div class="card"><h2 class="card-title">Pass rate over time' + demoPill() + '</h2>' +
+    var card3 = '<div class="card"><h2 class="card-title">Pass rate over time ' + examplePill() + '</h2>' +
+      '<p class="card-subtitle">Historical data shown for illustration &mdash; your real run history will build here over time.</p>' +
       '<div class="bar-chart">' + historyRows + '</div></div>';
 
     // ── Card 4: Reviewer feedback (demo data) ──
@@ -2284,36 +2281,38 @@ table.data-table, table.detail-table {
     var helpful = Math.min(d.totalTests, passCount + Math.floor(passCount * 0.1));
     var notHelpful = d.totalTests - helpful;
     var helpfulRate = d.totalTests > 0 ? Math.round(helpful / d.totalTests * 100) : 0;
-    var card4 = '<div class="card"><h2 class="card-title">Reviewer feedback' + demoPill() + '</h2>' +
+    var card4 = '<div class="card"><h2 class="card-title">Reviewer feedback ' + examplePill() + '</h2>' +
+      '<p class="card-subtitle">Shown for illustration &mdash; real feedback from the thumbs up/down buttons in the Report tab will appear here.</p>' +
       '<div class="bar-chart">' +
-        '<div class="bar-row" style="align-items:center">' +
-          '<div class="bar-label" style="min-width:110px">Marked helpful</div>' +
-          '<div class="bar-meta" style="min-width:64px;text-align:right;padding-right:12px"><span class="pass">' + helpfulRate + '%</span></div>' +
-          engBar(helpfulRate) +
-          '<div class="bar-count" style="margin-left:10px">' + helpful + ' of ' + d.totalTests + '</div>' +
+        '<div class="bar-row">' +
+          '<div class="bar-meta"><span class="bar-label">Marked helpful</span><span class="bar-count">' + helpful + ' of ' + d.totalTests + '</span></div>' +
+          '<div class="bar-track"><div class="bar-fill green" style="width:' + helpfulRate + '%"></div></div>' +
+          '<span class="bar-pct">' + helpfulRate + '%</span>' +
         '</div>' +
-        '<div class="bar-row" style="align-items:center">' +
-          '<div class="bar-label" style="min-width:110px">Not helpful</div>' +
-          '<div class="bar-meta" style="min-width:64px;text-align:right;padding-right:12px"><span class="fail">' + (100 - helpfulRate) + '%</span></div>' +
-          engBar(100 - helpfulRate) +
-          '<div class="bar-count" style="margin-left:10px">' + notHelpful + ' of ' + d.totalTests + '</div>' +
+        '<div class="bar-row">' +
+          '<div class="bar-meta"><span class="bar-label">Not helpful</span><span class="bar-count">' + notHelpful + ' of ' + d.totalTests + '</span></div>' +
+          '<div class="bar-track"><div class="bar-fill red" style="width:' + (100 - helpfulRate) + '%"></div></div>' +
+          '<span class="bar-pct">' + (100 - helpfulRate) + '%</span>' +
         '</div>' +
       '</div></div>';
 
     // ── Card 5: Per-test table ──
     var rows = d.tests.map(function(t) {
+      var latCell = t.latencyMs >= 1000 ? (t.latencyMs / 1000).toFixed(1) + 's' : t.latencyMs + 'ms';
       return '<tr>' +
         '<td>' + t.testNumber + '</td>' +
         '<td class="' + (t.passed ? 'result-pass' : 'result-fail') + '">' + (t.passed ? 'PASS' : 'FAIL') + '</td>' +
         '<td>' + escHtml(t.metric) + '</td>' +
         (t.persona ? '<td>' + escHtml(formatPersonaLabel(t.persona)) + '</td>' : '') +
-        '<td>' + t.latencyMs + 'ms</td>' +
+        '<td>' + latCell + '</td>' +
         '<td>' + (t.promptTokens + t.completionTokens).toLocaleString() + '</td>' +
       '</tr>';
     }).join('');
     var personaCol = d.tests.some(function(t){return !!t.persona;});
-    var tableHtml = '<div class="card"><table class="data-table usa-table usa-table--borderless usa-table--compact">' +
-      '<thead><tr><th>#</th><th>Result</th><th>Metric</th>' + (personaCol ? '<th>Audience</th>' : '') + '<th>Latency</th><th>Tokens</th></tr></thead>' +
+    var tableHtml = '<div class="card"><h2 class="card-title">Per-test breakdown</h2>' +
+      '<p class="card-subtitle">Latency and token counts for each test case from this run.</p>' +
+      '<table class="data-table usa-table usa-table--borderless usa-table--compact">' +
+      '<thead><tr><th>#</th><th>Result</th><th>Metric</th>' + (personaCol ? '<th>Persona</th>' : '') + '<th>Latency</th><th>Tokens</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>';
 
     content.innerHTML = card1 + card2 + card3 + card4 + tableHtml;

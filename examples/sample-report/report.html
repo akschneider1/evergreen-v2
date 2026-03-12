@@ -817,20 +817,13 @@ table.data-table, table.detail-table {
 }
 
 /* ── Engineering tab ── */
-.eng-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+.example-pill {
+  display: inline-block;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  background: #f1f3f5; color: #71767a;
+  padding: 2px 7px; border-radius: 3px; margin-left: 8px;
+  vertical-align: middle;
 }
-.eng-metric-card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-}
-.eng-metric-value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: var(--brand); line-height: 1; }
-.eng-metric-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-3); margin-top: 4px; }
 .eng-model-badge {
   display: inline-block;
   padding: 3px 10px;
@@ -1466,8 +1459,8 @@ table.data-table, table.detail-table {
   
   <div class="card">
     <h2 class="card-title">Performance View</h2>
-    <p style="color:var(--text-2);font-size:14px;line-height:1.6;margin-bottom:12px">Connect Langfuse to see performance metrics for this run — latency, token counts, and estimated cost per test case.</p>
-    <a class="usa-link" href="https://langfuse.com" target="_blank" rel="noopener" style="font-size:14px">Learn about Langfuse →</a>
+    <p class="card-subtitle">Connect Langfuse to see latency, token counts, and estimated cost per test case.</p>
+    <a class="usa-link" href="https://langfuse.com" target="_blank" rel="noopener">Learn about Langfuse →</a>
   </div>
 </div>
 </section>
