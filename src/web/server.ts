@@ -26,7 +26,7 @@ import { generateReport } from '../report/generator';
 import { normalizePromptfooOutput, EvergreenConfig, SheetRow, PresetPersona } from '../types';
 import { getPreset, getAllPresets } from '../presets/index';
 import { getBuilderCases, builderCasesToCsv, metricDistribution } from '../builder';
-import { isLangfuseConfigured, makeLangfuseClient, getTraceUrl } from '../langfuse';
+import { isLangfuseConfigured, makeLangfuseClient, getTraceUrl, getLangfuseBaseUrl } from '../langfuse';
 
 // ── Job state ────────────────────────────────────────────────────────────────
 
@@ -278,6 +278,19 @@ async function runPipeline(
   }
 }
 
+// ── Cost estimation ───────────────────────────────────────────────────────────
+
+function estimateCost(model: string, promptTokens: number, completionTokens: number): number {
+  let pPer1k = 0.002, cPer1k = 0.008;
+  if (model.includes('gpt-4o'))              { pPer1k = 0.0025;  cPer1k = 0.010; }
+  else if (model.includes('gpt-4'))          { pPer1k = 0.030;   cPer1k = 0.060; }
+  else if (model.includes('gpt-3.5'))        { pPer1k = 0.0005;  cPer1k = 0.0015; }
+  else if (model.includes('claude-haiku'))   { pPer1k = 0.00025; cPer1k = 0.00125; }
+  else if (model.includes('claude-opus'))    { pPer1k = 0.015;   cPer1k = 0.075; }
+  else if (model.includes('claude-sonnet') || model.includes('claude-3-5')) { pPer1k = 0.003; cPer1k = 0.015; }
+  return (promptTokens / 1000) * pPer1k + (completionTokens / 1000) * cPer1k;
+}
+
 // ── Express app ───────────────────────────────────────────────────────────────
 
 export function createApp(): express.Application {
@@ -389,6 +402,75 @@ export function createApp(): express.Application {
     lf.score({ traceId: jobId, observationId, name: 'user-feedback', value, dataType: 'BOOLEAN' });
     await lf.flushAsync();
     res.json({ ok: true });
+  });
+
+  // Langfuse engineering data — latency, tokens, cost per test
+  app.get('/api/langfuse-data/:jobId', async (req, res) => {
+    if (!isLangfuseConfigured()) {
+      res.status(404).json({ error: 'Langfuse is not configured on this server.' });
+      return;
+    }
+    const job = jobs.get(req.params.jobId);
+    if (!job || job.status !== 'complete') {
+      res.status(404).json({ error: 'Job not found or not complete.' });
+      return;
+    }
+
+    const baseUrl = getLangfuseBaseUrl();
+    const pubKey = process.env.LANGFUSE_PUBLIC_KEY!;
+    const secKey = process.env.LANGFUSE_SECRET_KEY!;
+    const auth = Buffer.from(`${pubKey}:${secKey}`).toString('base64');
+
+    try {
+      const r = await fetch(`${baseUrl}/api/public/traces/${req.params.jobId}`, {
+        headers: { Authorization: `Basic ${auth}` },
+      });
+      if (!r.ok) throw new Error(`Langfuse returned ${r.status}`);
+      const trace = await r.json() as any;
+
+      const observations: any[] = trace.observations ?? [];
+      const genIds: string[] = job.generationIds ?? [];
+
+      const idToTestNum = new Map<string, number>();
+      genIds.forEach((id, i) => idToTestNum.set(id, i + 1));
+
+      const tests = observations
+        .filter((o: any) => idToTestNum.has(o.id))
+        .map((o: any) => {
+          const passScore = (o.scores ?? []).find((s: any) => s.name === 'pass-fail');
+          return {
+            testNumber: idToTestNum.get(o.id)!,
+            latencyMs: Math.round(o.latencyMs ?? 0),
+            promptTokens: o.usage?.promptTokens ?? 0,
+            completionTokens: o.usage?.completionTokens ?? 0,
+            passed: passScore?.value === 1,
+            metric: o.metadata?.metric ?? '',
+            severity: o.metadata?.severity ?? '',
+          };
+        })
+        .sort((a: any, b: any) => a.testNumber - b.testNumber);
+
+      const totalTests = tests.length;
+      const avgLatencyMs = totalTests > 0
+        ? Math.round(tests.reduce((s: number, t: any) => s + t.latencyMs, 0) / totalTests)
+        : 0;
+      const totalPromptTokens = tests.reduce((s: number, t: any) => s + t.promptTokens, 0);
+      const totalCompletionTokens = tests.reduce((s: number, t: any) => s + t.completionTokens, 0);
+      const model = observations.find((o: any) => o.model)?.model ?? 'unknown';
+
+      res.json({
+        traceUrl: getTraceUrl(req.params.jobId),
+        model,
+        totalTests,
+        avgLatencyMs,
+        totalPromptTokens,
+        totalCompletionTokens,
+        estimatedCostUsd: estimateCost(model, totalPromptTokens, totalCompletionTokens),
+        tests,
+      });
+    } catch {
+      res.status(502).json({ error: 'Could not fetch Langfuse data.' });
+    }
   });
 
   // Start eval job

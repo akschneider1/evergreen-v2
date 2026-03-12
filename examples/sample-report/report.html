@@ -777,6 +777,100 @@ table.data-table, table.detail-table {
   font-style: italic;
 }
 
+/* ── Engineering tab ── */
+.eng-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.eng-metric-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.eng-metric-value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: var(--brand); line-height: 1; }
+.eng-metric-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-3); margin-top: 4px; }
+.eng-model-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #e8f0fe;
+  color: #1a56db;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.eng-placeholder-text { color: var(--text-3); font-style: italic; font-size: 14px; }
+
+/* ── Recommendation layers ── */
+.rec-synthesis {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  margin-bottom: 12px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.rec-critical-note { color: var(--fail); font-weight: 600; }
+.rec-critical-block {
+  background: var(--fail-bg);
+  border: 1px solid var(--fail-border);
+  border-radius: var(--radius);
+  padding: 16px 22px;
+  margin-bottom: 12px;
+}
+.rec-critical-block-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--fail);
+  margin-bottom: 10px;
+}
+.rec-layers { display: flex; flex-direction: column; gap: 10px; }
+.rec-layer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.rec-layer-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.rec-layer-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.rec-layer-subtitle { font-size: 12px; color: var(--text-3); font-style: italic; }
+.rec-layer-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; }
+.rec-layer-item {
+  font-size: 14px;
+  color: var(--text);
+  padding-left: 18px;
+  position: relative;
+  line-height: 1.5;
+}
+.rec-layer-item::before { content: '→'; position: absolute; left: 0; color: var(--text-3); font-weight: 600; }
+.rec-layer-item--clean { color: var(--pass); }
+.rec-layer-item--clean::before { content: ''; }
+.rec-clean-check { font-weight: 700; color: var(--pass); }
+.rec-data-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  vertical-align: middle;
+}
+.rec-layer-item--langfuse::after {
+  content: ' (from live data)';
+  font-size: 11px;
+  color: var(--text-3);
+  font-style: italic;
+}
+
 /* ── Print ── */
 @media print {
   .tab-nav { position: static; box-shadow: none; }
@@ -842,17 +936,13 @@ table.data-table, table.detail-table {
 <!-- ── Tab nav ── -->
 <nav class="tab-nav">
   <div class="grid-container" style="display:flex">
-    <button class="tab-btn active" data-tab="summary">
-      <span class="tab-label">Summary</span>
-      <span class="tab-sub">Policy &amp; Leadership</span>
+    <button class="tab-btn active" data-tab="report">
+      <span class="tab-label">Report</span>
+      <span class="tab-sub">Compliance artifact</span>
     </button>
-    <button class="tab-btn" data-tab="analysis">
-      <span class="tab-label">Analysis</span>
-      <span class="tab-sub">Operations</span>
-    </button>
-    <button class="tab-btn" data-tab="details">
-      <span class="tab-label">Details</span>
-      <span class="tab-sub">Technical</span>
+    <button class="tab-btn" id="tab-btn-engineering" data-tab="engineering">
+      <span class="tab-label">Engineering</span>
+      <span class="tab-sub">Latency &amp; cost</span>
     </button>
     <button class="tab-btn" data-tab="recommendations">
       <span class="tab-label">Recommendations</span>
@@ -861,15 +951,15 @@ table.data-table, table.detail-table {
   </div>
 </nav>
 
-<!-- ── Summary tab ── -->
-<section class="tab-content active" id="tab-summary">
+<!-- ── Report tab ── -->
+<section class="tab-content active" id="tab-report">
 <div class="grid-container">
 
   <div class="readiness-hero not-ready">
     <div class="rh-status not-ready">Not Ready for Deployment</div>
     <p class="rh-explanation">There is 1 critical failure that could directly harm users. The system must not be deployed until these are resolved.</p>
     <div class="rh-next-label">What to do next</div>
-    <ul class="rh-steps"><li>Review each critical failure below and identify the root cause</li><li>Update the system prompt or knowledge base to address the gaps</li><li>Re-run the evaluation to confirm the fixes</li><li>Escalate to technical staff if the issue requires model or retrieval changes</li></ul>
+    <ul class="rh-steps"><li>Review each critical failure below and identify the root cause</li><li>Update the system prompt or knowledge base to address the gaps</li><li>Re-run the evaluation to confirm the fixes</li><li>See the Recommendations tab for specific next steps by layer</li></ul>
   </div>
 
   <div class="stats-grid">
@@ -926,15 +1016,8 @@ table.data-table, table.detail-table {
     </div>
   
 
-</div>
-</section>
-
-<!-- ── Analysis tab ── -->
-<section class="tab-content" id="tab-analysis">
-<div class="grid-container">
-
   <div class="card">
-    <h2 class="card-title">Results by Lead Metric</h2>
+    <h2 class="card-title">Results by Metric</h2>
     <div class="bar-chart">
     <div class="bar-row">
       <div class="bar-meta">
@@ -995,7 +1078,7 @@ table.data-table, table.detail-table {
   </div>
 
   <div class="card">
-    <h2 class="card-title">Results by Severity — click a row to view those test cases</h2>
+    <h2 class="card-title">Results by Severity — click a row to filter test cases</h2>
     <table class="data-table">
       <thead>
         <tr>
@@ -1066,13 +1149,6 @@ table.data-table, table.detail-table {
   </div>
 
   
-
-</div>
-</section>
-
-<!-- ── Details tab ── -->
-<section class="tab-content" id="tab-details">
-<div class="grid-container">
 
   <div class="filter-bar">
     <span class="filter-group-label">Status</span>
@@ -1365,181 +1441,110 @@ table.data-table, table.detail-table {
 </div>
 </section>
 
+<!-- ── Engineering tab ── -->
+<section class="tab-content" id="tab-engineering">
+<div class="grid-container">
+  
+  <div class="card">
+    <h2 class="card-title">Engineering View</h2>
+    <p style="color:var(--text-2);font-size:14px;line-height:1.6;margin-bottom:12px">Connect Langfuse to see engineering metrics for this run — latency, token counts, and estimated cost per test case.</p>
+    <a class="usa-link" href="https://langfuse.com" target="_blank" rel="noopener" style="font-size:14px">Learn about Langfuse →</a>
+  </div>
+</div>
+</section>
+
 <!-- ── Recommendations tab ── -->
 <section class="tab-content" id="tab-recommendations">
 <div class="grid-container">
 
-  <div class="card">
-    <h2 class="card-title">Recommendations</h2>
-    <p class="rec-intro">Based on the patterns in your evaluation results, here are specific steps to improve your AI system. Each recommendation includes guidance for your technical team.</p>
+  <div class="rec-synthesis">
+    <p>Overall pass rate: <strong>83%</strong> &middot;
+    <span class="rec-critical-note">1 critical failure require attention before deployment.</span></p>
+    <p style="font-size:13px;color:var(--text-3);margin-top:6px;margin-bottom:0">Recommendations are organized by what type of change is most likely to improve your scores. Engineering data from the Engineering tab will enrich model and prompt recommendations when available.</p>
   </div>
 
   
-    <details class="rec-card">
-      <summary class="rec-summary">
-        <div class="rec-number">1</div>
-        <h3 class="rec-headline">Review your safety guardrails</h3>
-        <span class="rec-chevron">&#9662;</span>
-      </summary>
-      <div class="rec-body">
-        <p class="rec-explanation">Safety failures mean the AI gave responses that could mislead or harm the people using it. Even one safety failure is worth investigating.</p>
-        <div class="rec-steps">
-          <div class="rec-steps-label">Steps to take</div>
-          <ol class="rec-step-list"><li>Review each safety failure in the Details tab</li><li>Identify the types of unsafe content the AI produced</li><li>Work with your technical team to add protections for those specific issues</li><li>Re-run the evaluation to confirm the fixes work</li></ol>
-        </div>
-        <div class="rec-evidence">
-          <span class="rec-evidence-label">Your results:</span>
-          <span class="rec-evidence-tag">Safety: 0%</span>
-        </div>
-        <details class="rec-technical">
-          <summary class="rec-tech-toggle">For your technical team</summary>
-          <div class="rec-tech-content">
-            <ol class="rec-tech-list"><li>Harden the system prompt with explicit safety boundaries for the identified failure modes</li><li>Add output filtering or classifier-based guardrails (e.g. moderation API, custom classifiers)</li><li>Consider a content-safety layer that screens responses before they reach the user</li><li>Log and alert on safety failures in production for ongoing monitoring</li></ol>
-          </div>
-        </details>
-      </div>
-    </details>
-    <details class="rec-card">
-      <summary class="rec-summary">
-        <div class="rec-number">2</div>
-        <h3 class="rec-headline">Improve the information your AI draws from</h3>
-        <span class="rec-chevron">&#9662;</span>
-      </summary>
-      <div class="rec-body">
-        <p class="rec-explanation">When the AI gets facts wrong, it usually means the information it has access to is incomplete, outdated, or poorly organized.</p>
-        <div class="rec-steps">
-          <div class="rec-steps-label">Steps to take</div>
-          <ol class="rec-step-list"><li>Check whether the source documents your AI uses are current and complete</li><li>Identify which facts the AI got wrong (see Details tab) and verify them against your records</li><li>Work with your technical team to improve how information is stored and retrieved</li><li>Add missing facts to the knowledge base or correct outdated ones</li></ol>
-        </div>
-        <div class="rec-evidence">
-          <span class="rec-evidence-label">Your results:</span>
-          <span class="rec-evidence-tag">Accuracy: 100%</span>
-        </div>
-        <details class="rec-technical">
-          <summary class="rec-tech-toggle">For your technical team</summary>
-          <div class="rec-tech-content">
-            <ol class="rec-tech-list"><li>Review document chunking strategy — smaller, overlapping chunks often improve retrieval accuracy</li><li>Evaluate your embedding model and consider re-indexing with a higher-quality model</li><li>Tune retrieval parameters (top-k results, similarity threshold) to improve relevance</li><li>Add structured metadata (dates, categories, source authority) to improve retrieval filtering</li><li>Consider a hybrid search approach combining semantic and keyword-based retrieval</li></ol>
-          </div>
-        </details>
-      </div>
-    </details>
-    <details class="rec-card">
-      <summary class="rec-summary">
-        <div class="rec-number">3</div>
-        <h3 class="rec-headline">Strengthen the instructions your AI follows</h3>
-        <span class="rec-chevron">&#9662;</span>
-      </summary>
-      <div class="rec-body">
-        <p class="rec-explanation">When the AI understands the question but doesn’t respond in the most helpful way, the instructions it follows (system prompt) likely need improvement.</p>
-        <div class="rec-steps">
-          <div class="rec-steps-label">Steps to take</div>
-          <ol class="rec-step-list"><li>Review the responses that weren’t effective or easy to understand (see Details tab)</li><li>Look for patterns — are responses too long, too vague, or missing key steps?</li><li>Update the instructions to address the gaps you’ve identified</li><li>Add examples of good responses so the AI knows what to aim for</li></ol>
-        </div>
-        <div class="rec-evidence">
-          <span class="rec-evidence-label">Your results:</span>
-          <span class="rec-evidence-tag">Effectiveness: 100%</span><span class="rec-evidence-tag">Ease of Use: 100%</span>
-        </div>
-        <details class="rec-technical">
-          <summary class="rec-tech-toggle">For your technical team</summary>
-          <div class="rec-tech-content">
-            <ol class="rec-tech-list"><li>Revise the system prompt with explicit formatting guidance and response structure</li><li>Add few-shot examples that demonstrate ideal responses for common question types</li><li>Include plain-language directives: &quot;avoid jargon&quot;, &quot;explain acronyms&quot;, &quot;give the next step&quot;</li><li>Consider breaking complex prompts into a chain of smaller, focused prompts</li><li>Test system prompt changes in isolation before deploying to see measurable improvement</li></ol>
-          </div>
-        </details>
-      </div>
-    </details>
-    <details class="rec-card">
-      <summary class="rec-summary">
-        <div class="rec-number">4</div>
-        <h3 class="rec-headline">Adjust the tone and style</h3>
-        <span class="rec-chevron">&#9662;</span>
-      </summary>
-      <div class="rec-body">
-        <p class="rec-explanation">People using government services are often in stressful situations. If the AI’s tone feels cold, robotic, or dismissive, it can make things worse even when the information is correct.</p>
-        <div class="rec-steps">
-          <div class="rec-steps-label">Steps to take</div>
-          <ol class="rec-step-list"><li>Read through the emotion-related failures in the Details tab</li><li>Note where the AI could have acknowledged the person’s situation before answering</li><li>Update the instructions to include guidance about tone and empathy</li><li>Consider adding specific phrases the AI should use in sensitive situations</li></ol>
-        </div>
-        <div class="rec-evidence">
-          <span class="rec-evidence-label">Your results:</span>
-          <span class="rec-evidence-tag">Emotion: 100%</span>
-        </div>
-        <details class="rec-technical">
-          <summary class="rec-tech-toggle">For your technical team</summary>
-          <div class="rec-tech-content">
-            <ol class="rec-tech-list"><li>Add tone guidance to the system prompt: &quot;acknowledge the user’s situation before providing information&quot;</li><li>Include examples of empathetic phrasing for common sensitive topics</li><li>Consider using a separate tone-check step that evaluates response empathy before delivery</li><li>Avoid overly formal or bureaucratic language patterns in prompt templates</li></ol>
-          </div>
-        </details>
-      </div>
-    </details>
-    <details class="rec-card">
-      <summary class="rec-summary">
-        <div class="rec-number">5</div>
-        <h3 class="rec-headline">Consider a different AI model</h3>
-        <span class="rec-chevron">&#9662;</span>
-      </summary>
-      <div class="rec-body">
-        <p class="rec-explanation">Different AI models have different strengths. If you tested more than one, comparing their results can reveal whether switching models would make a meaningful difference.</p>
-        <div class="rec-steps">
-          <div class="rec-steps-label">Steps to take</div>
-          <ol class="rec-step-list"><li>Compare pass rates across models in the Analysis tab</li><li>Check if one model is consistently better across all categories, or only in specific areas</li><li>Factor in cost and speed — a more expensive model is only worth it if the improvement matters</li><li>Discuss trade-offs with your technical team before switching</li></ol>
-        </div>
-        <div class="rec-evidence">
-          <span class="rec-evidence-label">Your results:</span>
-          <span class="rec-evidence-tag">GPT-4o: 83%</span>
-        </div>
-        <details class="rec-technical">
-          <summary class="rec-tech-toggle">For your technical team</summary>
-          <div class="rec-tech-content">
-            <ol class="rec-tech-list"><li>Compare model performance on each metric dimension, not just overall pass rate</li><li>Evaluate cost per evaluation — larger models may not justify their cost for your use case</li><li>Consider latency requirements, especially for real-time user-facing applications</li><li>Fine-tuning is rarely necessary for public-sector chatbots — prompt engineering and retrieval improvements usually deliver better ROI</li><li>Test candidate models with the same evaluation suite to get an apples-to-apples comparison</li></ol>
-          </div>
-        </details>
-      </div>
-    </details>
-    <details class="rec-card">
-      <summary class="rec-summary">
-        <div class="rec-number">6</div>
-        <h3 class="rec-headline">Talk to the people who use this service</h3>
-        <span class="rec-chevron">&#9662;</span>
-      </summary>
-      <div class="rec-body">
-        <p class="rec-explanation">The best way to improve your AI is to understand what real people actually need from it. Test cases based on real user questions catch problems that hypothetical scenarios miss.</p>
-        <div class="rec-steps">
-          <div class="rec-steps-label">Steps to take</div>
-          <ol class="rec-step-list"><li>Interview 5–10 people who use (or would use) this service</li><li>Ask what questions they’d ask, what words they’d use, and what would actually help them</li><li>Add their real questions to your test suite as new test cases</li><li>Pay special attention to edge cases and situations that are hard to handle</li></ol>
-        </div>
-        <div class="rec-evidence">
-          <span class="rec-evidence-label">Your results:</span>
-          <span class="rec-evidence-tag">Effectiveness: 100%</span>
-        </div>
-        <details class="rec-technical">
-          <summary class="rec-tech-toggle">For your technical team</summary>
-          <div class="rec-tech-content">
-            <ol class="rec-tech-list"><li>Analyze production logs to identify the most common user questions and failure modes</li><li>Build test cases from real user interactions, not just policy documents</li><li>Expand test coverage to include multilingual queries and accessibility scenarios</li><li>Set up a feedback loop so user-reported issues automatically become new test cases</li><li>Consider A/B testing different response strategies with real users</li></ol>
-          </div>
-        </details>
-      </div>
-    </details>
-    <details class="rec-card">
-      <summary class="rec-summary">
-        <div class="rec-number">7</div>
-        <h3 class="rec-headline">Run this evaluation again after making changes</h3>
-        <span class="rec-chevron">&#9662;</span>
-      </summary>
-      <div class="rec-body">
-        <p class="rec-explanation">Evaluation isn’t a one-time activity. Every time you update the AI’s instructions, data, or model, run the same tests again to make sure things got better, not worse.</p>
-        <div class="rec-steps">
-          <div class="rec-steps-label">Steps to take</div>
-          <ol class="rec-step-list"><li>Make one or two focused changes based on the recommendations above</li><li>Re-run this same evaluation to measure the impact</li><li>Compare your new pass rates against this baseline</li><li>Repeat until you’re confident the AI is ready for real users</li></ol>
-        </div>
-        
-        <details class="rec-technical">
-          <summary class="rec-tech-toggle">For your technical team</summary>
-          <div class="rec-tech-content">
-            <ol class="rec-tech-list"><li>Integrate evaluation into your CI/CD pipeline so it runs automatically on every deployment</li><li>Track pass rates across runs to establish improvement trends</li><li>Set up automated alerts when pass rates drop below acceptable thresholds</li><li>Version your test suites alongside your code to maintain reproducibility</li></ol>
-          </div>
-        </details>
-      </div>
-    </details>
+  <div class="rec-critical-block">
+    <div class="rec-critical-block-title">Requires attention before deployment</div>
+    <ul class="rec-layer-list">
+      
+        <li class="rec-layer-item">
+          Safety failures block deployment regardless of severity — the AI gave responses that could mislead or harm users. <span class="rec-data-tag">1 safety failure</span>
+        </li>
+        <li class="rec-layer-item">
+          1 critical-severity test case failed and must be resolved before deployment. <span class="rec-data-tag">1 critical failure</span>
+        </li>
+    </ul>
+  </div>
+
+  
+  <div class="rec-layers">
+    
+  <div class="rec-layer" id="rec-layer-prompt">
+    <div class="rec-layer-header">
+      <span class="rec-layer-title">Prompt</span>
+      <span class="rec-layer-subtitle">Changes to how you instruct the AI</span>
+    </div>
+    <ul class="rec-layer-list">
+      <li class="rec-layer-item">
+        Add explicit safety guardrails to your system prompt for the identified failure topics. <span class="rec-data-tag">1 safety failure</span>
+      </li></ul>
+  </div>
+    
+  <div class="rec-layer" id="rec-layer-data">
+    <div class="rec-layer-header">
+      <span class="rec-layer-title">Data</span>
+      <span class="rec-layer-subtitle">Changes to your test cases</span>
+    </div>
+    <ul class="rec-layer-list">
+      <li class="rec-layer-item">
+        Consider adding more Safety test cases to improve coverage reliability. <span class="rec-data-tag">only 1 Safety test case</span>
+      </li>
+      <li class="rec-layer-item">
+        Consider adding more Ease of Use test cases to improve coverage reliability. <span class="rec-data-tag">only 1 Ease of Use test case</span>
+      </li>
+      <li class="rec-layer-item">
+        Consider adding more Effectiveness test cases to improve coverage reliability. <span class="rec-data-tag">only 1 Effectiveness test case</span>
+      </li>
+      <li class="rec-layer-item">
+        Consider adding more Emotion test cases to improve coverage reliability. <span class="rec-data-tag">only 1 Emotion test case</span>
+      </li>
+      <li class="rec-layer-item">
+        Small test suite — consider expanding to 15–25 test cases for more reliable results. <span class="rec-data-tag">6 total test cases</span>
+      </li></ul>
+  </div>
+    
+  <div class="rec-layer" id="rec-layer-model">
+    <div class="rec-layer-header">
+      <span class="rec-layer-title">Model</span>
+      <span class="rec-layer-subtitle">Changes to which AI you are testing</span>
+    </div>
+    <ul class="rec-layer-list">
+      <li class="rec-layer-item rec-layer-item--clean">
+        <span class="rec-clean-check">&#10003;</span> No model-layer concerns detected.
+      </li></ul>
+  </div>
+    
+  <div class="rec-layer" id="rec-layer-process">
+    <div class="rec-layer-header">
+      <span class="rec-layer-title">Process</span>
+      <span class="rec-layer-subtitle">Changes to your team's practices</span>
+    </div>
+    <ul class="rec-layer-list">
+      <li class="rec-layer-item">
+        Re-run this evaluation after making changes to measure the impact.
+      </li>
+      <li class="rec-layer-item">
+        Have a subject matter expert review the critical failures before deployment. <span class="rec-data-tag">1 critical failure</span>
+      </li>
+      <li class="rec-layer-item">
+        Talk to frontline staff about the safety failures — they may reflect real user interactions you haven't anticipated.
+      </li>
+      <li class="rec-layer-item">
+        Share this report with decision-makers as a record of due diligence before deployment.
+      </li></ul>
+  </div>
+  </div>
 
 </div>
 </section>
@@ -1553,7 +1558,7 @@ table.data-table, table.detail-table {
         <strong>Framework:</strong> Evergreen 4-Dimension Eval &middot;
         <strong>Test Source:</strong> Google Sheets &middot;
         <strong>Metrics:</strong> Safety, Accuracy, Ease of Use, Effectiveness, Emotion &middot;
-        <strong>Generated:</strong> 2026-03-12T00:11:24.626Z
+        <strong>Generated:</strong> 2026-03-12T03:23:53.653Z
         
       </p>
     </div>
@@ -1627,11 +1632,14 @@ table.data-table, table.detail-table {
   }
   window.applyFilter = applyFilter;
 
-  // ── Severity row click → Details tab with filter ──
+  // ── Severity row click → Report tab with filter, scroll to test cases ──
   function gotoSeverity(sev) {
-    activateTab('details');
+    activateTab('report');
     applyFilter(sev);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(function() {
+      var detailCard = document.querySelector('.detail-card');
+      if (detailCard) detailCard.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
   }
   window.gotoSeverity = gotoSeverity;
 

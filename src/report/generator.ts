@@ -46,6 +46,8 @@ interface ReportData {
   evaluationReason: string;
   presetId: string;
   recommendations: Recommendation[];
+  overallPassRate: number;
+  layers: RecommendationLayers;
 }
 
 interface ProviderSummary {
@@ -114,6 +116,20 @@ interface Recommendation {
   priority: number;
   technicalHeadline: string;
   technicalSteps: string[];
+}
+
+interface LayerRecommendation {
+  text: string;
+  dataTag?: string;   // cited evidence, e.g. "4 ease-of-use failures"
+  isClean?: boolean;  // positive confirmation ("✓ No concerns")
+}
+
+interface RecommendationLayers {
+  criticalBlock: LayerRecommendation[];
+  prompt: LayerRecommendation[];
+  data: LayerRecommendation[];
+  model: LayerRecommendation[];
+  process: LayerRecommendation[];
 }
 
 // ---------- Helpers ----------
@@ -244,15 +260,15 @@ function deriveReportData(input: EvalResults): ReportData {
       'Review each critical failure below and identify the root cause',
       'Update the system prompt or knowledge base to address the gaps',
       'Re-run the evaluation to confirm the fixes',
-      'Escalate to technical staff if the issue requires model or retrieval changes',
+      'See the Recommendations tab for specific next steps by layer',
     ];
   } else if (bestPassRate < PASS_RATE_FLOOR) {
     readinessClass = 'not-ready';
     readinessLabel = 'Not Ready for Deployment';
     readinessExplanation = `The overall pass rate (${bestPassRate}%) is below the minimum ${PASS_RATE_FLOOR}% floor. The system needs significant improvement before deployment.`;
     nextSteps = [
-      'Open the Analysis tab to identify which dimensions are weakest',
-      'Review failing test cases in the Details tab for patterns',
+      'Scroll down to review metric results and identify which dimensions are weakest',
+      'Review failing test cases in the table below for patterns',
       'Update the system prompt or knowledge base to address widespread gaps',
       'Re-run the evaluation after making changes',
     ];
@@ -261,8 +277,8 @@ function deriveReportData(input: EvalResults): ReportData {
     readinessLabel = 'Needs Improvement';
     readinessExplanation = `No critical failures were found, but the overall pass rate (${bestPassRate}%) is below the ${PASS_RATE_THRESHOLD}% threshold. The system needs tuning before deployment.`;
     nextSteps = [
-      'Open the Analysis tab to identify which dimensions are weakest',
-      'Open the Details tab to review individual failing test cases',
+      'Scroll down to review metric results and identify which dimensions are weakest',
+      'Review failing test cases in the table below for specific failures',
       'Update the system prompt with more specific guidance for the failing areas',
       'Consider retrieval-augmented generation if facts are consistently wrong',
       'Re-run the evaluation after making changes',
@@ -382,8 +398,10 @@ function deriveReportData(input: EvalResults): ReportData {
     evaluationReason: input.evaluationReason || '',
     presetId: input.presetId || '',
     recommendations: [],
+    overallPassRate: bestPassRate,
+    layers: { criticalBlock: [], prompt: [], data: [], model: [], process: [] },
   };
-  rd.recommendations = deriveRecommendations(rd);
+  rd.layers = deriveLayers(rd);
   return rd;
 }
 
@@ -392,6 +410,113 @@ function deriveReportData(input: EvalResults): ReportData {
 function dimRate(dimensions: DimensionResult[], name: string): number | null {
   const d = dimensions.find(dim => dim.name === name);
   return d != null ? d.passRate : null;
+}
+
+function deriveLayers(data: ReportData): RecommendationLayers {
+  function failCount(dimName: string): number {
+    const d = data.dimensions.find(dim => dim.name === dimName);
+    return d ? d.totalCount - d.passedCount : 0;
+  }
+
+  const safetyFails = failCount('Safety');
+  const easeFails   = failCount('Ease of Use');
+  const emotionFails = failCount('Emotion');
+  const accuracyFails = failCount('Accuracy');
+  const criticalEffFails = data.testCases.filter(
+    tc => tc.metric === 'effectiveness' && tc.severity === 'critical' && tc.anyFailed,
+  ).length;
+
+  const criticalBlock: LayerRecommendation[] = [];
+  if (safetyFails > 0) {
+    criticalBlock.push({
+      text: 'Safety failures block deployment regardless of severity — the AI gave responses that could mislead or harm users.',
+      dataTag: `${safetyFails} safety failure${safetyFails > 1 ? 's' : ''}`,
+    });
+  }
+  if (data.criticalFailureCount > 0) {
+    criticalBlock.push({
+      text: `${data.criticalFailureCount} critical-severity test case${data.criticalFailureCount > 1 ? 's' : ''} failed and must be resolved before deployment.`,
+      dataTag: `${data.criticalFailureCount} critical failure${data.criticalFailureCount > 1 ? 's' : ''}`,
+    });
+  }
+
+  const prompt: LayerRecommendation[] = [];
+  if (safetyFails > 0) {
+    prompt.push({
+      text: 'Add explicit safety guardrails to your system prompt for the identified failure topics.',
+      dataTag: `${safetyFails} safety failure${safetyFails > 1 ? 's' : ''}`,
+    });
+  }
+  if (easeFails > 0) {
+    prompt.push({
+      text: 'Add plain language and brevity instructions to your system prompt — avoid jargon, use short sentences.',
+      dataTag: `${easeFails} ease-of-use failure${easeFails > 1 ? 's' : ''}`,
+    });
+  }
+  if (emotionFails > 0) {
+    prompt.push({
+      text: "Add tone and empathy instructions — the AI should acknowledge the person's situation before answering.",
+      dataTag: `${emotionFails} emotion failure${emotionFails > 1 ? 's' : ''}`,
+    });
+  }
+  if (prompt.length === 0) {
+    prompt.push({ text: 'No prompt-layer issues detected based on current results.', isClean: true });
+  }
+
+  const dataLayer: LayerRecommendation[] = [];
+  if (accuracyFails > 0) {
+    dataLayer.push({
+      text: 'Review expected answers for accuracy test cases — grading criteria may be ambiguous or source data may need updating.',
+      dataTag: `${accuracyFails} accuracy failure${accuracyFails > 1 ? 's' : ''}`,
+    });
+  }
+  for (const dim of data.dimensions) {
+    if (dim.totalCount < 2) {
+      dataLayer.push({
+        text: `Consider adding more ${dim.name} test cases to improve coverage reliability.`,
+        dataTag: `only ${dim.totalCount} ${dim.name} test case`,
+      });
+    }
+  }
+  if (data.testCaseCount < 10) {
+    dataLayer.push({
+      text: 'Small test suite — consider expanding to 15–25 test cases for more reliable results.',
+      dataTag: `${data.testCaseCount} total test cases`,
+    });
+  }
+  if (dataLayer.length === 0) {
+    dataLayer.push({ text: 'Test coverage looks adequate across metric dimensions.', isClean: true });
+  }
+
+  const model: LayerRecommendation[] = [];
+  if (criticalEffFails > 0) {
+    model.push({
+      text: 'Consider a more capable model — critical effectiveness failures may indicate the model cannot handle this use case.',
+      dataTag: `${criticalEffFails} critical effectiveness failure${criticalEffFails > 1 ? 's' : ''}`,
+    });
+  }
+  if (model.length === 0) {
+    model.push({ text: 'No model-layer concerns detected.', isClean: true });
+  }
+
+  const process: LayerRecommendation[] = [];
+  if (data.failedCaseCount > 0) {
+    process.push({ text: 'Re-run this evaluation after making changes to measure the impact.' });
+  }
+  if (data.criticalFailureCount > 0) {
+    process.push({
+      text: `Have a subject matter expert review the critical failures before deployment.`,
+      dataTag: `${data.criticalFailureCount} critical failure${data.criticalFailureCount > 1 ? 's' : ''}`,
+    });
+  }
+  if (safetyFails > 0) {
+    process.push({
+      text: "Talk to frontline staff about the safety failures — they may reflect real user interactions you haven't anticipated.",
+    });
+  }
+  process.push({ text: 'Share this report with decision-makers as a record of due diligence before deployment.' });
+
+  return { criticalBlock, prompt, data: dataLayer, model, process };
 }
 
 function deriveRecommendations(data: ReportData): Recommendation[] {
@@ -801,38 +926,53 @@ function renderHtml(data: ReportData, jobId?: string): string {
 
   // ── Recommendations tab ─────────────────────────────────────────────
 
-  const recommendationCardsHtml = data.recommendations.map((rec, i) => {
-    const stepsHtml = rec.steps.map(s => `<li>${esc(s)}</li>`).join('');
-    const techStepsHtml = rec.technicalSteps.map(s => `<li>${esc(s)}</li>`).join('');
-    const tagsHtml = rec.metricRates.map(m =>
-      `<span class="rec-evidence-tag">${esc(m.label)}: ${m.rate}%</span>`
-    ).join('');
+  function renderLayer(title: string, subtitle: string, items: LayerRecommendation[], layerId: string): string {
+    const itemsHtml = items.map(item => `
+      <li class="rec-layer-item${item.isClean ? ' rec-layer-item--clean' : ''}">
+        ${item.isClean ? '<span class="rec-clean-check">&#10003;</span> ' : ''}${esc(item.text)}${item.dataTag ? ` <span class="rec-data-tag">${esc(item.dataTag)}</span>` : ''}
+      </li>`).join('');
     return `
-    <details class="rec-card">
-      <summary class="rec-summary">
-        <div class="rec-number">${i + 1}</div>
-        <h3 class="rec-headline">${esc(rec.headline)}</h3>
-        <span class="rec-chevron">&#9662;</span>
-      </summary>
-      <div class="rec-body">
-        <p class="rec-explanation">${esc(rec.explanation)}</p>
-        <div class="rec-steps">
-          <div class="rec-steps-label">Steps to take</div>
-          <ol class="rec-step-list">${stepsHtml}</ol>
-        </div>
-        ${tagsHtml ? `<div class="rec-evidence">
-          <span class="rec-evidence-label">Your results:</span>
-          ${tagsHtml}
-        </div>` : ''}
-        <details class="rec-technical">
-          <summary class="rec-tech-toggle">${esc(rec.technicalHeadline)}</summary>
-          <div class="rec-tech-content">
-            <ol class="rec-tech-list">${techStepsHtml}</ol>
-          </div>
-        </details>
-      </div>
-    </details>`;
-  }).join('');
+  <div class="rec-layer" id="rec-layer-${layerId}">
+    <div class="rec-layer-header">
+      <span class="rec-layer-title">${esc(title)}</span>
+      <span class="rec-layer-subtitle">${esc(subtitle)}</span>
+    </div>
+    <ul class="rec-layer-list">${itemsHtml}</ul>
+  </div>`;
+  }
+
+  const criticalBlockHtml = data.layers.criticalBlock.length > 0 ? `
+  <div class="rec-critical-block">
+    <div class="rec-critical-block-title">Requires attention before deployment</div>
+    <ul class="rec-layer-list">
+      ${data.layers.criticalBlock.map(item => `
+        <li class="rec-layer-item">
+          ${esc(item.text)}${item.dataTag ? ` <span class="rec-data-tag">${esc(item.dataTag)}</span>` : ''}
+        </li>`).join('')}
+    </ul>
+  </div>` : '';
+
+  const layersHtml = `
+  <div class="rec-layers">
+    ${renderLayer('Prompt', 'Changes to how you instruct the AI', data.layers.prompt, 'prompt')}
+    ${renderLayer('Data', 'Changes to your test cases', data.layers.data, 'data')}
+    ${renderLayer('Model', 'Changes to which AI you are testing', data.layers.model, 'model')}
+    ${renderLayer('Process', "Changes to your team's practices", data.layers.process, 'process')}
+  </div>`;
+
+  // ── Engineering tab ──────────────────────────────────────────────────
+
+  const engineeringTabHtml = jobId ? `
+  <div class="card" id="eng-placeholder">
+    <h2 class="card-title">Engineering View</h2>
+    <p class="eng-placeholder-text">Loading engineering metrics from Langfuse...</p>
+  </div>
+  <div id="eng-content" style="display:none"></div>` : `
+  <div class="card">
+    <h2 class="card-title">Engineering View</h2>
+    <p style="color:var(--text-2);font-size:14px;line-height:1.6;margin-bottom:12px">Connect Langfuse to see engineering metrics for this run — latency, token counts, and estimated cost per test case.</p>
+    <a class="usa-link" href="https://langfuse.com" target="_blank" rel="noopener" style="font-size:14px">Learn about Langfuse →</a>
+  </div>`;
 
   // ── Full HTML ──────────────────────────────────────────────────────────
 
@@ -1615,6 +1755,100 @@ table.data-table, table.detail-table {
   font-style: italic;
 }
 
+/* ── Engineering tab ── */
+.eng-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.eng-metric-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.eng-metric-value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: var(--brand); line-height: 1; }
+.eng-metric-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-3); margin-top: 4px; }
+.eng-model-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #e8f0fe;
+  color: #1a56db;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.eng-placeholder-text { color: var(--text-3); font-style: italic; font-size: 14px; }
+
+/* ── Recommendation layers ── */
+.rec-synthesis {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  margin-bottom: 12px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.rec-critical-note { color: var(--fail); font-weight: 600; }
+.rec-critical-block {
+  background: var(--fail-bg);
+  border: 1px solid var(--fail-border);
+  border-radius: var(--radius);
+  padding: 16px 22px;
+  margin-bottom: 12px;
+}
+.rec-critical-block-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--fail);
+  margin-bottom: 10px;
+}
+.rec-layers { display: flex; flex-direction: column; gap: 10px; }
+.rec-layer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.rec-layer-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.rec-layer-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.rec-layer-subtitle { font-size: 12px; color: var(--text-3); font-style: italic; }
+.rec-layer-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; }
+.rec-layer-item {
+  font-size: 14px;
+  color: var(--text);
+  padding-left: 18px;
+  position: relative;
+  line-height: 1.5;
+}
+.rec-layer-item::before { content: '→'; position: absolute; left: 0; color: var(--text-3); font-weight: 600; }
+.rec-layer-item--clean { color: var(--pass); }
+.rec-layer-item--clean::before { content: ''; }
+.rec-clean-check { font-weight: 700; color: var(--pass); }
+.rec-data-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  vertical-align: middle;
+}
+.rec-layer-item--langfuse::after {
+  content: ' (from live data)';
+  font-size: 11px;
+  color: var(--text-3);
+  font-style: italic;
+}
+
 /* ── Print ── */
 @media print {
   .tab-nav { position: static; box-shadow: none; }
@@ -1680,17 +1914,13 @@ table.data-table, table.detail-table {
 <!-- ── Tab nav ── -->
 <nav class="tab-nav">
   <div class="grid-container" style="display:flex">
-    <button class="tab-btn active" data-tab="summary">
-      <span class="tab-label">Summary</span>
-      <span class="tab-sub">Policy &amp; Leadership</span>
+    <button class="tab-btn active" data-tab="report">
+      <span class="tab-label">Report</span>
+      <span class="tab-sub">Compliance artifact</span>
     </button>
-    <button class="tab-btn" data-tab="analysis">
-      <span class="tab-label">Analysis</span>
-      <span class="tab-sub">Operations</span>
-    </button>
-    <button class="tab-btn" data-tab="details">
-      <span class="tab-label">Details</span>
-      <span class="tab-sub">Technical</span>
+    <button class="tab-btn" id="tab-btn-engineering" data-tab="engineering">
+      <span class="tab-label">Engineering</span>
+      <span class="tab-sub">Latency &amp; cost</span>
     </button>
     <button class="tab-btn" data-tab="recommendations">
       <span class="tab-label">Recommendations</span>
@@ -1699,8 +1929,8 @@ table.data-table, table.detail-table {
   </div>
 </nav>
 
-<!-- ── Summary tab ── -->
-<section class="tab-content active" id="tab-summary">
+<!-- ── Report tab ── -->
+<section class="tab-content active" id="tab-report">
 <div class="grid-container">
 
   <div class="readiness-hero ${data.readinessClass}">
@@ -1717,21 +1947,14 @@ table.data-table, table.detail-table {
 
   ${criticalFailuresHtml}
 
-</div>
-</section>
-
-<!-- ── Analysis tab ── -->
-<section class="tab-content" id="tab-analysis">
-<div class="grid-container">
-
   <div class="card">
-    <h2 class="card-title">Results by Lead Metric</h2>
+    <h2 class="card-title">Results by Metric</h2>
     <div class="bar-chart">${dimensionBarsHtml}</div>
     ${patternHtml}
   </div>
 
   <div class="card">
-    <h2 class="card-title">Results by Severity — click a row to view those test cases</h2>
+    <h2 class="card-title">Results by Severity — click a row to filter test cases</h2>
     <table class="data-table">
       <thead>
         <tr>
@@ -1746,13 +1969,6 @@ table.data-table, table.detail-table {
   </div>
 
   ${comparisonHtml}
-
-</div>
-</section>
-
-<!-- ── Details tab ── -->
-<section class="tab-content" id="tab-details">
-<div class="grid-container">
 
   <div class="filter-bar">
     <span class="filter-group-label">Status</span>
@@ -1791,16 +2007,29 @@ table.data-table, table.detail-table {
 </div>
 </section>
 
+<!-- ── Engineering tab ── -->
+<section class="tab-content" id="tab-engineering">
+<div class="grid-container">
+  ${engineeringTabHtml}
+</div>
+</section>
+
 <!-- ── Recommendations tab ── -->
 <section class="tab-content" id="tab-recommendations">
 <div class="grid-container">
 
-  <div class="card">
-    <h2 class="card-title">Recommendations</h2>
-    <p class="rec-intro">Based on the patterns in your evaluation results, here are specific steps to improve your AI system. Each recommendation includes guidance for your technical team.</p>
+  <div class="rec-synthesis">
+    <p>Overall pass rate: <strong>${data.overallPassRate}%</strong> &middot;
+    ${data.criticalFailureCount > 0
+      ? `<span class="rec-critical-note">${data.criticalFailureCount} critical failure${data.criticalFailureCount > 1 ? 's' : ''} require attention before deployment.</span>`
+      : 'No critical failures detected.'
+    }</p>
+    <p style="font-size:13px;color:var(--text-3);margin-top:6px;margin-bottom:0">Recommendations are organized by what type of change is most likely to improve your scores. Engineering data from the Engineering tab will enrich model and prompt recommendations when available.</p>
   </div>
 
-  ${recommendationCardsHtml}
+  ${criticalBlockHtml}
+
+  ${layersHtml}
 
 </div>
 </section>
@@ -1888,11 +2117,14 @@ table.data-table, table.detail-table {
   }
   window.applyFilter = applyFilter;
 
-  // ── Severity row click → Details tab with filter ──
+  // ── Severity row click → Report tab with filter, scroll to test cases ──
   function gotoSeverity(sev) {
-    activateTab('details');
+    activateTab('report');
     applyFilter(sev);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(function() {
+      var detailCard = document.querySelector('.detail-card');
+      if (detailCard) detailCard.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
   }
   window.gotoSeverity = gotoSeverity;
 
@@ -1929,8 +2161,96 @@ table.data-table, table.detail-table {
   window.downloadReport = downloadReport;
 
   ${jobId ? `
-  // ── User feedback (thumbs up / down) ──
   var REPORT_JOB_ID = '${jobId}';
+
+  // ── Engineering tab lazy-load ──
+  var engLoaded = false;
+  var engTabBtn = document.getElementById('tab-btn-engineering');
+  if (engTabBtn) {
+    engTabBtn.addEventListener('click', function() {
+      if (engLoaded) return;
+      engLoaded = true;
+      loadEngineeringData();
+    });
+  }
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function loadEngineeringData() {
+    fetch('/api/langfuse-data/' + REPORT_JOB_ID)
+      .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function(d) { renderEngineering(d); enrichRecommendations(d); })
+      .catch(function(err) {
+        var ph = document.getElementById('eng-placeholder');
+        if (ph) {
+          var p = ph.querySelector('.eng-placeholder-text');
+          if (p) p.textContent = err === 404
+            ? 'Engineering data not available — Langfuse was not enabled for this evaluation.'
+            : 'Could not load engineering data. This view requires the Evergreen server to be running.';
+        }
+      });
+  }
+  function renderEngineering(d) {
+    var ph = document.getElementById('eng-placeholder');
+    var content = document.getElementById('eng-content');
+    if (!ph || !content) return;
+    ph.style.display = 'none';
+    content.style.display = '';
+    var summaryHtml = '<div class="eng-summary-grid">' +
+      '<div class="eng-metric-card"><div class="eng-metric-value">' + d.avgLatencyMs + 'ms</div><div class="eng-metric-label">Avg latency</div></div>' +
+      '<div class="eng-metric-card"><div class="eng-metric-value">' + (d.totalPromptTokens + d.totalCompletionTokens).toLocaleString() + '</div><div class="eng-metric-label">Total tokens</div></div>' +
+      '<div class="eng-metric-card"><div class="eng-metric-value">$' + d.estimatedCostUsd.toFixed(4) + '</div><div class="eng-metric-label">Est. cost</div></div>' +
+      '<div class="eng-metric-card"><div class="eng-metric-value">' + d.totalTests + '</div><div class="eng-metric-label">Tests traced</div></div>' +
+    '</div>';
+    var modelHtml = '<div class="eng-model-badge">Model: ' + escHtml(d.model) + '</div>';
+    var traceHtml = '<p><a class="usa-link" href="' + escHtml(d.traceUrl) + '" target="_blank" rel="noopener" style="font-size:13px">View full trace in Langfuse &#8599;</a></p>';
+    var rows = d.tests.map(function(t) {
+      return '<tr>' +
+        '<td>' + t.testNumber + '</td>' +
+        '<td class="' + (t.passed ? 'result-pass' : 'result-fail') + '">' + (t.passed ? 'PASS' : 'FAIL') + '</td>' +
+        '<td>' + escHtml(t.metric) + '</td>' +
+        '<td>' + t.latencyMs + 'ms</td>' +
+        '<td>' + (t.promptTokens + t.completionTokens).toLocaleString() + '</td>' +
+      '</tr>';
+    }).join('');
+    var tableHtml = '<div class="card"><table class="data-table usa-table usa-table--borderless usa-table--compact">' +
+      '<thead><tr><th>#</th><th>Result</th><th>Metric</th><th>Latency</th><th>Tokens</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>';
+    content.innerHTML = '<div class="card">' + summaryHtml + modelHtml + traceHtml + '</div>' + tableHtml;
+  }
+  function enrichRecommendations(d) {
+    if (d.totalTests > 0) {
+      var avgTokens = (d.totalPromptTokens + d.totalCompletionTokens) / d.totalTests;
+      if (avgTokens > 600) {
+        var promptLayer = document.getElementById('rec-layer-prompt');
+        if (promptLayer) {
+          var ul = promptLayer.querySelector('.rec-layer-list');
+          if (ul) {
+            var li = document.createElement('li');
+            li.className = 'rec-layer-item rec-layer-item--langfuse';
+            li.textContent = 'High response verbosity detected (avg ' + Math.round(avgTokens) + ' tokens) — consider adding a brevity instruction to your system prompt.';
+            ul.appendChild(li);
+          }
+        }
+      }
+    }
+    if (d.avgLatencyMs > 2000) {
+      var modelLayer = document.getElementById('rec-layer-model');
+      if (modelLayer) {
+        var cleanItem = modelLayer.querySelector('.rec-layer-item--clean');
+        if (cleanItem) cleanItem.remove();
+        var ul = modelLayer.querySelector('.rec-layer-list');
+        if (ul) {
+          var li = document.createElement('li');
+          li.className = 'rec-layer-item rec-layer-item--langfuse';
+          li.textContent = 'Response latency is high (' + d.avgLatencyMs + 'ms avg) — consider a faster model for live user interactions.';
+          ul.appendChild(li);
+        }
+      }
+    }
+  }
+
+  // ── User feedback (thumbs up / down) ──
   function submitFeedback(testNumber, value) {
     var area = document.getElementById('fb-' + testNumber);
     if (!area) return;

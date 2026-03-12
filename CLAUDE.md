@@ -34,12 +34,13 @@ Same 4-step pipeline runs in both CLI (`src/index.ts`) and web app (`src/web/ser
 | `GET /report/:jobId` | `server.ts` | Serve completed report |
 | `GET /api/capabilities` | `server.ts` | Returns enabled optional features (e.g. `langfuseEnabled`) |
 | `POST /api/feedback` | `server.ts` | Submit thumbs up/down score to Langfuse for a test case |
+| `GET /api/langfuse-data/:jobId` | `server.ts` | Fetch per-test latency, tokens, cost from Langfuse for Engineering tab |
 
 ### Key Source Files
 - `src/builder.ts` — Conversion between `BuilderTestCase` and `SheetRow`, CSV export
 - `src/presets/` — Built-in test suites (6 presets + blank + 2 demo); presets can define `personas` and multi-turn seeded `turns` — see `PresetSuite` interface in `src/presets/index.ts`
 - `src/langfuse.ts` — Langfuse client helpers (`isLangfuseConfigured`, `makeLangfuseClient`, `getTraceUrl`)
-- `src/report/generator.ts` — Single-file HTML report with remediation hints
+- `src/report/generator.ts` — 3-tab HTML report: Report (compliance artifact) | Engineering (Langfuse lazy-load) | Recommendations (layer-based: Prompt/Data/Model/Process)
 
 ## Constraints
 - USWDS only for UI — no Tailwind, Bootstrap, or custom CSS frameworks

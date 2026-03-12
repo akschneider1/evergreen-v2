@@ -22,26 +22,25 @@ You can also open `report.html` directly as a file in Chrome, Firefox, Safari, o
 
 ---
 
-## The Four Tabs
+## The Three Tabs
 
-The report has four tabs, each designed for a different audience:
+The report has three tabs, designed as a sequence — start at the left and move right:
 
 | Tab | For | What It Shows |
 |-----|-----|--------------|
-| **Summary** | Leadership, decision-makers | Pass rates, critical failures, go/no-go recommendation |
-| **Analysis** | Operations, program managers | Breakdown by severity and evaluation dimension |
-| **Details** | Technical staff | Every test case with full AI responses and grading reasons |
-| **Recommendations** | Anyone | Prioritized actions to improve the AI system |
+| **Report** | Leadership, decision-makers, compliance | Pass rates, critical failures, metric breakdown, all test case results — the full compliance artifact |
+| **Engineering** | Technical staff | Per-test latency, token counts, and estimated cost pulled from Langfuse (requires Langfuse to be enabled) |
+| **Recommendations** | Anyone | Actionable next steps organized by what type of change is needed: Prompt, Data, Model, or Process |
 
 ---
 
-## Summary Tab
+## Report Tab
 
-This is the tab for leadership and decision-makers. It is designed to give a fast, defensible go/no-go answer.
+This is the primary tab — the compliance artifact. It is one continuous scroll designed to give a fast, defensible go/no-go answer followed by all supporting evidence.
 
 ### Readiness Card
 
-At the top of the Summary tab is a large coloured readiness card — the first thing you see:
+At the top is a large coloured readiness card — the first thing you see:
 
 | Colour | Status | Meaning |
 |--------|--------|---------|
@@ -68,19 +67,13 @@ If any critical-severity test cases failed, they appear here. Each failure shows
 - **Expected** — what the correct answer should have contained (green panel)
 - **Actual** — what the AI responded (red panel)
 - The real-world impact of getting this wrong
-- **Remediation guidance** — a plain-language suggestion for how to fix the failure, tailored to the metric (e.g., "Work with your AI team to add guardrails" for Safety failures, "Verify the source data your AI system uses" for Accuracy failures)
+- **Suggested fix** — a plain-language recommendation tailored to the metric
 
 **These are the most important items in the report.** If there are critical failures, the system should not be deployed until they are resolved.
 
----
-
-## Analysis Tab
-
-This tab is for operations staff and program managers. It helps you understand **which metrics** the AI is strong and weak on, and what to do about it.
-
 ### Results by Metric
 
-A bar chart showing pass rates across all five lead metrics. Each bar shows the percentage **and** the underlying count (e.g. "2/5 tests"):
+A bar chart showing pass rates across all five lead metrics. Each bar shows the percentage and the underlying count (e.g. "2/5 tests"):
 
 | Metric | What It Measures |
 |--------|-----------------|
@@ -92,11 +85,9 @@ A bar chart showing pass rates across all five lead metrics. Each bar shows the 
 
 If one metric is significantly lower than others, focus your system prompt improvements there first.
 
-A **pattern note** beneath the bars names the weakest metric and suggests what to do.
-
 ### Results by Severity
 
-A table showing pass rates by severity level, with inline progress bars for quick scanning. Each row is **clickable** — clicking a severity level jumps to the Details tab filtered to those test cases.
+A table showing pass rates by severity level, with inline progress bars for quick scanning. Each row is **clickable** — clicking a severity level scrolls to the test case table filtered to those cases.
 
 Look for:
 - **Any failures in "critical"** — these are deal-breakers
@@ -106,31 +97,16 @@ Look for:
 
 If you tested multiple LLMs, this table compares them side by side on overall pass rate, critical failures, and pass rate per severity level.
 
----
-
-## Details Tab
-
-This tab is for technical staff who need to triage failures and understand grading logic.
-
-### Filter Bar
-
-The top of the Details tab has filter buttons to narrow the table:
-
-**Status filters:**
-- **All** — show every test case
-- **Failures** — show only test cases where at least one provider failed
-- **Critical** — show only critical-severity test cases
-
-**Metric filters** (after the divider):
-- One button per metric in the evaluation (e.g., Safety, Accuracy, Ease of Use, Effectiveness, Emotion), each showing a count
-
-An **Expand all / Collapse all** toggle on the right lets you open or close all test case details at once.
-
-A count label (e.g., "5 of 25 shown") appears when a filter is active.
-
 ### Test Case Table
 
-Each row shows:
+The full list of all test cases, with filter bar and expandable rows.
+
+**Filter bar:**
+- **Status filters:** All / Failures / Critical
+- **Metric filters:** one button per metric in the evaluation, each showing a count
+- **Expand all / Collapse all** toggle on the right
+
+**Each row shows:**
 
 | Column | What It Shows |
 |--------|--------------|
@@ -143,7 +119,10 @@ Each row shows:
 
 Click **anywhere on a row** to expand it and see:
 - **Expected** — what the correct answer should contain (highlighted in green)
+- For multi-turn test cases: the full **conversation history** before the graded question
 - Per provider: the **full AI response** and the **grading reason**
+
+If Langfuse is enabled, each expanded row includes a thumbs up / thumbs down button to mark whether the grading was correct.
 
 ### Grading Reasons
 
@@ -151,17 +130,49 @@ For **Accuracy** tests, the grading reason explains which expected item was foun
 
 ---
 
+## Engineering Tab
+
+This tab is for technical staff who want to understand model performance at a lower level. It requires Langfuse to be enabled when the evaluation ran.
+
+When you click the Engineering tab, it loads live data from Langfuse for this specific run. You'll see:
+
+- **Summary cards:** average latency, total tokens, estimated cost, number of tests traced
+- **Model badge:** which model was used
+- **Per-test table:** test number, pass/fail, metric, latency, token count
+- **View full trace in Langfuse ↗** — a direct link to the full trace in your Langfuse dashboard
+
+If Langfuse was not enabled for this evaluation, or if you're viewing a downloaded report offline, the tab shows a placeholder with a link to learn about Langfuse.
+
+---
+
 ## Recommendations Tab
 
-This tab is for anyone who wants to know what to do next. It presents up to 7 prioritized recommendations derived from the patterns in your evaluation results.
+This tab is for anyone who wants to know what to do next. It synthesizes the evaluation results into layered, actionable next steps.
 
-Each card shows:
-- A numbered headline describing the action (e.g., "Review your safety guardrails")
-- Plain-language steps for policy and program staff
-- Evidence tags showing your actual pass rates for the relevant metric(s)
-- An expandable **For your technical team** section with specific engineering guidance (prompt tuning, retrieval improvements, CI/CD integration, etc.)
+### Synthesis Line
 
-Cards are collapsed by default — click any card to expand it.
+At the top, a brief statement: your overall pass rate and whether any critical failures were found. This sets the context for everything below.
+
+### Critical Block
+
+If there are safety failures or critical-severity failures, they appear in a red alert block at the top — before any other recommendations — with explicit language that they must be resolved before deployment.
+
+### Four Layers
+
+Recommendations are organized into four sections, each addressing a different type of change:
+
+| Layer | Description | Example |
+|-------|-------------|---------|
+| **Prompt** | Changes to how you instruct the AI | "Add plain language instructions (4 ease-of-use failures)" |
+| **Data** | Changes to your test cases | "Review expected answers for accuracy test cases" |
+| **Model** | Changes to which AI you are testing | "No model-layer concerns detected" |
+| **Process** | Changes to your team's practices | "Have a subject matter expert review the critical failures" |
+
+Each recommendation includes a **citation chip** showing the evidence behind it — e.g., "4 ease-of-use failures" — so you can trace it back to specific results in the Report tab.
+
+Layers that have no issues show a green positive confirmation ("✓ No model-layer concerns detected") so you know you can skip them.
+
+**Engineering enrichment:** If you've clicked the Engineering tab and Langfuse data loaded, the Prompt and Model layers may gain additional recommendations based on response verbosity (tokens) and latency — marked with "from live data."
 
 ---
 
@@ -206,7 +217,7 @@ The report is a single HTML file. You can:
 - **Upload it** to a shared drive
 - **Print it** to PDF (use File > Print in your browser — it has print-friendly styles)
 
-The report serves as a concrete artifact of due diligence for procurement, oversight, or leadership review.
+The report serves as a concrete artifact of due diligence for procurement, oversight, or leadership review. The Engineering tab will show a placeholder in downloaded/offline reports — only live server reports can load Langfuse data.
 
 ---
 
