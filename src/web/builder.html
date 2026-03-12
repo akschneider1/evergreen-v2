@@ -150,7 +150,7 @@ function renderCard(t) {
   return '<li class="usa-card tablet:grid-col-4">' +
     '<div class="usa-card__container' + (isActive ? ' border-primary' : '') + '">' +
       '<div class="usa-card__header">' +
-        '<h2 class="usa-card__heading">' + esc(t.domain || t.name) + '</h2>' +
+        '<h2 class="usa-card__heading">' + esc(t.name) + '</h2>' +
         '<p class="lib-card-meta">' + metaParts.join(' \u00b7 ') + '</p>' +
       '</div>' +
       '<div class="usa-card__body"><p>' + esc(t.description || '') + '</p></div>' +
@@ -269,6 +269,17 @@ function renderRow(c, overallIdx) {
   html += '</div>';
   if (sev) html += '<span class="usa-hint display-block margin-top-1">' + esc(sev.hint) + '</span>';
 
+  // Persona (only when template has named personas)
+  if (state.template && state.template.personas && state.template.personas.length > 0) {
+    html += '<p class="usa-label margin-top-3">Persona</p>';
+    html += '<div class="pill-row">';
+    state.template.personas.forEach(function(p) {
+      var sel = c.persona === p.id ? ' selected' : '';
+      html += '<button class="pill-btn' + sel + '" data-action="set-persona" data-id="' + c._id + '" data-value="' + esc(p.id) + '">' + esc(p.label) + '</button>';
+    });
+    html += '</div>';
+  }
+
   // Conversation history (multi-turn preset cases)
   if (c.turns && c.turns.length > 0) {
     html += '<p class="usa-label margin-top-3">Prior conversation <span class="conv-readonly-note">(seeded context — read only)</span></p>';
@@ -286,7 +297,6 @@ function renderRow(c, overallIdx) {
   html += '<p class="usa-label margin-top-3">What would a real person ask?</p>';
   if (c.capability) html += '<span class="capability-badge">' + esc(c.capability) + '</span>';
   html += '<textarea class="usa-textarea" data-action="set-question" data-id="' + c._id + '" placeholder="Type the question here\u2026">' + esc(c.question) + '</textarea>';
-  html += '<input class="usa-input margin-top-2" data-action="set-context" data-id="' + c._id + '" placeholder="Context \u2014 optional: who is asking?" value="' + esc(c.context) + '">';
 
   // Criteria (once question is filled)
   if (c.question) {
@@ -445,6 +455,10 @@ function handleAction(action, id, value, index) {
       c = findCase(Number(id));
       if (c) { c.severity = value; renderBuilder(); }
       break;
+    case 'set-persona':
+      c = findCase(Number(id));
+      if (c) { c.persona = value; renderBuilder(); }
+      break;
     case 'add-should':
       c = findCase(Number(id));
       if (c) { c.should.push(''); renderBuilder(); }
@@ -482,7 +496,7 @@ document.addEventListener('click', function(e) {
   var btn = e.target.closest('[data-action]');
   if (!btn) return;
   var action = btn.dataset.action;
-  if (action === 'set-question' || action === 'set-context' || action === 'edit-should' || action === 'edit-shouldnot') return;
+  if (action === 'set-question' || action === 'edit-should' || action === 'edit-shouldnot') return;
   e.preventDefault();
   handleAction(action, btn.dataset.id, btn.dataset.value, btn.dataset.index);
 });
@@ -495,7 +509,6 @@ document.addEventListener('input', function(e) {
   if (!c) return;
   switch (action) {
     case 'set-question':   c.question = el.value; break;
-    case 'set-context':    c.context  = el.value; break;
     case 'edit-should':    c.should[Number(el.dataset.index)]    = el.value; break;
     case 'edit-shouldnot': c.shouldNot[Number(el.dataset.index)] = el.value; break;
   }
