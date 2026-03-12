@@ -5,6 +5,18 @@
  *       Promptfoo JSON → EvalResults → HTML Report
  */
 
+// ── Multi-turn conversation types ──
+
+export interface ConversationTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface PresetPersona {
+  id: string;
+  label: string;
+}
+
 // ── Google Sheet row (one test case) ──
 
 export interface SheetRow {
@@ -13,6 +25,8 @@ export interface SheetRow {
   context: string;
   metric: EvalMetric;
   severity: Severity;
+  turns?: ConversationTurn[];  // seeded prior exchanges (preset-only)
+  persona?: string;             // persona id (preset-only)
 }
 
 export type EvalMetric =
@@ -43,6 +57,8 @@ export interface BuilderTestCase {
   should: string[];
   shouldNot: string[];
   capability?: string;
+  turns?: ConversationTurn[];  // seeded prior exchanges (preset-only)
+  persona?: string;             // persona id (preset-only)
 }
 
 // ── Evergreen config (evergreen.yaml) ──
@@ -170,6 +186,8 @@ export interface TestCaseResult {
   severity: 'critical' | 'high' | 'medium' | 'low';
   /** One entry per provider, in same order as EvalResults.providers */
   results: ProviderResult[];
+  turns?: ConversationTurn[];  // seeded prior exchanges, for report display
+  persona?: string;             // persona id, for report badge
 }
 
 export interface ProviderResult {

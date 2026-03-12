@@ -12,7 +12,7 @@
 
 import * as fs from 'fs';
 
-import { EvalResults, EvalMetric, TestCaseResult, ProviderResult } from '../types';
+import { EvalResults, EvalMetric, TestCaseResult, ProviderResult, ConversationTurn } from '../types';
 export type { EvalResults, TestCaseResult, ProviderResult };
 
 // ---------- Internal Derived Types ----------
@@ -99,6 +99,9 @@ interface TestCaseView {
     enhancedGradingReason: string;
   }[];
   colspan: number;
+  persona?: string;
+  personaLabel?: string;
+  turns?: ConversationTurn[];
 }
 
 interface Recommendation {
@@ -325,6 +328,9 @@ function deriveReportData(input: EvalResults): ReportData {
 
   const testCases: TestCaseView[] = input.testCases.map(tc => {
     const anyFailed = tc.results.some(r => !r.passed);
+    const personaLabel = tc.persona
+      ? tc.persona.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+      : undefined;
     return {
       number: tc.number,
       question: tc.question,
@@ -342,6 +348,8 @@ function deriveReportData(input: EvalResults): ReportData {
         response: r.response,
         enhancedGradingReason: enhanceGrading(r.gradingReason, r.passed, tc.metric, tc.expected),
       })),
+      ...(tc.persona ? { persona: tc.persona, personaLabel } : {}),
+      ...(tc.turns   ? { turns: tc.turns } : {}),
     };
   });
 
@@ -704,6 +712,31 @@ function renderHtml(data: ReportData, jobId?: string): string {
       `<td class="${r.resultClass}">${r.resultLabel}</td>`
     ).join('');
 
+    const conversationHtml = tc.turns && tc.turns.length === 4 ? `
+      <div class="ev-conversation">
+        <div class="ev-conv-label">Conversation history</div>
+        <div class="ev-turn ev-turn--user">
+          <span class="ev-turn-label">Turn 1 — User</span>
+          <div class="ev-turn-content">${esc(tc.turns[0].content)}</div>
+        </div>
+        <div class="ev-turn ev-turn--assistant">
+          <span class="ev-turn-label">Turn 1 — AI (seeded)</span>
+          <div class="ev-turn-content">${esc(tc.turns[1].content)}</div>
+        </div>
+        <div class="ev-turn ev-turn--user">
+          <span class="ev-turn-label">Turn 2 — User</span>
+          <div class="ev-turn-content">${esc(tc.turns[2].content)}</div>
+        </div>
+        <div class="ev-turn ev-turn--assistant">
+          <span class="ev-turn-label">Turn 2 — AI (seeded)</span>
+          <div class="ev-turn-content">${esc(tc.turns[3].content)}</div>
+        </div>
+        <div class="ev-turn ev-turn--user ev-turn--final">
+          <span class="ev-turn-label">Turn 3 — User (live, graded)</span>
+          <div class="ev-turn-content">${esc(tc.question)}</div>
+        </div>
+      </div>` : '';
+
     const expandedContent = tc.results.map(r => `
       <div class="expanded-provider">
         <div class="exp-provider-name">${esc(r.providerName)}</div>
@@ -726,7 +759,10 @@ function renderHtml(data: ReportData, jobId?: string): string {
           <td class="tc-num">${tc.number}</td>
           <td class="tc-question">${esc(tc.question)}</td>
           <td><span class="usa-tag severity-badge ${tc.severity}">${tc.severity}</span></td>
-          <td class="tc-check"><span class="check-badge metric-${tc.metric}" title="${esc(tc.metricTooltip)}">${esc(tc.metricLabel)}</span></td>
+          <td class="tc-check">
+            <span class="check-badge metric-${tc.metric}" title="${esc(tc.metricTooltip)}">${esc(tc.metricLabel)}</span>
+            ${tc.personaLabel ? `<span class="persona-badge">${esc(tc.personaLabel)}</span>` : ''}
+          </td>
           ${resultCells}
           <td class="tc-chevron"><span class="chevron" id="chevron-${tc.number}">▼</span></td>
         </tr>
@@ -737,6 +773,7 @@ function renderHtml(data: ReportData, jobId?: string): string {
                 <span class="exp-label">Expected</span>
                 <span class="exp-expected-value">${esc(tc.expected)}</span>
               </div>
+              ${conversationHtml}
               ${expandedContent}
               ${jobId ? `
               <div class="ev-feedback" id="fb-${tc.number}">
@@ -1489,6 +1526,93 @@ table.data-table, table.detail-table {
 @media (max-width: 680px) {
   .rec-body { padding: 16px; }
   .rec-summary { padding: 14px 16px; }
+}
+
+/* ── Persona badge ── */
+.persona-badge {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #ede9fe;
+  color: #5b21b6;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* ── Conversation history (multi-turn) ── */
+.ev-conversation {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: #f8fafc;
+}
+.ev-conv-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+.ev-turn {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+  align-items: flex-start;
+}
+.ev-turn-label {
+  flex-shrink: 0;
+  min-width: 140px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  padding-top: 2px;
+}
+.ev-turn-content {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 6px 10px;
+  flex: 1;
+}
+.ev-turn--assistant .ev-turn-label { color: #1e40af; }
+.ev-turn--assistant .ev-turn-content { background: #eff6ff; border-color: #bfdbfe; }
+.ev-turn--final .ev-turn-content { border-color: var(--brand); background: #f0f4ff; }
+.ev-turn--final .ev-turn-label { color: var(--brand); }
+
+/* ── Feedback (thumbs up/down) ── */
+.ev-feedback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.ev-feedback-label {
+  font-size: 13px;
+  color: var(--text-2);
+}
+.ev-thumb {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.ev-thumb:hover { background: var(--border-sub); }
+.ev-thumb:disabled { opacity: .5; cursor: default; }
+.ev-feedback-thanks {
+  font-size: 12px;
+  color: var(--text-3);
+  font-style: italic;
 }
 
 /* ── Print ── */

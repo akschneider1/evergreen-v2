@@ -66,7 +66,7 @@ Six ready-to-use suites, 25 test cases each:
 - Benefits Eligibility Checker
 - Agent Assist
 - Call Center Summaries
-- Permitting Assistant
+- Permitting Assistant (w/ Persona) — multi-turn, 3 personas
 
 ---
 
@@ -76,6 +76,8 @@ Six ready-to-use suites, 25 test cases each:
 Google Sheet  →  Evergreen          →  Promptfoo        →  LLM Under Test  →  Evergreen Report
 (test cases)     CLI or Web App        (eval engine)       (OpenAI, etc.)     (4-tab HTML)
 ```
+
+Optional: set `LANGFUSE_SECRET_KEY` + `LANGFUSE_PUBLIC_KEY` to enable Langfuse tracing — per-test scores, conversation traces, and thumbs up/down feedback from inside the report.
 
 Evergreen wraps **[Promptfoo](https://github.com/promptfoo/promptfoo)** — an open-source eval runner — with a Google Sheets connector (no config files required for non-technical users), a web-based test suite builder, and a public-sector-specific HTML report with severity grading, a readiness badge, and four audience tabs: Summary, Analysis, Details, and Recommendations.
 
@@ -90,6 +92,7 @@ src/
 ├── mapper.ts         # Map results to report format
 ├── builder.ts        # Builder ↔ SheetRow conversion, CSV export
 ├── types.ts          # Shared types
+├── langfuse.ts       # Optional Langfuse observability helpers
 ├── presets/          # 6 presets + blank + 2 demo suites
 ├── report/
 │   └── generator.ts  # HTML report (4 tabs)

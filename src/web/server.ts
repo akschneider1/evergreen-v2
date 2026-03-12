@@ -23,7 +23,7 @@ import { buildPromptfooConfig, writePromptfooConfig } from '../config';
 import { runPromptfooAsync } from '../runner';
 import { mapToEvalResults } from '../mapper';
 import { generateReport } from '../report/generator';
-import { normalizePromptfooOutput, EvergreenConfig, SheetRow } from '../types';
+import { normalizePromptfooOutput, EvergreenConfig, SheetRow, PresetPersona } from '../types';
 import { getPreset, getAllPresets } from '../presets/index';
 import { getBuilderCases, builderCasesToCsv, metricDistribution } from '../builder';
 import { isLangfuseConfigured, makeLangfuseClient, getTraceUrl } from '../langfuse';
@@ -117,6 +117,7 @@ async function runPipeline(
     let systemPrompt: string | undefined;
     let testSource: string;
     let sheetId: string;
+    let personas: PresetPersona[] | undefined;
 
     const s1 = trace?.span({ name: 'load-test-cases', input: { source: body.presetId ?? body.sheetUrl } });
     if (body.presetId) {
@@ -126,6 +127,7 @@ async function runPipeline(
       systemPrompt = preset.systemPrompt;
       testSource = `Built-in: ${preset.name}`;
       sheetId = '';
+      personas = preset.personas;
     } else {
       sheetId = extractSheetId(body.sheetUrl!);
       rows = await fetchSheet(sheetId);
@@ -135,6 +137,14 @@ async function runPipeline(
       testSource = 'Google Sheets';
     }
     s1?.end({ output: { rowCount: rows.length } });
+
+    // Add persona tags to trace if this preset uses personas
+    if (trace && personas) {
+      const personaTags = [...new Set(rows.map(r => r.persona).filter(Boolean))] as string[];
+      if (personaTags.length > 0) {
+        trace.update({ tags: personaTags });
+      }
+    }
 
     // Step 2 — Build Promptfoo config
     job.step = 2;
@@ -147,7 +157,7 @@ async function runPipeline(
       defaultSystemPrompt: systemPrompt,
       outputPath: path.join(os.tmpdir(), `evergreen-results-${jobId}.json`),
     };
-    const pfConfig = buildPromptfooConfig(rows, config);
+    const pfConfig = buildPromptfooConfig(rows, config, personas);
     const pfConfigPath = path.join(os.tmpdir(), `evergreen-config-${jobId}.yaml`);
     writePromptfooConfig(pfConfig, pfConfigPath);
     s2?.end({ output: { testCount: rows.length } });
@@ -174,23 +184,63 @@ async function runPipeline(
     }
     const passCount = pfOutput.results.filter(r => r.success).length;
 
-    // Log one generation per test case — capture IDs so user-feedback scores can attach later
+    // Log one observation per test case — capture IDs so user-feedback scores can attach later
     if (s3) {
       const generationIds: string[] = [];
       pfOutput.results.forEach((r, i) => {
         const metric   = rows[i]?.metric   ?? '';
         const severity = rows[i]?.severity ?? '';
-        const gen = s3.generation({
-          name:   `test-${i + 1}`,
-          model:  r.provider?.id ?? body.provider,
-          input:  r.prompt?.raw ?? '',
-          output: r.response?.output ?? '',
-          metadata: { metric, severity, gradingReason: r.gradingResult?.reason ?? '' },
-        });
-        gen.score({ name: 'pass-fail',  value: r.success ? 1 : 0, dataType: 'BOOLEAN'     });
-        gen.score({ name: 'metric',     value: metric,              dataType: 'CATEGORICAL' });
-        gen.score({ name: 'severity',   value: severity,            dataType: 'CATEGORICAL' });
-        generationIds.push(gen.id);
+        const persona  = rows[i]?.persona  ?? '';
+
+        // Detect multi-turn: prompt.raw is a JSON messages array
+        let parsedTurns: { role: string; content: string }[] = [];
+        try {
+          const parsed = JSON.parse(r.prompt?.raw ?? '');
+          if (Array.isArray(parsed)) parsedTurns = parsed;
+        } catch { /* single-turn: prompt.raw is a plain string */ }
+
+        if (parsedTurns.length > 0) {
+          // Multi-turn: span with nested generation per user→assistant exchange
+          const convSpan = s3.span({
+            name: `test-${i + 1}`,
+            metadata: { metric, severity, persona },
+          });
+          let turnNum = 1;
+          for (let t = 0; t < parsedTurns.length; t++) {
+            if (parsedTurns[t].role !== 'user') continue;
+            const isLiveTurn = t === parsedTurns.length - 1;
+            const output = isLiveTurn
+              ? (r.response?.output ?? '')
+              : (parsedTurns[t + 1]?.content ?? '');
+            convSpan.generation({
+              name:   `turn-${turnNum++}`,
+              model:  r.provider?.id ?? body.provider,
+              input:  parsedTurns[t].content,
+              output,
+              metadata: { seeded: String(!isLiveTurn), ...(isLiveTurn ? { gradingReason: r.gradingResult?.reason ?? '' } : {}) },
+            });
+          }
+          convSpan.score({ name: 'pass-fail', value: r.success ? 1 : 0, dataType: 'BOOLEAN'     });
+          convSpan.score({ name: 'metric',    value: metric,              dataType: 'CATEGORICAL' });
+          convSpan.score({ name: 'severity',  value: severity,            dataType: 'CATEGORICAL' });
+          if (persona) convSpan.score({ name: 'persona', value: persona,  dataType: 'CATEGORICAL' });
+          convSpan.end({ output: { passed: r.success, gradingReason: r.gradingResult?.reason ?? '' } });
+          generationIds.push(convSpan.id);
+        } else {
+          // Single-turn: plain generation
+          const gen = s3.generation({
+            name:   `test-${i + 1}`,
+            model:  r.provider?.id ?? body.provider,
+            input:  r.prompt?.raw ?? '',
+            output: r.response?.output ?? '',
+            metadata: { metric, severity, gradingReason: r.gradingResult?.reason ?? '', ...(persona ? { persona } : {}) },
+          });
+          gen.score({ name: 'pass-fail',  value: r.success ? 1 : 0, dataType: 'BOOLEAN'     });
+          gen.score({ name: 'metric',     value: metric,              dataType: 'CATEGORICAL' });
+          gen.score({ name: 'severity',   value: severity,            dataType: 'CATEGORICAL' });
+          if (persona) gen.score({ name: 'persona', value: persona,   dataType: 'CATEGORICAL' });
+          generationIds.push(gen.id);
+        }
       });
       job.generationIds = generationIds;
     }

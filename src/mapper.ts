@@ -71,6 +71,8 @@ export function mapToEvalResults(
       metric: row.metric,
       severity: row.severity,
       results: providerResults,
+      ...(row.turns   ? { turns:   row.turns   } : {}),
+      ...(row.persona ? { persona: row.persona } : {}),
     });
   }
 

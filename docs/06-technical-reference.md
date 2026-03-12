@@ -114,9 +114,11 @@ The server runs the same four-step pipeline as `evergreen run` (fetch → config
 | `GET` | `/api/templates` | List all template presets (JSON); returns `[{ id, name, icon, domain, caseCount, description, metricDistribution }]` |
 | `GET` | `/api/templates/:id` | Get a single template with builder cases (JSON) |
 | `POST` | `/api/export-sheet` | Export builder cases as CSV; body: `{ cases: BuilderTestCase[] }` |
-| `POST` | `/api/run` | Start a job; body: `{ provider, description?, sheetUrl?, aiDescription?, presetId?, agencyName?, evaluatorName?, evaluationReason? }`; returns `{ jobId }` |
-| `GET` | `/api/status/:jobId` | Poll job progress; returns `{ step, status, error? }` |
+| `POST` | `/api/run` | Start a job; body: `{ provider, description?, sheetUrl?, aiDescription?, presetId?, agencyName?, evaluatorName?, evaluationReason?, enableLangfuse? }`; returns `{ jobId }` |
+| `GET` | `/api/status/:jobId` | Poll job progress; returns `{ step, status, error?, traceUrl? }` |
 | `GET` | `/report/:jobId` | Serve completed report HTML |
+| `GET` | `/api/capabilities` | Returns enabled optional features; e.g. `{ langfuseEnabled: true }` |
+| `POST` | `/api/feedback` | Submit thumbs up/down score to Langfuse; body: `{ jobId, testNumber, value }` (value: 1=correct, 0=incorrect) |
 
 ---
 
@@ -236,6 +238,11 @@ The tool accepts common capitalization variants (`safety`, `SAFETY`, `Ease of Us
 |----------|-------------|-------------|
 | `OPENAI_API_KEY` | OpenAI providers | Your OpenAI API key |
 | `ANTHROPIC_API_KEY` | Anthropic providers | Your Anthropic API key |
+| `LANGFUSE_SECRET_KEY` | Langfuse tracing (optional) | Secret key from your Langfuse project settings |
+| `LANGFUSE_PUBLIC_KEY` | Langfuse tracing (optional) | Public key from your Langfuse project settings |
+| `LANGFUSE_BASE_URL` | Langfuse tracing (optional) | Override the Langfuse instance URL (default: `https://us.cloud.langfuse.com`) |
+
+When `LANGFUSE_SECRET_KEY` and `LANGFUSE_PUBLIC_KEY` are both set, a "Send to Langfuse" checkbox appears on the Run form. Each pipeline step (load, build, eval, report) is traced as a span. Every test case generation receives automatic `pass-fail`, `metric`, `severity`, and `persona` scores. Thumbs up/down feedback from the report attaches as a `user-feedback` score. A "View in Langfuse" link appears on the completion screen.
 
 ---
 
@@ -265,7 +272,9 @@ Fetches the Google Sheet as a CSV export (no API key needed — the sheet just n
 | `snap-food-assistance` | SNAP / Food Assistance | 25 | Benefits |
 | `agent-assist` | Agent Assist | 25 | Support |
 | `call-center-summaries` | Call Center Summaries | 25 | Support |
-| `permitting-assistant` | Permitting Assistant | 25 | Licensing |
+| `permitting-assistant` | Permitting Assistant (w/ Persona) | 25 | Licensing |
+
+> **Permitting Assistant (w/ Persona):** All 25 cases are 3-turn seeded multi-turn conversations (2 scripted prior exchanges + 1 live graded question) across three personas — Home Owner, Renter, and Contractor. Persona is injected into the grading rubric and tagged in Langfuse for filtering.
 
 ### Step 2: Generate
 Converts the sheet rows + your `evergreen.yaml` config into a Promptfoo-compatible YAML config file. This is written to `.promptfoo-config.yaml` (temporary, deleted after run).

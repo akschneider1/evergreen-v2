@@ -15,7 +15,21 @@ import {
   PromptfooProvider,
   PromptfooTest,
   PromptfooAssertion,
+  PresetPersona,
 } from './types';
+
+/**
+ * Multi-turn 3-turn prompt template.
+ * Promptfoo renders {{vars}} inside the JSON string, then sends it as a chat messages array.
+ * Used when all rows have `turns` (seeded prior exchanges).
+ */
+const MULTI_TURN_3_PROMPT = JSON.stringify([
+  { role: 'user',      content: '{{turn1_user}}' },
+  { role: 'assistant', content: '{{turn1_assistant}}' },
+  { role: 'user',      content: '{{turn2_user}}' },
+  { role: 'assistant', content: '{{turn2_assistant}}' },
+  { role: 'user',      content: '{{question}}' },
+]);
 
 /**
  * Convert sheet rows + evergreen config into a Promptfoo config object.
@@ -23,6 +37,7 @@ import {
 export function buildPromptfooConfig(
   rows: SheetRow[],
   config: EvergreenConfig,
+  personas?: PresetPersona[],
 ): PromptfooConfig {
   const providers: PromptfooProvider[] = config.providers.map(p => {
     const provider: PromptfooProvider = { id: p.id };
@@ -34,23 +49,36 @@ export function buildPromptfooConfig(
     return provider;
   });
 
+  const isAllMultiTurn = rows.every(r => r.turns && r.turns.length > 0);
+
   const tests: PromptfooTest[] = rows.map((row, i) => {
+    // Use persona label as rubric context when available
+    const rubricContext = row.persona && personas
+      ? (personas.find(p => p.id === row.persona)?.label ?? row.context)
+      : row.context;
+
     const test: PromptfooTest = {
       vars: {
         question: row.question,
       },
-      assert: metricToAssertions(row.metric, row.expectedAnswer, row.context),
+      assert: metricToAssertions(row.metric, row.expectedAnswer, rubricContext),
       metadata: {
         severity: row.severity,
-        context: row.context,
+        context: rubricContext,
         testNumber: String(i + 1),
+        ...(row.persona ? { persona: row.persona } : {}),
       },
     };
 
-    // If the test has context, prepend it to the question var
-    // so the LLM sees "Context: ... \n Question: ..."
-    if (row.context) {
-      test.vars.question = `Context: ${row.context}\n\nQuestion: ${row.question}`;
+    if (row.turns && row.turns.length === 4) {
+      // Multi-turn seeded conversation — populate named template vars
+      test.vars.turn1_user      = row.turns[0].content;
+      test.vars.turn1_assistant = row.turns[1].content;
+      test.vars.turn2_user      = row.turns[2].content;
+      test.vars.turn2_assistant = row.turns[3].content;
+    } else if (rubricContext) {
+      // Single-turn with context: prepend to question so the LLM sees full situation
+      test.vars.question = `Context: ${rubricContext}\n\nQuestion: ${row.question}`;
     }
 
     return test;
@@ -62,7 +90,7 @@ export function buildPromptfooConfig(
 
   return {
     description: config.description,
-    prompts: ['{{question}}'],
+    prompts: [isAllMultiTurn ? MULTI_TURN_3_PROMPT : '{{question}}'],
     providers,
     tests,
     ...(gradingProvider ? { defaultTest: { options: { provider: gradingProvider } } } : {}),

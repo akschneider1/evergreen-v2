@@ -93,6 +93,16 @@ Click **Run Evaluation**. A step-by-step progress indicator tracks the pipeline:
 
 When complete, a success banner appears with a **View the report →** link.
 
+### Optional: Langfuse observability
+
+If you have a [Langfuse](https://langfuse.com) account, set `LANGFUSE_SECRET_KEY` and `LANGFUSE_PUBLIC_KEY` before launching the app. A "Send to Langfuse" checkbox will appear on the Run form. After the evaluation completes, a "View in Langfuse" link takes you to the full trace — pipeline spans, per-test prompts and responses, automatic scores (pass/fail, metric, severity), and thumbs up/down feedback you submit from inside the report.
+
+```bash
+export LANGFUSE_SECRET_KEY=sk-lf-...
+export LANGFUSE_PUBLIC_KEY=pk-lf-...
+npx evergreen app
+```
+
 ---
 
 ## Option B: CLI

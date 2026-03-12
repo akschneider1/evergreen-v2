@@ -21,6 +21,8 @@ export function builderCaseToSheetRow(bc: BuilderTestCase): SheetRow {
     context: bc.context,
     metric: bc.metric as EvalMetric,
     severity: bc.severity as Severity,
+    ...(bc.turns    ? { turns:   bc.turns   } : {}),
+    ...(bc.persona  ? { persona: bc.persona } : {}),
   };
 }
 
@@ -44,6 +46,8 @@ export function sheetRowToBuilderCase(row: SheetRow): BuilderTestCase {
     severity: row.severity,
     should,
     shouldNot,
+    ...(row.turns   ? { turns:   row.turns   } : {}),
+    ...(row.persona ? { persona: row.persona } : {}),
   };
 }
 
